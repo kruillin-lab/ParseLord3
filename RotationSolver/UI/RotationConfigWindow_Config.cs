@@ -235,9 +235,13 @@ public partial class RotationConfigWindow
         }
     }
 
+    private static Lumina.Excel.Sheets.Action[]? _actionSheet;
+    private string _actionSearch = string.Empty;
+
     private void DrawActionStacks()
     {
         float leftWidth = 200 * Scale;
+        if (_actionSheet == null) _actionSheet = Svc.Data.GetExcelSheet<Lumina.Excel.Sheets.Action>()?.Where(x => !string.IsNullOrEmpty(x.Name)).ToArray();
         
         // Split View
         ImGui.BeginGroup();
@@ -296,11 +300,17 @@ public partial class RotationConfigWindow
 
             ImGui.Separator();
             
-            int trigger = (int)stack.TriggerActionId;
-            ImGui.Text("Trigger Action ID:");
+            // Trigger Action Selector
+            string triggerName = "None";
+            if (stack.TriggerActionId != 0)
+            {
+                var row = Svc.Data.GetExcelSheet<Lumina.Excel.Sheets.Action>()?.GetRow(stack.TriggerActionId);
+                if (row.HasValue) triggerName = row.Value.Name.ToString();
+            }
+            ImGui.Text("Trigger Action:");
             ImGui.SameLine();
-            ImGui.SetNextItemWidth(80 * Scale);
-            if (ImGui.InputInt("##Trigger", ref trigger, 0)) stack.TriggerActionId = (uint)trigger;
+            ImGui.SetNextItemWidth(200 * Scale);
+            ImGuiHelper.SearchCombo($"TrigSel{_selectedStackIndex}", $"[{stack.TriggerActionId}] {triggerName}", ref _actionSearch, _actionSheet ?? [], a => $"{a.Name} ({a.RowId})", a => stack.TriggerActionId = a.RowId, "Search Trigger...");
             
             // Toggles
             bool block = stack.BlockOriginalOnFail;
@@ -345,10 +355,16 @@ public partial class RotationConfigWindow
                 if (ImGuiEx.EnumCombo("##Tgt", ref tgt)) item.Target = tgt;
                 ImGui.SameLine();
 
-                // Action ID
-                int act = (int)item.ActionId;
-                ImGui.SetNextItemWidth(80 * Scale);
-                if (ImGui.InputInt("ActID", ref act, 0)) item.ActionId = (uint)act;
+                // Action Selector
+                string actName = "None";
+                if (item.ActionId != 0)
+                {
+                    var row = Svc.Data.GetExcelSheet<Lumina.Excel.Sheets.Action>()?.GetRow(item.ActionId);
+                    if (row.HasValue) actName = row.Value.Name.ToString();
+                }
+                
+                ImGui.SetNextItemWidth(150 * Scale);
+                ImGuiHelper.SearchCombo($"ActSel{j}", $"[{item.ActionId}] {actName}", ref _actionSearch, _actionSheet ?? [], a => $"{a.Name} ({a.RowId})", a => item.ActionId = a.RowId, "Search Action...");
                 ImGui.SameLine();
 
                 // Conditions
