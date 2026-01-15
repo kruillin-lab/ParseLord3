@@ -37,7 +37,11 @@ public class ActionStackItem
 
 public class ActionStackConfig
 {
+    public string Name { get; set; } = "New Stack";
     public uint TriggerActionId { get; set; }
+    public bool BlockOriginalOnFail { get; set; } = false;
+    public bool CheckRange { get; set; } = true;
+    public bool CheckCooldown { get; set; } = true;
     public List<ActionStackItem> Items { get; set; } = [];
 }
 

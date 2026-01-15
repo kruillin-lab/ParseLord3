@@ -204,18 +204,199 @@ public partial class RotationConfigWindow
     }
     #endregion
 
+    private int _selectedStackIndex = -1;
+
     #region Stacks
-    private static void DrawStacks()
+    private void DrawStacks()
+    {
+        // ... (Keep Beneficial/Priority Stacks UI logic here or separate it?)
+        // The user wants the ReactionEx style UI for "Action Stacks".
+        // I should probably separate "Action Stacks" from the other "Priority Targets" UI to avoid clutter.
+        // Or keep them in tabs/headers?
+        
+        if (ImGui.BeginTabBar("StacksTabBar"))
+        {
+            if (ImGui.BeginTabItem("Action Stacks"))
+            {
+                DrawActionStacks();
+                ImGui.EndTabItem();
+            }
+            if (ImGui.BeginTabItem("Hostile Priority"))
+            {
+                DrawHostilePriority();
+                ImGui.EndTabItem();
+            }
+            if (ImGui.BeginTabItem("Beneficial Priority"))
+            {
+                DrawBeneficialPriority();
+                ImGui.EndTabItem();
+            }
+            ImGui.EndTabBar();
+        }
+    }
+
+    private void DrawActionStacks()
+    {
+        float leftWidth = 200 * Scale;
+        
+        // Split View
+        ImGui.BeginGroup();
+        
+        // Left Pane: List
+        ImGui.BeginChild("StackList", new Vector2(leftWidth, -1), true);
+        
+        if (ImGuiEx.IconButton(FontAwesomeIcon.Plus, "Add Stack"))
+        {
+            Service.Config.ActionStacks.Add(new ActionStackConfig());
+            _selectedStackIndex = Service.Config.ActionStacks.Count - 1;
+        }
+        
+        ImGui.Separator();
+        
+        for (int i = 0; i < Service.Config.ActionStacks.Count; i++)
+        {
+            var stack = Service.Config.ActionStacks[i];
+            string name = string.IsNullOrEmpty(stack.Name) ? $"Stack #{i+1}" : stack.Name;
+            
+            if (ImGui.Selectable($"{name}##Stack{i}", _selectedStackIndex == i))
+            {
+                _selectedStackIndex = i;
+            }
+        }
+        
+        ImGui.EndChild();
+        ImGui.EndGroup();
+        
+        ImGui.SameLine();
+        
+        // Right Pane: Details
+        ImGui.BeginGroup();
+        ImGui.BeginChild("StackDetails", new Vector2(0, -1), true);
+        
+        if (_selectedStackIndex >= 0 && _selectedStackIndex < Service.Config.ActionStacks.Count)
+        {
+            var stack = Service.Config.ActionStacks[_selectedStackIndex];
+            
+            // Header: Name & Trigger
+            string stackName = stack.Name;
+            ImGui.Text("Name:");
+            ImGui.SameLine();
+            ImGui.SetNextItemWidth(200 * Scale);
+            if (ImGui.InputText("##StackName", ref stackName, 64)) stack.Name = stackName;
+            
+            ImGui.SameLine();
+            if (ImGuiEx.IconButton(FontAwesomeIcon.Trash, "Delete Stack"))
+            {
+                Service.Config.ActionStacks.RemoveAt(_selectedStackIndex);
+                _selectedStackIndex = -1;
+                ImGui.EndChild();
+                ImGui.EndGroup();
+                return;
+            }
+
+            ImGui.Separator();
+            
+            int trigger = (int)stack.TriggerActionId;
+            ImGui.Text("Trigger Action ID:");
+            ImGui.SameLine();
+            ImGui.SetNextItemWidth(80 * Scale);
+            if (ImGui.InputInt("##Trigger", ref trigger, 0)) stack.TriggerActionId = (uint)trigger;
+            
+            // Toggles
+            bool block = stack.BlockOriginalOnFail;
+            if (ImGui.Checkbox("Block Original on Fail", ref block)) stack.BlockOriginalOnFail = block;
+            ImGui.SameLine();
+            bool range = stack.CheckRange;
+            if (ImGui.Checkbox("Check Range", ref range)) stack.CheckRange = range;
+            ImGui.SameLine();
+            bool cd = stack.CheckCooldown;
+            if (ImGui.Checkbox("Check Cooldown", ref cd)) stack.CheckCooldown = cd;
+
+            ImGui.Separator();
+            ImGui.Text("Stack Items (Drag to Reorder)");
+            if (ImGuiEx.IconButton(FontAwesomeIcon.Plus, "Add Item"))
+            {
+                stack.Items.Add(new ActionStackItem());
+            }
+
+            // Items List (Reorderable)
+            for (int j = 0; j < stack.Items.Count; j++)
+            {
+                var item = stack.Items[j];
+                ImGui.PushID($"StItm_{j}");
+                
+                // Drag Handle
+                ImGui.Button("::");
+                if (ImGui.IsItemActive() && !ImGui.IsItemHovered())
+                {
+                    int n_next = j + (ImGui.GetMouseDragDelta(ImGuiMouseButton.Left).Y < 0f ? -1 : 1);
+                    if (n_next >= 0 && n_next < stack.Items.Count)
+                    {
+                        stack.Items[j] = stack.Items[n_next];
+                        stack.Items[n_next] = item;
+                        ImGui.ResetMouseDragDelta(ImGuiMouseButton.Left);
+                    }
+                }
+                ImGui.SameLine();
+
+                // Target
+                var tgt = item.Target;
+                ImGui.SetNextItemWidth(100 * Scale);
+                if (ImGuiEx.EnumCombo("##Tgt", ref tgt)) item.Target = tgt;
+                ImGui.SameLine();
+
+                // Action ID
+                int act = (int)item.ActionId;
+                ImGui.SetNextItemWidth(80 * Scale);
+                if (ImGui.InputInt("ActID", ref act, 0)) item.ActionId = (uint)act;
+                ImGui.SameLine();
+
+                // Conditions
+                float hp = item.HpRatio * 100f;
+                ImGui.SetNextItemWidth(60 * Scale);
+                if (ImGui.SliderFloat("HP%", ref hp, 0, 100, "%.0f")) item.HpRatio = hp / 100f;
+                
+                // Delete
+                ImGui.SameLine();
+                if (ImGuiEx.IconButton(FontAwesomeIcon.Trash, ""))
+                {
+                    stack.Items.RemoveAt(j);
+                    j--;
+                }
+
+                ImGui.PopID();
+            }
+        }
+        else
+        {
+            ImGui.Text("Select a stack from the left list.");
+        }
+        
+        ImGui.EndChild();
+        ImGui.EndGroup();
+    }
+
+    private void DrawHostilePriority()
     {
         if (ImGuiEx.IconButton(FontAwesomeIcon.Plus, "Add Priority Target"))
         {
             Service.Config.PriorityTargets.Add(new PriorityTargetConfig());
         }
         ImGui.SameLine();
-        ImGui.TextWrapped("Add targets to prioritize. Higher priority value = higher precedence.");
+        ImGui.TextWrapped("Add targets to prioritize.");
 
         ImGui.Separator();
+        // ... (Existing Hostile Logic)
+        DrawHostileList();
+    }
 
+    private void DrawBeneficialPriority()
+    {
+        // ... (Existing Beneficial Logic)
+        DrawBeneficialList();
+    }
+    private void DrawHostileList()
+    {
         // Header
         ImGui.Text("On");
         ImGui.SameLine();
@@ -287,14 +468,10 @@ public partial class RotationConfigWindow
 
             ImGui.PopID();
         }
+    }
 
-        ImGui.Separator();
-        ImGui.Text("Beneficial Stacks (Heals/Buffs)");
-        if (ImGuiEx.IconButton(FontAwesomeIcon.Plus, "Add Beneficial Stack"))
-        {
-            Service.Config.BeneficialPriorityTargets.Add(new BeneficialTargetConfig());
-        }
-        
+    private void DrawBeneficialList()
+    {
         ImGui.Separator();
         ImGui.Text("On");
         ImGui.SameLine();
@@ -354,93 +531,6 @@ public partial class RotationConfigWindow
             {
                 Service.Config.BeneficialPriorityTargets.RemoveAt(i);
                 i--;
-            }
-
-            ImGui.PopID();
-        }
-
-        ImGui.Separator();
-        ImGui.Text("Action Stacks (Single Button Multi-Target)");
-        if (ImGuiEx.IconButton(FontAwesomeIcon.Plus, "Add Action Stack"))
-        {
-            Service.Config.ActionStacks.Add(new ActionStackConfig());
-        }
-        
-        for (int i = 0; i < Service.Config.ActionStacks.Count; i++)
-        {
-            var stack = Service.Config.ActionStacks[i];
-            string key = $"ActStack_{i}";
-            ImGui.PushID(key);
-            
-            ImGui.Separator();
-            int trigger = (int)stack.TriggerActionId;
-            ImGui.Text("Trigger Action ID:");
-            ImGui.SameLine();
-            ImGui.SetNextItemWidth(80 * Scale);
-            if (ImGui.InputInt("##Trigger", ref trigger, 0)) stack.TriggerActionId = (uint)trigger;
-            
-            ImGui.SameLine();
-            if (ImGuiEx.IconButton(FontAwesomeIcon.Plus, "Add Item"))
-            {
-                stack.Items.Add(new ActionStackItem());
-            }
-            ImGui.SameLine();
-            if (ImGuiEx.IconButton(FontAwesomeIcon.Trash, "Delete Stack"))
-            {
-                Service.Config.ActionStacks.RemoveAt(i);
-                i--;
-                ImGui.PopID();
-                continue;
-            }
-
-            // Items
-            for (int j = 0; j < stack.Items.Count; j++)
-            {
-                var item = stack.Items[j];
-                ImGui.PushID($"Item_{j}");
-                
-                ImGui.Indent();
-                ImGui.Text($"#{j+1}:");
-                ImGui.SameLine();
-                
-                // Action ID
-                int actId = (int)item.ActionId;
-                ImGui.SetNextItemWidth(60 * Scale);
-                if (ImGui.InputInt("ActID", ref actId, 0)) item.ActionId = (uint)actId;
-                ImGui.SameLine();
-
-                // Target
-                var tgt = item.Target;
-                ImGui.SetNextItemWidth(80 * Scale);
-                if (ImGuiEx.EnumCombo("##Tgt", ref tgt)) item.Target = tgt;
-                ImGui.SameLine();
-
-                // HP
-                float hp = item.HpRatio * 100f;
-                ImGui.SetNextItemWidth(60 * Scale);
-                if (ImGui.SliderFloat("HP%", ref hp, 0, 100, "%.0f")) item.HpRatio = hp / 100f;
-                ImGui.SameLine();
-
-                // Status
-                int status = (int)item.StatusId;
-                ImGui.SetNextItemWidth(60 * Scale);
-                if (ImGui.InputInt("StsID", ref status, 0)) item.StatusId = (uint)status;
-                if (status > 0)
-                {
-                    ImGui.SameLine();
-                    bool missing = item.MissingStatus;
-                    if (ImGui.Checkbox("Miss", ref missing)) item.MissingStatus = missing;
-                }
-
-                ImGui.SameLine();
-                if (ImGuiEx.IconButton(FontAwesomeIcon.Trash, ""))
-                {
-                    stack.Items.RemoveAt(j);
-                    j--;
-                }
-
-                ImGui.Unindent();
-                ImGui.PopID();
             }
 
             ImGui.PopID();

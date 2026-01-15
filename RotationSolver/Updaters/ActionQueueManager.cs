@@ -143,13 +143,46 @@ namespace RotationSolver.Updaters
                         uint newActionID = item.ActionId != 0 ? item.ActionId : actionID;
                         ulong newTargetID = target.GameObjectId;
 
+                        // Check Range
+                        if (stack.CheckRange && ActionManager.GetActionInRangeOrLoS(newActionID, (FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject*)Player.Object.Address, (FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject*)target.Address) != 0) continue;
+
+                        // Check Cooldown
+                        if (stack.CheckCooldown)
+                        {
+                            // 0 = Ready.
+                            if (ActionManager.Instance()->GetActionStatus(ActionType.Action, newActionID, newTargetID) != 0) continue;
+                        }
+
+                        // Check Cooldown
+                        if (stack.CheckCooldown)
+                        {
+                            // 0 = Ready.
+                            if (ActionManager.Instance()->GetActionStatus(ActionType.Action, newActionID, newTargetID) != 0) continue;
+                        }
+
                         PluginLog.Debug($"[ActionQueueManager] Stack Triggered: {actionID} -> {newActionID} on {newTargetID:X}");
 
                         if (_useActionHook?.Original != null)
                         {
-                            return _useActionHook.Original(actionManager, actionType, newActionID, newTargetID, param, useType, pvp, isGroundTarget);
+                            bool result = _useActionHook.Original(actionManager, actionType, newActionID, newTargetID, param, useType, pvp, isGroundTarget);
+                            if (result) return true; // Action executed
+                            
+                            // If action failed and BlockOriginalOnFail is false, continue loop? No, stack logic says "Try this".
+                            // If we tried and it failed (returned false), should we try next item?
+                            // ReactionEx: "Fail if..." means "Skip item if condition fail". We already checked conditions (Range, CD).
+                            // So if we are here, we attempt to use it.
+                            
+                            // If BlockOriginalOnFail is set, we return false (block original) even if this failed?
+                            // No, if we successfully *triggered* the hook, we are done.
+                            return true;
                         }
                         return true;
+                    }
+                    
+                    // If we exit loop without finding a valid item
+                    if (stack.BlockOriginalOnFail)
+                    {
+                        return false; // Block original action
                     }
                 }
             }
