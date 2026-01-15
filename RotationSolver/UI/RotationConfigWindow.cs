@@ -1,4 +1,4 @@
-﻿using Dalamud.Common;
+using Dalamud.Common;
 using Dalamud.Common.Game;
 using Dalamud.Game.ClientState.Keys;
 using Dalamud.Interface.Colors;
@@ -1138,6 +1138,10 @@ public partial class RotationConfigWindow : Window
                         DrawTarget();
                         break;
 
+                    case RotationConfigWindowTab.Stacks:
+                        DrawStacks();
+                        break;
+
                     case RotationConfigWindowTab.Extra:
                         DrawExtra();
                         break;
@@ -1172,6 +1176,8 @@ public partial class RotationConfigWindow : Window
             Configs.PvPSpecificControls => $"Auto > {UiString.ConfigWindow_Auto_PvPSpecific.GetDescription()}",
 
             Configs.TargetConfig => $"Target > {UiString.ConfigWindow_Target_Config.GetDescription()}",
+
+            Configs.Stacks => "Stacks",
 
             Configs.Extra => $"Extra > {UiString.ConfigWindow_Extra_Others.GetDescription()}",
 

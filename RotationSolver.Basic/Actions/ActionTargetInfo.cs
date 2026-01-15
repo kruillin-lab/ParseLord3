@@ -1,4 +1,4 @@
-﻿using Dalamud.Game.ClientState.Objects.SubKinds;
+using Dalamud.Game.ClientState.Objects.SubKinds;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
 using ECommons.GameFunctions;
@@ -2629,6 +2629,55 @@ public struct ActionTargetInfo(IBaseAction action)
 
             static IBattleChara? GeneralHealTarget(List<IBattleChara> objs)
             {
+                // Priority Stack Check
+                if (Service.Config.BeneficialPriorityTargets.Count > 0)
+                {
+                    IBattleChara? bestPriority = null;
+                    int maxPrio = int.MinValue;
+
+                    // Sort stacks by priority desc
+                    var sortedStacks = Service.Config.BeneficialPriorityTargets
+                        .Where(s => s.Enabled)
+                        .OrderByDescending(s => s.Priority);
+
+                    foreach (var stack in sortedStacks)
+                    {
+                        // Optimization: if we found a match in a higher priority bracket, stop checking lower ones?
+                        // Actually, we iterate stacks (high to low). First stack that finds a valid target wins.
+                        // Inside a stack rule, if multiple targets match, pick lowest HP.
+
+                        IBattleChara? bestInStack = null;
+                        float minHp = float.MaxValue;
+
+                        foreach (var o in objs)
+                        {
+                            // Criteria Check
+                            if (stack.Role != JobRole.None && !o.IsJobCategory(stack.Role)) continue;
+                            if (o.GetHealthRatio() > stack.HpRatio) continue;
+                            
+                            if (stack.StatusId != 0)
+                            {
+                                bool hasStatus = o.HasStatus(true, (StatusID)stack.StatusId) || o.HasStatus(false, (StatusID)stack.StatusId);
+                                if (stack.MissingStatus && hasStatus) continue;
+                                if (!stack.MissingStatus && !hasStatus) continue;
+                            }
+
+                            // Match found. Pick lowest HP if multiple match this rule.
+                            float hp = o.GetHealthRatio();
+                            if (hp < minHp)
+                            {
+                                minHp = hp;
+                                bestInStack = o;
+                            }
+                        }
+
+                        if (bestInStack != null)
+                        {
+                            return bestInStack;
+                        }
+                    }
+                }
+
                 List<IBattleChara> healingNeededObjs = [];
                 foreach (var o in objs)
                 {

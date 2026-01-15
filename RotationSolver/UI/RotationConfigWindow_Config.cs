@@ -1,4 +1,4 @@
-﻿using Dalamud.Game.ClientState.Keys;
+using Dalamud.Game.ClientState.Keys;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility.Raii;
 using ECommons.DalamudServices;
@@ -200,6 +200,163 @@ public partial class RotationConfigWindow
                 (Delete, new[] { VirtualKey.DELETE }),
                 (Up, new[] { VirtualKey.UP }),
                 (Down, new[] { VirtualKey.DOWN }));
+        }
+    }
+    #endregion
+
+    #region Stacks
+    private static void DrawStacks()
+    {
+        if (ImGuiEx.IconButton(FontAwesomeIcon.Plus, "Add Priority Target"))
+        {
+            Service.Config.PriorityTargets.Add(new PriorityTargetConfig());
+        }
+        ImGui.SameLine();
+        ImGui.TextWrapped("Add targets to prioritize. Higher priority value = higher precedence.");
+
+        ImGui.Separator();
+
+        // Header
+        ImGui.Text("On");
+        ImGui.SameLine();
+        ImGui.Text("Prio");
+        ImGui.SameLine();
+        ImGui.Text("Target Name (Partial Match)");
+
+        for (int i = 0; i < Service.Config.PriorityTargets.Count; i++)
+        {
+            var item = Service.Config.PriorityTargets[i];
+            string key = $"PriorityTarget_{i}";
+
+            ImGui.PushID(key);
+
+            // Enabled toggle
+            bool enabled = item.Enabled;
+            if (ImGui.Checkbox("##Enabled", ref enabled))
+            {
+                item.Enabled = enabled;
+            }
+            ImGui.SameLine();
+
+            // Priority
+            int priority = item.Priority;
+            ImGui.SetNextItemWidth(60 * Scale);
+            if (ImGui.InputInt("##Priority", ref priority, 0))
+            {
+                item.Priority = priority;
+            }
+            ImGui.SameLine();
+
+            // Name
+            string name = item.Name;
+            ImGui.SetNextItemWidth(150 * Scale);
+            if (ImGui.InputTextWithHint("##Name", "Name (0 for ID)", ref name, 64))
+            {
+                item.Name = name;
+            }
+            ImGui.SameLine();
+
+            // Object ID
+            if (string.IsNullOrEmpty(name))
+            {
+                int objId = (int)item.ObjectId;
+                ImGui.SetNextItemWidth(80 * Scale);
+                if (ImGui.InputInt("##ObjID", ref objId, 0))
+                {
+                    item.ObjectId = (uint)objId;
+                }
+                ImGui.SameLine();
+            }
+            else
+            {
+                // Full Match Toggle
+                bool full = item.FullMatch;
+                if (ImGui.Checkbox("Full Match", ref full))
+                {
+                    item.FullMatch = full;
+                }
+                ImGui.SameLine();
+            }
+
+            // Delete
+            if (ImGuiEx.IconButton(FontAwesomeIcon.Trash, "Delete"))
+            {
+                Service.Config.PriorityTargets.RemoveAt(i);
+                i--;
+            }
+
+            ImGui.PopID();
+        }
+
+        ImGui.Separator();
+        ImGui.Text("Beneficial Stacks (Heals/Buffs)");
+        if (ImGuiEx.IconButton(FontAwesomeIcon.Plus, "Add Beneficial Stack"))
+        {
+            Service.Config.BeneficialPriorityTargets.Add(new BeneficialTargetConfig());
+        }
+        
+        ImGui.Separator();
+        ImGui.Text("On");
+        ImGui.SameLine();
+        ImGui.Text("Prio");
+        ImGui.SameLine();
+        ImGui.Text("Role");
+        ImGui.SameLine();
+        ImGui.Text("HP < %");
+        ImGui.SameLine();
+        ImGui.Text("Status ID (0=Ignore)");
+
+        for (int i = 0; i < Service.Config.BeneficialPriorityTargets.Count; i++)
+        {
+            var item = Service.Config.BeneficialPriorityTargets[i];
+            string key = $"BenTarget_{i}";
+            ImGui.PushID(key);
+
+            // Enabled
+            bool enabled = item.Enabled;
+            if (ImGui.Checkbox("##Enabled", ref enabled)) item.Enabled = enabled;
+            ImGui.SameLine();
+
+            // Priority
+            int priority = item.Priority;
+            ImGui.SetNextItemWidth(40 * Scale);
+            if (ImGui.InputInt("##Prio", ref priority, 0)) item.Priority = priority;
+            ImGui.SameLine();
+
+            // Role
+            var role = item.Role;
+            ImGui.SetNextItemWidth(80 * Scale);
+            if (ImGuiEx.EnumCombo("##Role", ref role)) item.Role = role;
+            ImGui.SameLine();
+
+            // HP Ratio
+            float hp = item.HpRatio * 100f;
+            ImGui.SetNextItemWidth(80 * Scale);
+            if (ImGui.SliderFloat("##HP", ref hp, 0, 100, "%.0f%%")) item.HpRatio = hp / 100f;
+            ImGui.SameLine();
+
+            // Status ID
+            int status = (int)item.StatusId;
+            ImGui.SetNextItemWidth(60 * Scale);
+            if (ImGui.InputInt("##Status", ref status, 0)) item.StatusId = (uint)status;
+            
+            // Missing Status toggle (if StatusID > 0)
+            if (status > 0)
+            {
+                ImGui.SameLine();
+                bool missing = item.MissingStatus;
+                if (ImGui.Checkbox("Missing", ref missing)) item.MissingStatus = missing;
+                ImguiTooltips.HoveredTooltip("Target if Status is MISSING");
+            }
+
+            ImGui.SameLine();
+            if (ImGuiEx.IconButton(FontAwesomeIcon.Trash, "Delete"))
+            {
+                Service.Config.BeneficialPriorityTargets.RemoveAt(i);
+                i--;
+            }
+
+            ImGui.PopID();
         }
     }
     #endregion

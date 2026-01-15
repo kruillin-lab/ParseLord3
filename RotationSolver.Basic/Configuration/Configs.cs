@@ -7,6 +7,25 @@ using static RotationSolver.Basic.Configuration.ConfigTypes;
 
 namespace RotationSolver.Basic.Configuration;
 
+public class BeneficialTargetConfig
+{
+    public int Priority { get; set; } = 1;
+    public bool Enabled { get; set; } = true;
+    public JobRole Role { get; set; } = JobRole.None;
+    public float HpRatio { get; set; } = 1.0f;
+    public uint StatusId { get; set; } = 0;
+    public bool MissingStatus { get; set; } = false;
+}
+
+public class PriorityTargetConfig
+{
+    public string Name { get; set; } = string.Empty;
+    public uint ObjectId { get; set; } = 0;
+    public int Priority { get; set; } = 1;
+    public bool Enabled { get; set; } = true;
+    public bool FullMatch { get; set; } = false;
+}
+
 internal partial class Configs : IPluginConfiguration
 {
     [JsonIgnore]
@@ -21,6 +40,7 @@ internal partial class Configs : IPluginConfiguration
         HealingActionCondition = "HealingActionCondition",
         PhantomDutyRotationConfiguration = "PhantomDutyRotationConfiguration",
         TargetConfig = "TargetConfig",
+        Stacks = "Stacks",
         Extra = "Extra",
         Rotations = "Rotations",
         List = "List",
@@ -39,6 +59,8 @@ internal partial class Configs : IPluginConfiguration
 
     public string[] RotationLibs { get; set; } = [];
     public List<TargetingType> TargetingTypes { get; set; } = [];
+    public List<PriorityTargetConfig> PriorityTargets { get; set; } = [];
+    public List<BeneficialTargetConfig> BeneficialPriorityTargets { get; set; } = [];
 
     public MacroInfo DutyStart { get; set; } = new MacroInfo();
     public MacroInfo DutyEnd { get; set; } = new MacroInfo();

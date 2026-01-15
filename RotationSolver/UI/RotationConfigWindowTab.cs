@@ -1,4 +1,4 @@
-﻿using ECommons.DalamudServices;
+using ECommons.DalamudServices;
 using System.ComponentModel;
 
 namespace RotationSolver.UI;
@@ -54,6 +54,9 @@ internal enum RotationConfigWindowTab : byte
 
     [Description("Configure targeting settings.")]
     [TabIcon(Icon = 16)] Target,
+
+    [Description("Configure priority targeting stacks.")]
+    [TabIcon(Icon = 36)] Stacks,
 
     [Description("Configure optional helpful features.")]
     [TabIcon(Icon = 51)] Extra,

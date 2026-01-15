@@ -470,10 +470,66 @@ internal static class MajorUpdater
                         IBattleChara? closestEnemy = null;
                         float minDistance = float.MaxValue;
 
+                        // Check Priority Targets first
+                        IBattleChara? priorityEnemy = null;
+                        int maxPriority = int.MinValue;
+
                         foreach (var enemy in DataCenter.AllHostileTargets)
                         {
                             if (enemy == null || !enemy.IsEnemy() || enemy == Player.Object)
                                 continue;
+
+                            // Priority Logic
+                            if (Service.Config.PriorityTargets.Count > 0)
+                            {
+                                foreach (var pConfig in Service.Config.PriorityTargets)
+                                {
+                                    if (!pConfig.Enabled) continue;
+
+                                    bool match = false;
+                                    
+                                    // Check by ID if provided
+                                    if (pConfig.ObjectId != 0)
+                                    {
+                                        if (enemy.BaseId == pConfig.ObjectId || enemy.GameObjectId == pConfig.ObjectId)
+                                            match = true;
+                                    }
+                                    // Check by Name if provided
+                                    else if (!string.IsNullOrEmpty(pConfig.Name))
+                                    {
+                                        string enemyName = enemy.Name.ToString();
+                                        if (pConfig.FullMatch)
+                                        {
+                                            if (enemyName.Equals(pConfig.Name, StringComparison.OrdinalIgnoreCase))
+                                                match = true;
+                                        }
+                                        else
+                                        {
+                                            if (enemyName.Contains(pConfig.Name, StringComparison.OrdinalIgnoreCase))
+                                                match = true;
+                                        }
+                                    }
+
+                                    if (match)
+                                    {
+                                        if (pConfig.Priority > maxPriority)
+                                        {
+                                            maxPriority = pConfig.Priority;
+                                            priorityEnemy = enemy;
+                                        }
+                                        else if (pConfig.Priority == maxPriority)
+                                        {
+                                            // Tie-breaker: closest distance
+                                            float distP = Vector3.Distance(Player.Object.Position, enemy.Position);
+                                            float distExisting = priorityEnemy != null ? Vector3.Distance(Player.Object.Position, priorityEnemy.Position) : float.MaxValue;
+                                            if (distP < distExisting)
+                                            {
+                                                priorityEnemy = enemy;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
 
                             float distance = Vector3.Distance(Player.Object.Position, enemy.Position);
                             if (distance < minDistance)
@@ -483,20 +539,23 @@ internal static class MajorUpdater
                             }
                         }
 
-                        if (closestEnemy != null)
+                        // Use priority enemy if found, otherwise closest
+                        var finalTarget = priorityEnemy ?? closestEnemy;
+
+                        if (finalTarget != null)
                         {
                             if (!Service.Config.TargetDelayEnable)
                             {
                                 BeginParseLordTargetChange();
-                                Svc.Targets.Target = closestEnemy;
+                                Svc.Targets.Target = finalTarget;
                                 EndParseLordTargetChange();
                             }
                             // Respect TargetDelay before auto-targeting the closest enemy
                             if (Service.Config.TargetDelayEnable)
                             {
-                                RSCommands.SetTargetWithDelay(closestEnemy);
+                                RSCommands.SetTargetWithDelay(finalTarget);
                             }
-                            PluginLog.Information($"Targeting {closestEnemy}");
+                            PluginLog.Information($"Targeting {finalTarget}");
                         }
                     }
                 }
