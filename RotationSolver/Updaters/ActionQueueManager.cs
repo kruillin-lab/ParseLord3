@@ -1,4 +1,4 @@
-﻿using Dalamud.Hooking;
+using Dalamud.Hooking;
 using ECommons.DalamudServices;
 using ECommons.GameHelpers;
 using ECommons.Logging;
@@ -103,6 +103,57 @@ namespace RotationSolver.Updaters
 
         private static unsafe bool UseActionDetour(ActionManager* actionManager, uint actionType, uint actionID, ulong targetObjectID, uint param, uint useType, int pvp, bool* isGroundTarget)
         {
+            // Action Stacks Logic (ReactionEx Style)
+            if (Service.Config.ActionStacks.Count > 0 && actionType == 1 && Player.Available)
+            {
+                uint adjusted = Service.GetAdjustedActionId(actionID);
+                var stack = Service.Config.ActionStacks.FirstOrDefault(s => s.TriggerActionId == adjusted || s.TriggerActionId == actionID);
+                if (stack != null)
+                {
+                    foreach (var item in stack.Items)
+                    {
+                        if (!item.Enabled) continue;
+
+                        IGameObject? target = null;
+                        switch (item.Target)
+                        {
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.Target: target = Svc.Targets.Target; break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.Self: target = Player.Object; break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.Focus: target = Svc.Targets.FocusTarget; break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.Mouseover: target = Svc.Targets.MouseOverTarget; break;
+                        }
+
+                        if (target == null) continue;
+
+                        // HP Check
+                        if (item.HpRatio < 1.0f && target is IBattleChara bc)
+                        {
+                            if (bc.CurrentHp == 0 || (float)bc.CurrentHp / bc.MaxHp > item.HpRatio) continue;
+                        }
+
+                        // Status Check
+                        if (item.StatusId != 0 && target is IBattleChara bc2)
+                        {
+                            bool has = bc2.HasStatus(true, (StatusID)item.StatusId) || bc2.HasStatus(false, (StatusID)item.StatusId);
+                            if (item.MissingStatus && has) continue;
+                            if (!item.MissingStatus && !has) continue;
+                        }
+
+                        // Execute Stack Item
+                        uint newActionID = item.ActionId != 0 ? item.ActionId : actionID;
+                        ulong newTargetID = target.GameObjectId;
+
+                        PluginLog.Debug($"[ActionQueueManager] Stack Triggered: {actionID} -> {newActionID} on {newTargetID:X}");
+
+                        if (_useActionHook?.Original != null)
+                        {
+                            return _useActionHook.Original(actionManager, actionType, newActionID, newTargetID, param, useType, pvp, isGroundTarget);
+                        }
+                        return true;
+                    }
+                }
+            }
+
             if (Player.Available && Service.Config.InterceptAction2 && DataCenter.State && DataCenter.InCombat && !DataCenter.IsPvP)
             {
                 try

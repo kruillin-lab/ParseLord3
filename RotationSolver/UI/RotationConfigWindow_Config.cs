@@ -358,6 +358,93 @@ public partial class RotationConfigWindow
 
             ImGui.PopID();
         }
+
+        ImGui.Separator();
+        ImGui.Text("Action Stacks (Single Button Multi-Target)");
+        if (ImGuiEx.IconButton(FontAwesomeIcon.Plus, "Add Action Stack"))
+        {
+            Service.Config.ActionStacks.Add(new ActionStackConfig());
+        }
+        
+        for (int i = 0; i < Service.Config.ActionStacks.Count; i++)
+        {
+            var stack = Service.Config.ActionStacks[i];
+            string key = $"ActStack_{i}";
+            ImGui.PushID(key);
+            
+            ImGui.Separator();
+            int trigger = (int)stack.TriggerActionId;
+            ImGui.Text("Trigger Action ID:");
+            ImGui.SameLine();
+            ImGui.SetNextItemWidth(80 * Scale);
+            if (ImGui.InputInt("##Trigger", ref trigger, 0)) stack.TriggerActionId = (uint)trigger;
+            
+            ImGui.SameLine();
+            if (ImGuiEx.IconButton(FontAwesomeIcon.Plus, "Add Item"))
+            {
+                stack.Items.Add(new ActionStackItem());
+            }
+            ImGui.SameLine();
+            if (ImGuiEx.IconButton(FontAwesomeIcon.Trash, "Delete Stack"))
+            {
+                Service.Config.ActionStacks.RemoveAt(i);
+                i--;
+                ImGui.PopID();
+                continue;
+            }
+
+            // Items
+            for (int j = 0; j < stack.Items.Count; j++)
+            {
+                var item = stack.Items[j];
+                ImGui.PushID($"Item_{j}");
+                
+                ImGui.Indent();
+                ImGui.Text($"#{j+1}:");
+                ImGui.SameLine();
+                
+                // Action ID
+                int actId = (int)item.ActionId;
+                ImGui.SetNextItemWidth(60 * Scale);
+                if (ImGui.InputInt("ActID", ref actId, 0)) item.ActionId = (uint)actId;
+                ImGui.SameLine();
+
+                // Target
+                var tgt = item.Target;
+                ImGui.SetNextItemWidth(80 * Scale);
+                if (ImGuiEx.EnumCombo("##Tgt", ref tgt)) item.Target = tgt;
+                ImGui.SameLine();
+
+                // HP
+                float hp = item.HpRatio * 100f;
+                ImGui.SetNextItemWidth(60 * Scale);
+                if (ImGui.SliderFloat("HP%", ref hp, 0, 100, "%.0f")) item.HpRatio = hp / 100f;
+                ImGui.SameLine();
+
+                // Status
+                int status = (int)item.StatusId;
+                ImGui.SetNextItemWidth(60 * Scale);
+                if (ImGui.InputInt("StsID", ref status, 0)) item.StatusId = (uint)status;
+                if (status > 0)
+                {
+                    ImGui.SameLine();
+                    bool missing = item.MissingStatus;
+                    if (ImGui.Checkbox("Miss", ref missing)) item.MissingStatus = missing;
+                }
+
+                ImGui.SameLine();
+                if (ImGuiEx.IconButton(FontAwesomeIcon.Trash, ""))
+                {
+                    stack.Items.RemoveAt(j);
+                    j--;
+                }
+
+                ImGui.Unindent();
+                ImGui.PopID();
+            }
+
+            ImGui.PopID();
+        }
     }
     #endregion
 

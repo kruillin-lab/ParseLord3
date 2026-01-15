@@ -17,6 +17,30 @@ public class BeneficialTargetConfig
     public bool MissingStatus { get; set; } = false;
 }
 
+public enum ActionStackTargetType
+{
+    Target,
+    Self,
+    Focus,
+    Mouseover
+}
+
+public class ActionStackItem
+{
+    public uint ActionId { get; set; } = 0;
+    public ActionStackTargetType Target { get; set; } = ActionStackTargetType.Target;
+    public bool Enabled { get; set; } = true;
+    public float HpRatio { get; set; } = 1.0f;
+    public uint StatusId { get; set; } = 0;
+    public bool MissingStatus { get; set; } = false;
+}
+
+public class ActionStackConfig
+{
+    public uint TriggerActionId { get; set; }
+    public List<ActionStackItem> Items { get; set; } = [];
+}
+
 public class PriorityTargetConfig
 {
     public string Name { get; set; } = string.Empty;
@@ -61,6 +85,7 @@ internal partial class Configs : IPluginConfiguration
     public List<TargetingType> TargetingTypes { get; set; } = [];
     public List<PriorityTargetConfig> PriorityTargets { get; set; } = [];
     public List<BeneficialTargetConfig> BeneficialPriorityTargets { get; set; } = [];
+    public List<ActionStackConfig> ActionStacks { get; set; } = [];
 
     public MacroInfo DutyStart { get; set; } = new MacroInfo();
     public MacroInfo DutyEnd { get; set; } = new MacroInfo();
