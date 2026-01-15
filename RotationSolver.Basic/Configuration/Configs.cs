@@ -19,10 +19,14 @@ public class BeneficialTargetConfig
 
 public enum ActionStackTargetType
 {
-    Target,
-    Self,
-    Focus,
-    Mouseover
+    Target,         // Original Target (from input)
+    Self,           // <me>
+    Focus,          // <f>
+    Mouseover,      // <mo>
+    TargetOfTarget, // <tt>
+    UITarget,       // Hard Target
+    Tank,           // Party Tank
+    Party1, Party2, Party3, Party4, Party5, Party6, Party7, Party8
 }
 
 public class ActionStackItem

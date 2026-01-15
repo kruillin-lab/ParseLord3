@@ -241,7 +241,7 @@ public partial class RotationConfigWindow
     private void DrawActionStacks()
     {
         float leftWidth = 200 * Scale;
-        if (_actionSheet == null) _actionSheet = Svc.Data.GetExcelSheet<Lumina.Excel.Sheets.Action>()?.Where(x => !string.IsNullOrEmpty(x.Name)).ToArray();
+        if (_actionSheet == null) _actionSheet = Svc.Data.GetExcelSheet<Lumina.Excel.Sheets.Action>()?.Where(x => !string.IsNullOrEmpty(x.Name.ToString())).ToArray();
         
         // Split View
         ImGui.BeginGroup();

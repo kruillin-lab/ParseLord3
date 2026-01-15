@@ -117,10 +117,47 @@ namespace RotationSolver.Updaters
                         IGameObject? target = null;
                         switch (item.Target)
                         {
-                            case RotationSolver.Basic.Configuration.ActionStackTargetType.Target: target = Svc.Targets.Target; break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.Target: 
+                                // Resolve from original target ID
+                                if (targetObjectID != 0 && targetObjectID != 3758096384UL) // INVALID_TARGET_ID?
+                                    target = Svc.Objects.SearchById(targetObjectID);
+                                else
+                                    target = Svc.Targets.Target; // Fallback?
+                                break;
                             case RotationSolver.Basic.Configuration.ActionStackTargetType.Self: target = Player.Object; break;
                             case RotationSolver.Basic.Configuration.ActionStackTargetType.Focus: target = Svc.Targets.FocusTarget; break;
                             case RotationSolver.Basic.Configuration.ActionStackTargetType.Mouseover: target = Svc.Targets.MouseOverTarget; break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.TargetOfTarget: 
+                                target = Svc.Targets.Target?.TargetObject; 
+                                break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.UITarget: 
+                                target = Svc.Targets.Target; 
+                                break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.Tank:
+                                if (Svc.Party.Length > 0)
+                                {
+                                    // Find first tank that isn't me? Or any tank?
+                                    // Usually "Tank" implies "Main Tank" or "Co-Tank".
+                                    // I'll pick the first tank found in party list.
+                                    foreach (var member in Svc.Party)
+                                    {
+                                        if (member.GameObject is IBattleChara tankChara && tankChara.IsJobCategory(JobRole.Tank))
+                                        {
+                                            target = tankChara;
+                                            break;
+                                        }
+                                    }
+                                }
+                                break;
+                            // Party 1-8
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.Party1: if (Svc.Party.Length > 0) target = Svc.Party[0]?.GameObject; break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.Party2: if (Svc.Party.Length > 1) target = Svc.Party[1]?.GameObject; break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.Party3: if (Svc.Party.Length > 2) target = Svc.Party[2]?.GameObject; break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.Party4: if (Svc.Party.Length > 3) target = Svc.Party[3]?.GameObject; break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.Party5: if (Svc.Party.Length > 4) target = Svc.Party[4]?.GameObject; break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.Party6: if (Svc.Party.Length > 5) target = Svc.Party[5]?.GameObject; break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.Party7: if (Svc.Party.Length > 6) target = Svc.Party[6]?.GameObject; break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.Party8: if (Svc.Party.Length > 7) target = Svc.Party[7]?.GameObject; break;
                         }
 
                         if (target == null) continue;
