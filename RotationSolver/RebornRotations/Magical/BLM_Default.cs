@@ -1,4 +1,4 @@
-﻿namespace RotationSolver.RebornRotations.Magical;
+namespace RotationSolver.RebornRotations.Magical;
 
 [Rotation("Default", CombatType.PvE, GameVersion = "7.4")]
 [SourceCode(Path = "main/BasicRotations/Magical/BLM_Default.cs")]
@@ -561,7 +561,7 @@ public class BLM_Default : BlackMageRotation
         }
 
         if (AddThunder(out act, 0) && StatusHelper.PlayerWillStatusEndGCD(1, 0, true,
-            StatusID.Thundercloud))
+            StatusID.Thunderhead))
         {
             return true;
         }
