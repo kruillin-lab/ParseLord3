@@ -25,11 +25,11 @@ public sealed class ChurinMNK : MonkRotation
     }
 
     private enum Nadi : byte
-{
-    [Description("None")] None,
-    [Description("Lunar")] Lunar,
-    [Description("Solar")] Solar,
-}
+    {
+        [Description("None")] None,
+        [Description("Lunar")] Lunar,
+        [Description("Solar")] Solar,
+    }
 
     private enum Blitz : byte
     {
@@ -47,9 +47,9 @@ public sealed class ChurinMNK : MonkRotation
     private Blitz NextBlitz { get; set; }
     private bool PhantomRushed { get; set; }
     private bool LunarOddWindow => NextNadiGoal == Nadi.Lunar
-                                   && BrotherhoodPvE.Cooldown.RecastTimeElapsedRaw is >30f and < 90f;
+                                   && BrotherhoodPvE.Cooldown.RecastTimeElapsedRaw is > 30f and < 90f;
     private bool SolarOddWindow => NextNadiGoal == Nadi.Solar
-                                   && BrotherhoodPvE.Cooldown.RecastTimeElapsedRaw is >30f and < 90f;
+                                   && BrotherhoodPvE.Cooldown.RecastTimeElapsedRaw is > 30f and < 90f;
     private static bool HasBlitzReady => !BeastChakrasContains(BeastChakra.None);
     private static bool IsReadySoon(IBaseAction action, int maxGCD)
     {
@@ -94,7 +94,7 @@ public sealed class ChurinMNK : MonkRotation
                                             ActionID.LeapingOpoPvE, ActionID.BootshinePvE,
                                             ActionID.ShadowOfTheDestroyerPvE, ActionID.ArmOfTheDestroyerPvE);
     private bool IsLastGCDMasterfulBlitz => IsLastGCD(true, ElixirBurstPvE, PhantomRushPvE, RisingPhoenixPvE);
-    private bool IsLastGCDOpo => IsLastGCD( true, DragonKickPvE, LeapingOpoPvE, BootshinePvE, ShadowOfTheDestroyerPvE, ArmOfTheDestroyerPvE);
+    private bool IsLastGCDOpo => IsLastGCD(true, DragonKickPvE, LeapingOpoPvE, BootshinePvE, ShadowOfTheDestroyerPvE, ArmOfTheDestroyerPvE);
     private static bool PerfectBalanceStacks(int stacks) => StatusHelper.PlayerStatusStack(true, StatusID.PerfectBalance) == stacks;
     private static bool CanLateWeave => WeaponRemain <= LateWeaveWindow;
     private static bool CanEarlyWeave => WeaponRemain >= LateWeaveWindow;
@@ -129,7 +129,7 @@ public sealed class ChurinMNK : MonkRotation
 
         if (!_canIncrement && incrementTrigger)
         {
-                        BlitzCount++;
+            BlitzCount++;
         }
 
         _canIncrement = incrementTrigger;
@@ -149,7 +149,7 @@ public sealed class ChurinMNK : MonkRotation
     }
     private Blitz GetNextBlitz()
     {
-    // 1. Handle Openers (Fixed Sequences)
+        // 1. Handle Openers (Fixed Sequences)
         if (!PhantomRushed)
         {
             return (ChosenOpener, BlitzCount) switch
@@ -174,8 +174,8 @@ public sealed class ChurinMNK : MonkRotation
 
                 // Default fallback if counts go out of bounds before PR
                 _ => Blitz.None
-        };
-    }
+            };
+        }
 
         // 2. Handle Standard Loop (Post-Opener)
         // Logic: Fill missing Nadi -> Phantom Rush -> Repeat
@@ -188,20 +188,20 @@ public sealed class ChurinMNK : MonkRotation
         };
     }
     private void ResetState()
-{
-    BlitzCount = 0;
-    PhantomRushed = false;
-    _canIncrement = false;
-
-    // Pre-combat prep: Set initial Blitz based on opener preference
-    NextBlitz = ChosenOpener switch
     {
-        OpenerType.SolarLunar => Blitz.RisingPhoenix,
-        _ => Blitz.ElixirBurst // Double and Triple Lunar start with Elixir Burst
-    };
+        BlitzCount = 0;
+        PhantomRushed = false;
+        _canIncrement = false;
 
-    NextNadiGoal = NextBlitz == Blitz.RisingPhoenix ? Nadi.Solar : Nadi.Lunar;
-}
+        // Pre-combat prep: Set initial Blitz based on opener preference
+        NextBlitz = ChosenOpener switch
+        {
+            OpenerType.SolarLunar => Blitz.RisingPhoenix,
+            _ => Blitz.ElixirBurst // Double and Triple Lunar start with Elixir Burst
+        };
+
+        NextNadiGoal = NextBlitz == Blitz.RisingPhoenix ? Nadi.Solar : Nadi.Lunar;
+    }
     private static string CheckFuryGaugeState()
     {
 
@@ -366,7 +366,7 @@ public sealed class ChurinMNK : MonkRotation
     #region Countdown Logic
     protected override IAction? CountDownAction(float remainTime)
     {
-        if  (remainTime <= 0.8f && ThunderclapPvE.CanUse(out var act)
+        if (remainTime <= 0.8f && ThunderclapPvE.CanUse(out var act)
             || remainTime <= 2 && TrueNorthPvE.CanUse(out act)
             || remainTime <= 5 && Chakra < 5 && TryUseMeditations(out act))
         {
@@ -441,7 +441,7 @@ public sealed class ChurinMNK : MonkRotation
         if (TryUseWindsReply(out act)) return true;
         if (TryUseFiresReply(out act)) return true;
 
-        return  TryGenerateNadi(out act)
+        return TryGenerateNadi(out act)
             || TryUseMasterfulBlitz(out act)
             || TryUseFiller(out act)
             || TryUseMeditations(out act)
@@ -493,7 +493,7 @@ public sealed class ChurinMNK : MonkRotation
     private bool TryUseRaptor(out IAction? act)
     {
         act = null;
-        if (InRaptorForm || HasFormlessFist ||HasPerfectBalance)
+        if (InRaptorForm || HasFormlessFist || HasPerfectBalance)
         {
             if (FourpointFuryPvE.CanUse(out act, skipComboCheck: true))
             {
@@ -516,7 +516,7 @@ public sealed class ChurinMNK : MonkRotation
     private bool TryUseCoeurl(out IAction? act)
     {
         act = null;
-        if (InCoeurlForm || HasFormlessFist ||HasPerfectBalance)
+        if (InCoeurlForm || HasFormlessFist || HasPerfectBalance)
         {
             if (RockbreakerPvE.CanUse(out act, skipComboCheck: true))
             {
@@ -567,7 +567,7 @@ public sealed class ChurinMNK : MonkRotation
     private bool TryGenerateNadi(out IAction? act)
     {
         act = null;
-                if (!HasPerfectBalance || !BeastChakrasContains(BeastChakra.None)) return false;
+        if (!HasPerfectBalance || !BeastChakrasContains(BeastChakra.None)) return false;
 
         return NextNadiGoal switch
         {
@@ -765,12 +765,12 @@ public sealed class ChurinMNK : MonkRotation
 
         if (LunarOddWindow && (HasRiddleOfFire || IsReadySoon(RiddleOfFirePvE, 0)) && !HasBothNadi)
         {
-            return  IsLastGCDOpo && PerfectBalancePvE.Cooldown.WillHaveOneCharge(10) && PerfectBalancePvE.CanUse(out act, usedUp: true);
+            return IsLastGCDOpo && PerfectBalancePvE.Cooldown.WillHaveOneCharge(10) && PerfectBalancePvE.CanUse(out act, usedUp: true);
         }
 
-        if (IsReadySoon(BrotherhoodPvE, 2) && IsReadySoon(RiddleOfFirePvE,2))
+        if (IsReadySoon(BrotherhoodPvE, 2) && IsReadySoon(RiddleOfFirePvE, 2))
         {
-                return IsLastGCDOpo && PerfectBalancePvE.CanUse(out act, usedUp: true);
+            return IsLastGCDOpo && PerfectBalancePvE.CanUse(out act, usedUp: true);
         }
 
 
@@ -836,7 +836,7 @@ public sealed class ChurinMNK : MonkRotation
     private bool TryUseRiddleOfWind(out IAction? act)
     {
         act = null;
-        if (!RiddleOfWindPvE.IsEnabled || !EnoughWeaveTime || !RiddleOfWindPvE.Cooldown.WillHaveOneCharge(WeaponRemain) && WeaponRemain <= 1.2f ) return false;
+        if (!RiddleOfWindPvE.IsEnabled || !EnoughWeaveTime || !RiddleOfWindPvE.Cooldown.WillHaveOneCharge(WeaponRemain) && WeaponRemain <= 1.2f) return false;
 
         if (RiddleOfWindPvE.CanUse(out act))
         {
@@ -868,7 +868,7 @@ public sealed class ChurinMNK : MonkRotation
     {
         act = null;
 
-                if (Chakra < 5 || !EnoughWeaveTime || ((IsReadySoon(BrotherhoodPvE, 1) || IsReadySoon(RiddleOfFirePvE, 1)) && !IsOpenerStart)) return false;
+        if (Chakra < 5 || !EnoughWeaveTime || ((IsReadySoon(BrotherhoodPvE, 1) || IsReadySoon(RiddleOfFirePvE, 1)) && !IsOpenerStart)) return false;
 
         // AoE Check
         if (EnlightenmentPvE.CanUse(out act)) return true;

@@ -70,13 +70,7 @@
           "Microsoft.Win32.SystemEvents": "10.0.2"
         }
       },
-      "rotationsolver.sourcegenerators": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.CodeAnalysis.CSharp": "[5.0.0, )"
-        }
-      },
-      "RotationSolverReborn.Basic": {
+      "ParseLord.Basic": {
         "type": "Project",
         "dependencies": {
           "ECommons": "[3.1.0.13, )",
@@ -84,6 +78,12 @@
           "RotationSolver.SourceGenerators": "[1.0.0, )",
           "Svg": "[3.4.7, )",
           "System.Drawing.Common": "[10.0.2, )"
+        }
+      },
+      "rotationsolver.sourcegenerators": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.CodeAnalysis.CSharp": "[5.0.0, )"
         }
       }
     }

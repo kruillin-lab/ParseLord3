@@ -55,16 +55,16 @@ internal class OverlayWindow : Window
 
         try
         {
-			if (_throttle.ElapsedMilliseconds >= SyncUpdateMs)
-			{
-				var result = HotbarHighlightManager.To2DAsync().GetAwaiter().GetResult() ?? [];
-				var list = new List<IDrawing2D>(result);
-				list.Sort((a, b) => GetDrawingOrder(a).CompareTo(GetDrawingOrder(b)));
-				_elements = [.. list];
-				_throttle.Restart();
-			}
+            if (_throttle.ElapsedMilliseconds >= SyncUpdateMs)
+            {
+                var result = HotbarHighlightManager.To2DAsync().GetAwaiter().GetResult() ?? [];
+                var list = new List<IDrawing2D>(result);
+                list.Sort((a, b) => GetDrawingOrder(a).CompareTo(GetDrawingOrder(b)));
+                _elements = [.. list];
+                _throttle.Restart();
+            }
 
-			ImDrawListPtr drawList = ImGui.GetWindowDrawList();
+            ImDrawListPtr drawList = ImGui.GetWindowDrawList();
             if (drawList.Handle == null)
             {
                 PluginLog.Warning($"{nameof(OverlayWindow)}: Window draw list is null.");

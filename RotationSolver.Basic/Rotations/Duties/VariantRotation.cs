@@ -123,7 +123,7 @@ public partial class DutyRotation
     {
         setting.StatusNeed = [StatusID.VariantEagleEyeShotSet];
         setting.TargetType = TargetType.HighHP;
-		setting.CreateConfig = () => new ActionConfig()
+        setting.CreateConfig = () => new ActionConfig()
         {
             AoeCount = 1,
         };

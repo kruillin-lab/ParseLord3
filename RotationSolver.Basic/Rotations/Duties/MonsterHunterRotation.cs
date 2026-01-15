@@ -33,7 +33,7 @@ public partial class DutyRotation
         ImGui.Text($"Arkveld EX: {ArkveldEX}");
         ImGui.Spacing();
     }
-    
+
     /// <summary>
     /// Modifies the settings for MegaPotionPvE.
     /// </summary>

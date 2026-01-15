@@ -3,6 +3,7 @@ using FFXIVClientStructs.FFXIV.Client.Game;
 using CombatRole = RotationSolver.Basic.Data.CombatRole;
 
 namespace RotationSolver.Basic.Rotations.Basic;
+
 public partial class BlueMageRotation
 {
     /// <summary>

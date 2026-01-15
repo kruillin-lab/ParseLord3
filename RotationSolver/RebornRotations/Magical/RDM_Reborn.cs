@@ -107,15 +107,15 @@ public sealed class RDM_Reborn : RedMageRotation
     {
         bool AnyoneInMeleeRange = NumberOfHostilesInRangeOf(3) > 0;
 
-		if (HasEmbolden || EmboldenPvE.Cooldown.HasOneCharge || EmboldenPvE.Cooldown.WillHaveOneCharge(5f) && !IsInMeleeCombo)
-		{
-			if (InCombat && HasHostilesInMaxRange && ManaficationPvE.CanUse(out act))
-			{
-				return true;
-			}
-		}
+        if (HasEmbolden || EmboldenPvE.Cooldown.HasOneCharge || EmboldenPvE.Cooldown.WillHaveOneCharge(5f) && !IsInMeleeCombo)
+        {
+            if (InCombat && HasHostilesInMaxRange && ManaficationPvE.CanUse(out act))
+            {
+                return true;
+            }
+        }
 
-		if (!AnyonesMeleeRule)
+        if (!AnyonesMeleeRule)
         {
             if (IsBurst && InCombat && HasHostilesInRange && EmboldenPvE.CanUse(out act))
             {
@@ -130,10 +130,10 @@ public sealed class RDM_Reborn : RedMageRotation
             }
         }
 
-		return base.EmergencyAbility(nextGCD, out act);
-	}
+        return base.EmergencyAbility(nextGCD, out act);
+    }
 
-	protected override bool AttackAbility(IAction nextGCD, out IAction? act)
+    protected override bool AttackAbility(IAction nextGCD, out IAction? act)
     {
         bool Meleecheck = nextGCD.IsTheSameTo(true, ActionID.RipostePvE, ActionID.ZwerchhauPvE, ActionID.RedoublementPvE, ActionID.MoulinetPvE, ActionID.ReprisePvE);
 
@@ -158,7 +158,7 @@ public sealed class RDM_Reborn : RedMageRotation
                         return true;
                     }
                 }
-                if (!CanVerFire && nextGCD.IsTheSameTo(false, VerthunderPvE , VerthunderIiiPvE))
+                if (!CanVerFire && nextGCD.IsTheSameTo(false, VerthunderPvE, VerthunderIiiPvE))
                 {
                     if (SwiftcastPvE.CanUse(out act))
                     {
@@ -277,7 +277,7 @@ public sealed class RDM_Reborn : RedMageRotation
     {
         if (PreventRaising)
         {
-            if (HasManafication || HasEmbolden || ManaStacks == 3 || CanMagickedSwordplay || CanGrandImpact 
+            if (HasManafication || HasEmbolden || ManaStacks == 3 || CanMagickedSwordplay || CanGrandImpact
                 || ScorchPvE.CanUse(out _) || ResolutionPvE.CanUse(out _)
                 || IsLastComboAction(ActionID.RipostePvE, ActionID.ZwerchhauPvE))
             {
@@ -295,38 +295,38 @@ public sealed class RDM_Reborn : RedMageRotation
 
     protected override bool GeneralGCD(out IAction? act)
     {
-		if (ManaStacks == 3)
-		{
-			int diff = BlackMana - WhiteMana;
-			int gap = Math.Abs(diff);
+        if (ManaStacks == 3)
+        {
+            int diff = BlackMana - WhiteMana;
+            int gap = Math.Abs(diff);
 
-			bool forceBalance = HasEmbolden || gap >= 19;
+            bool forceBalance = HasEmbolden || gap >= 19;
 
-			if (forceBalance)
-			{
-				// Balance first
-				if (diff > 0 && VerholyPvE.CanUse(out act)) return true;  // Black leads -> add White
-				if (diff < 0 && VerflarePvE.CanUse(out act)) return true; // White leads -> add Black
-			}
-			else
-			{
-				// Slight imbalance: proc-aware preference to avoid overwriting existing procs
-				if (CanVerFire && VerholyPvE.CanUse(out act)) return true;
-				if (CanVerStone && VerflarePvE.CanUse(out act)) return true;
-			}
+            if (forceBalance)
+            {
+                // Balance first
+                if (diff > 0 && VerholyPvE.CanUse(out act)) return true;  // Black leads -> add White
+                if (diff < 0 && VerflarePvE.CanUse(out act)) return true; // White leads -> add Black
+            }
+            else
+            {
+                // Slight imbalance: proc-aware preference to avoid overwriting existing procs
+                if (CanVerFire && VerholyPvE.CanUse(out act)) return true;
+                if (CanVerStone && VerflarePvE.CanUse(out act)) return true;
+            }
 
-			// Fallbacks
-			if (diff > 0 && VerholyPvE.CanUse(out act)) return true;
-			if (diff < 0 && VerflarePvE.CanUse(out act)) return true;
+            // Fallbacks
+            if (diff > 0 && VerholyPvE.CanUse(out act)) return true;
+            if (diff < 0 && VerflarePvE.CanUse(out act)) return true;
 
-			if (CanVerFire && !CanVerStone && VerholyPvE.CanUse(out act)) return true;
-			if (CanVerStone && !CanVerFire && VerflarePvE.CanUse(out act)) return true;
+            if (CanVerFire && !CanVerStone && VerholyPvE.CanUse(out act)) return true;
+            if (CanVerStone && !CanVerFire && VerflarePvE.CanUse(out act)) return true;
 
-			if (VerholyPvE.CanUse(out act)) return true;
-			if (VerflarePvE.CanUse(out act)) return true;
-		}
+            if (VerholyPvE.CanUse(out act)) return true;
+            if (VerflarePvE.CanUse(out act)) return true;
+        }
 
-		if (CanInstantCast && !CanVerEither)
+        if (CanInstantCast && !CanVerEither)
         {
             if (ScatterPvE.CanUse(out act))
             {
@@ -373,47 +373,47 @@ public sealed class RDM_Reborn : RedMageRotation
             return true;
         }
 
-		if (EnchantedRedoublementPvE_45962.CanUse(out act))
-		{
-			return true;
-		}
-
-		if (EnchantedRedoublementPvE.CanUse(out act))
+        if (EnchantedRedoublementPvE_45962.CanUse(out act))
         {
             return true;
         }
 
-		if (EnchantedZwerchhauPvE_45961.CanUse(out act))
-		{
-			return true;
-		}
-
-		if (EnchantedZwerchhauPvE.CanUse(out act))
+        if (EnchantedRedoublementPvE.CanUse(out act))
         {
             return true;
         }
 
-		bool EnoughMana = (!Pooling && EnoughManaComboNoPooling) || (Pooling && EnoughManaComboPooling);
-		//Check if you can start melee combo
-		if (EnoughMana)
-		{
-			if (EnchantedRipostePvE.Config.IsEnabled && !IsLastGCD(true, EnchantedRipostePvE_45960) && ((HasEmbolden && CanMagickedSwordplay) || StatusHelper.PlayerWillStatusEndGCD(4, 0, true, StatusID.MagickedSwordplay)) && EnchantedRipostePvE_45960.CanUse(out act))
-			{
-				return true;
-			}
+        if (EnchantedZwerchhauPvE_45961.CanUse(out act))
+        {
+            return true;
+        }
 
-			if (!IsLastGCD(true, EnchantedMoulinetPvE) && EnchantedMoulinetPvE.CanUse(out act))
-			{
-				return true;
-			}
+        if (EnchantedZwerchhauPvE.CanUse(out act))
+        {
+            return true;
+        }
 
-			if (!IsLastGCD(true, EnchantedRipostePvE) && EnchantedRipostePvE.CanUse(out act))
-			{
-				return true;
-			}
-		}
-		//Grand impact usage if not interrupting melee combo
-		if (GrandImpactPvE.CanUse(out act, skipStatusProvideCheck: CanGrandImpact, skipCastingCheck: true))
+        bool EnoughMana = (!Pooling && EnoughManaComboNoPooling) || (Pooling && EnoughManaComboPooling);
+        //Check if you can start melee combo
+        if (EnoughMana)
+        {
+            if (EnchantedRipostePvE.Config.IsEnabled && !IsLastGCD(true, EnchantedRipostePvE_45960) && ((HasEmbolden && CanMagickedSwordplay) || StatusHelper.PlayerWillStatusEndGCD(4, 0, true, StatusID.MagickedSwordplay)) && EnchantedRipostePvE_45960.CanUse(out act))
+            {
+                return true;
+            }
+
+            if (!IsLastGCD(true, EnchantedMoulinetPvE) && EnchantedMoulinetPvE.CanUse(out act))
+            {
+                return true;
+            }
+
+            if (!IsLastGCD(true, EnchantedRipostePvE) && EnchantedRipostePvE.CanUse(out act))
+            {
+                return true;
+            }
+        }
+        //Grand impact usage if not interrupting melee combo
+        if (GrandImpactPvE.CanUse(out act, skipStatusProvideCheck: CanGrandImpact, skipCastingCheck: true))
         {
             return true;
         }

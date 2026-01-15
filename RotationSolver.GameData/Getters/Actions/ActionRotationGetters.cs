@@ -82,7 +82,7 @@ internal class ActionDutyRotationGetter(Lumina.GameData gameData)
     /// </summary>
     /// <param name="item">The action item to check.</param>
     /// <returns>True if the action is added; otherwise, false.</returns>
-protected override bool AddToList(Lumina.Excel.Sheets.Action item)
+    protected override bool AddToList(Lumina.Excel.Sheets.Action item)
     {
         if (!base.AddToList(item)) return false;
         return IsADutyAction(item);
@@ -105,7 +105,7 @@ internal class ActionRoleRotationGetter(Lumina.GameData gameData)
     /// </summary>
     /// <param name="item">The action item to check.</param>
     /// <returns>True if the action is added; otherwise, false.</returns>
-protected override bool AddToList(Lumina.Excel.Sheets.Action item)
+    protected override bool AddToList(Lumina.Excel.Sheets.Action item)
     {
         if (!base.AddToList(item)) return false;
         return !IsADutyAction(item);

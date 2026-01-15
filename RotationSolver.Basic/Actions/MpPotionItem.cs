@@ -2,6 +2,7 @@
 using Lumina.Excel.Sheets;
 
 namespace RotationSolver.Basic.Actions;
+
 internal class MpPotionItem : BaseItem
 {
     public uint MaxMp { get; }
@@ -14,14 +15,14 @@ internal class MpPotionItem : BaseItem
         MaxMp = data[1];
     }
 
-	public override bool CanUse(out IAction item, bool clippingCheck)
-	{
-		item = this;
+    public override bool CanUse(out IAction item, bool clippingCheck)
+    {
+        item = this;
 
-		if (Player.Object == null)
-		{
-			return false;
-		}
-		return Player.Available && ObjectHelper.GetPlayerMPRatio() <= Service.Config.UseMpPotionsPercent && Player.Object.MaxMp - DataCenter.CurrentMp >= MaxMp && base.CanUse(out item);
-	}
+        if (Player.Object == null)
+        {
+            return false;
+        }
+        return Player.Available && ObjectHelper.GetPlayerMPRatio() <= Service.Config.UseMpPotionsPercent && Player.Object.MaxMp - DataCenter.CurrentMp >= MaxMp && base.CanUse(out item);
+    }
 }

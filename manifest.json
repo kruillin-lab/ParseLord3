@@ -1,9 +1,9 @@
 {
-  "Author": "The Combat Reborn Team",
-  "Name": "Rotation Solver Reborn",
-  "InternalName": "RotationSolver",
-  "RepoUrl": "https://github.com/FFXIV-CombatReborn/RotationSolverReborn",
-  "Description": "Analyses combat information every frame and finds the best action.\n\nThis means almost all the information available in one frame in combat, including the status of all players in the party, the status of any hostile targets, skill cooldowns, the MP and HP of characters, the location of characters, casting status of the hostile target, combo, combat duration, player level, etc.\nThen, it will highlight the best action on the hot bar, or help you to click on it.\nIt is designed for `general combat`, not for savage or ultimate. Use it carefully.",
+  "Author": "kruil",
+  "Name": "ParseLord3",
+  "InternalName": "ParseLord3",
+  "RepoUrl": "https://github.com/kruil/ParseLord3",
+  "Description": "ParseLord3 - Enhanced ParseLord rotation engine with manual target control and other improvements.",
   "ApplicableVersion": "any",
   "DalamudApiLevel": 14,
   "TestingDalamudApiLevel": 14,
@@ -23,7 +23,7 @@
   "CanUnloadAsync": false,
   "LoadPriority": 0,
   "IsTestingExclusive": false,
-  "IconUrl": "https://raw.githubusercontent.com/FFXIV-CombatReborn/RebornAssets/main/IconAssets/RSR_Icon.png",
-  "Punchline": "Analyses combat information every frame and finds the best action.",
+  "IconUrl": "https://raw.githubusercontent.com/kruil/ParseLord3/main/Images/Logo.png",
+  "Punchline": "ParseLord3 - Enhanced rotation solver with manual target control.",
   "AcceptsFeedback": true
 }

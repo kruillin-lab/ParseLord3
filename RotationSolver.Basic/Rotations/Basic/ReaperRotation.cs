@@ -464,17 +464,17 @@ public partial class ReaperRotation
     static partial void ModifySlicePvP(ref ActionSetting setting)
     {
         setting.MPOverride = () => 0;
-	}
+    }
 
     static partial void ModifyWaxingSlicePvP(ref ActionSetting setting)
     {
-		setting.MPOverride = () => 0;
-	}
+        setting.MPOverride = () => 0;
+    }
 
     static partial void ModifyInfernalSlicePvP(ref ActionSetting setting)
     {
-		setting.MPOverride = () => 0;
-	}
+        setting.MPOverride = () => 0;
+    }
 
     static partial void ModifyHarvestMoonPvP(ref ActionSetting setting)
     {

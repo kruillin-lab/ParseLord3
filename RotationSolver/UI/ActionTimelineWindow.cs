@@ -122,10 +122,10 @@ internal class ActionTimelineWindow : Window
         // Calculate position on timeline
         var timeSinceStart = (float)(now - item.StartTime).TotalSeconds;
         var itemDuration = (float)(item.EndTime - item.StartTime).TotalSeconds;
-        
+
         var startX = pos.X + timelineLength - (timeSinceStart + TimeOffset) * SizePerSecond;
         var endX = startX + itemDuration * SizePerSecond;
-        
+
         // Skip if completely outside visible area
         if (endX < pos.X || startX > pos.X + timelineLength) return;
 
@@ -155,11 +155,11 @@ internal class ActionTimelineWindow : Window
         if (IconSet.GetTexture(item.Icon, out IDalamudTextureWrap? texture) && texture != null)
         {
             var iconPos = new Vector2(startX, pos.Y + yOffset + (itemHeight - iconSize) / 2);
-            
+
             // Ensure icon is within window bounds
             iconPos.X = Math.Max(iconPos.X, pos.X);
             iconPos.X = Math.Min(iconPos.X, pos.X + timelineLength - iconSize);
-            
+
             drawList.AddImage(
                 texture.Handle,
                 iconPos,
@@ -178,7 +178,7 @@ internal class ActionTimelineWindow : Window
 
             var iconPos = new Vector2(Math.Max(startX, pos.X), pos.Y + yOffset + (itemHeight - iconSize) / 2);
             iconPos.X = Math.Min(iconPos.X, pos.X + timelineLength - iconSize);
-            
+
             drawList.AddRectFilled(
                 iconPos,
                 iconPos + new Vector2(iconSize, iconSize),

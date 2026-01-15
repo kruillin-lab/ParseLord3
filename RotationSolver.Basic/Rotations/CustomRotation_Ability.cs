@@ -12,12 +12,12 @@ public partial class CustomRotation
     {
         act = DataCenter.CommandNextAction;
 
-		if (Player == null)
-		{
-			return false;
-		}
+        if (Player == null)
+        {
+            return false;
+        }
 
-		IBaseAction.ForceEnable = true;
+        IBaseAction.ForceEnable = true;
         if (act is IBaseAction a && a != null && !a.Info.IsRealGCD && a.CanUse(out _, usedUp: true, skipAoeCheck: true, skipStatusProvideCheck: true))
         {
             return true;
@@ -267,7 +267,7 @@ public partial class CustomRotation
             {
                 return true;
             }
-            if (DefenseSingleAbility(nextGCD, out act) 
+            if (DefenseSingleAbility(nextGCD, out act)
                 || (!DataCenter.IsHostileCastingToTank && !StatusHelper.PlayerHasStatus(true, StatusID.Vengeance) && !StatusHelper.PlayerHasStatus(true, StatusID.Damnation) && ArmsLengthPvE.CanUse(out act)))
             {
                 return true;

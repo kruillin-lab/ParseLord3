@@ -180,12 +180,12 @@ public sealed class PhantomDefault : PhantomRotation
             return base.GeneralAbility(nextGCD, out act);
         }
 
-		if (InCombat && MagicShellPvE.CanUse(out act))
-		{
-			return true;
-		}
+        if (InCombat && MagicShellPvE.CanUse(out act))
+        {
+            return true;
+        }
 
-		if (BattleBellPvE.CanUse(out act))
+        if (BattleBellPvE.CanUse(out act))
         {
             return true;
         }
@@ -210,12 +210,12 @@ public sealed class PhantomDefault : PhantomRotation
             return true;
         }
 
-		if (InCombat && DancePvE.CanUse(out act))
-		{
-			return true;
-		}
+        if (InCombat && DancePvE.CanUse(out act))
+        {
+            return true;
+        }
 
-		if (!IsMoving && OccultSprintPvE.CanUse(out act))
+        if (!IsMoving && OccultSprintPvE.CanUse(out act))
         {
             return true;
         }
@@ -287,12 +287,12 @@ public sealed class PhantomDefault : PhantomRotation
             }
         }
 
-		if (MesmerizePvE.CanUse(out act))
-		{
-			return true;
-		}
+        if (MesmerizePvE.CanUse(out act))
+        {
+            return true;
+        }
 
-		if (PilferWeaponPvE.CanUse(out act))
+        if (PilferWeaponPvE.CanUse(out act))
         {
             return true;
         }
@@ -313,12 +313,12 @@ public sealed class PhantomDefault : PhantomRotation
             return base.DefenseSingleAbility(nextGCD, out act);
         }
 
-		if (DefendPvE.CanUse(out act))
-		{
-			return true;
-		}
+        if (DefendPvE.CanUse(out act))
+        {
+            return true;
+        }
 
-		if (PhantomGuardPvE.CanUse(out act))
+        if (PhantomGuardPvE.CanUse(out act))
         {
             return true;
         }
@@ -343,22 +343,22 @@ public sealed class PhantomDefault : PhantomRotation
             return base.DefenseAreaAbility(nextGCD, out act);
         }
 
-		if (QuickstepPvE.CanUse(out act))
-		{
-			return true;
-		}
+        if (QuickstepPvE.CanUse(out act))
+        {
+            return true;
+        }
 
-		if (SteadfastStancePvE.CanUse(out act))
-		{
-			return true;
-		}
+        if (SteadfastStancePvE.CanUse(out act))
+        {
+            return true;
+        }
 
-		if (DefendPvE.CanUse(out act))
-		{
-			return true;
-		}
+        if (DefendPvE.CanUse(out act))
+        {
+            return true;
+        }
 
-		if (MightyMarchPvE.CanUse(out act))
+        if (MightyMarchPvE.CanUse(out act))
         {
             return true;
         }
@@ -636,57 +636,57 @@ public sealed class PhantomDefault : PhantomRotation
             return base.GeneralGCD(out act);
         }
 
-		if (BlazingSpellbladePvE.CanUse(out act))
-		{
-			return true;
-		}
+        if (BlazingSpellbladePvE.CanUse(out act))
+        {
+            return true;
+        }
 
-		if (HolySpellbladePvE.CanUse(out act))
-		{
-			return true;
-		}
+        if (HolySpellbladePvE.CanUse(out act))
+        {
+            return true;
+        }
 
-		if (SunderingSpellbladePvE.CanUse(out act))
-		{
-			return true;
-		}
+        if (SunderingSpellbladePvE.CanUse(out act))
+        {
+            return true;
+        }
 
-		if (PhantomSwordDancePvE.CanUse(out act))
-		{
-			return true;
-		}
+        if (PhantomSwordDancePvE.CanUse(out act))
+        {
+            return true;
+        }
 
-		if (TemptingTangoPvE.CanUse(out act))
-		{
-			return true;
-		}
+        if (TemptingTangoPvE.CanUse(out act))
+        {
+            return true;
+        }
 
-		if (JitterbugPvE.CanUse(out act))
-		{
-			return true;
-		}
+        if (JitterbugPvE.CanUse(out act))
+        {
+            return true;
+        }
 
-		if (MysteryWaltzPvE.CanUse(out act))
-		{
-			return true;
-		}
+        if (MysteryWaltzPvE.CanUse(out act))
+        {
+            return true;
+        }
 
-		if (FinisherPvE.CanUse(out act))
-		{
-			return true;
-		}
+        if (FinisherPvE.CanUse(out act))
+        {
+            return true;
+        }
 
-		if (LongReachPvE.CanUse(out act))
-		{
-			return true;
-		}
+        if (LongReachPvE.CanUse(out act))
+        {
+            return true;
+        }
 
-		if (BladeblitzPvE.CanUse(out act))
-		{
-			return true;
-		}
+        if (BladeblitzPvE.CanUse(out act))
+        {
+            return true;
+        }
 
-		if (ZeninagePvE.CanUse(out act, skipComboCheck: true))
+        if (ZeninagePvE.CanUse(out act, skipComboCheck: true))
         {
             return true;
         }

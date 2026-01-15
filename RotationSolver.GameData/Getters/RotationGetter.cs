@@ -178,7 +178,7 @@ internal class RotationGetter
     /// <param name="action">The action.</param>
     /// <param name="index">The index of the limit break.</param>
     /// <returns>The limit break code.</returns>
-private string GetLBInRotation(Lumina.Excel.Sheets.Action action, int index)
+    private string GetLBInRotation(Lumina.Excel.Sheets.Action action, int index)
     {
         if (action.RowId == 0) return string.Empty;
 
@@ -199,7 +199,7 @@ private string GetLBInRotation(Lumina.Excel.Sheets.Action action, int index)
     /// <param name="action">The action.</param>
     /// <param name="name">The name of the limit break.</param>
     /// <returns>The PvE limit break code.</returns>
-private string GetLBPvE(Lumina.Excel.Sheets.Action action, out string name)
+    private string GetLBPvE(Lumina.Excel.Sheets.Action action, out string name)
     {
         name = $"{action.Name.ToString().ToPascalCase()}PvE";
         var descName = action.GetDescName();
@@ -212,7 +212,7 @@ private string GetLBPvE(Lumina.Excel.Sheets.Action action, out string name)
     /// </summary>
     /// <param name="action">The action.</param>
     /// <returns>The PvP limit break code.</returns>
-private string GetLBInRotationPvP(Lumina.Excel.Sheets.Action? action)
+    private string GetLBInRotationPvP(Lumina.Excel.Sheets.Action? action)
     {
         if (action == null || action.Value.RowId == 0) return string.Empty;
 
@@ -233,7 +233,7 @@ private string GetLBInRotationPvP(Lumina.Excel.Sheets.Action? action)
     /// <param name="action">The action.</param>
     /// <param name="name">The name of the limit break.</param>
     /// <returns>The PvP limit break code.</returns>
-private string GetLBPvP(Lumina.Excel.Sheets.Action action, out string name)
+    private string GetLBPvP(Lumina.Excel.Sheets.Action action, out string name)
     {
         name = $"{action.Name.ToString().ToPascalCase()}PvP";
         var descName = action.GetDescName();
@@ -246,14 +246,14 @@ private string GetLBPvP(Lumina.Excel.Sheets.Action action, out string name)
     /// </summary>
     /// <param name="item">The action.</param>
     /// <returns>The description of the action.</returns>
-private string GetDesc(Lumina.Excel.Sheets.Action item)
+    private string GetDesc(Lumina.Excel.Sheets.Action item)
     {
         var transient = gameData.GetExcelSheet<ActionTransient>()?.GetRow(item.RowId);
         var desc = transient?.Description.ToString() ?? string.Empty;
-        
+
         // Sanitize the description to remove invalid XML tags
         desc = Util.SanitizeXmlDescription(desc);
-        
+
         return $"<para>{desc.Replace("\n", "</para>\n/// <para>")}</para>";
     }
 }

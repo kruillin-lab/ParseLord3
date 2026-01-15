@@ -1,4 +1,4 @@
-﻿using Dalamud.Configuration;
+using Dalamud.Configuration;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
 using ECommons.Logging;
@@ -166,20 +166,20 @@ internal partial class Configs : IPluginConfiguration
     Filter = AutoActionUsage)]
     private static readonly bool _useHpPotions = false;
 
-	[UI("Use HP Potions when HP% is lower than this", Parent = nameof(UseHpPotions))]
-	[Range(0, 1, ConfigUnitType.Percent, 0.002f)]
-	public float UseHpPotionsPercent { get; set; } = 0.5f;
+    [UI("Use HP Potions when HP% is lower than this", Parent = nameof(UseHpPotions))]
+    [Range(0, 1, ConfigUnitType.Percent, 0.002f)]
+    public float UseHpPotionsPercent { get; set; } = 0.5f;
 
-	[ConditionBool, UI("Automatically use MP Potions",
+    [ConditionBool, UI("Automatically use MP Potions",
     Description = "Enable to allow the plugin to use MP potions automatically.",
     Filter = AutoActionUsage)]
     private static readonly bool _useMpPotions = false;
 
-	[UI("Use MP Potions when MP% is lower than this", Parent = nameof(UseMpPotions))]
-	[Range(0, 1, ConfigUnitType.Percent, 0.002f)]
-	public float UseMpPotionsPercent { get; set; } = 0.5f;
+    [UI("Use MP Potions when MP% is lower than this", Parent = nameof(UseMpPotions))]
+    [Range(0, 1, ConfigUnitType.Percent, 0.002f)]
+    public float UseMpPotionsPercent { get; set; } = 0.5f;
 
-	[ConditionBool, UI("Automatically use Phoenix Down",
+    [ConditionBool, UI("Automatically use Phoenix Down",
     Description = "Enable to allow the plugin to use Phoenix Down item. (Experimental feature)",
     Filter = AutoActionUsage)]
     private static readonly bool _usePhoenixDown = false;
@@ -213,24 +213,24 @@ internal partial class Configs : IPluginConfiguration
         Filter = BasicAutoSwitch, Section = 1)]
     private static readonly bool _cancelStateOnCombatBeforeCountdown = false;
 
-	[ConditionBool, UI("I understand that Auto On settings will turn RSRs autorotation on, automatically.",
-		Filter = BasicAutoSwitch, Section = 1)]
-	private static readonly bool _AutoOnYes = false;
+    [ConditionBool, UI("I understand that Auto On settings will turn RSRs autorotation on, automatically.",
+        Filter = BasicAutoSwitch, Section = 1)]
+    private static readonly bool _AutoOnYes = false;
 
-	[ConditionBool, UI("Auto turn on manual mode when attacked.",
-			   Parent = nameof(AutoOnYes))]
+    [ConditionBool, UI("Auto turn on manual mode when attacked.",
+               Parent = nameof(AutoOnYes))]
     private static readonly bool _startOnAttackedBySomeone2 = false;
-    
+
     [ConditionBool, UI("Auto turn on auto mode when party is in combat.",
-			   Parent = nameof(AutoOnYes))]
+               Parent = nameof(AutoOnYes))]
     private static readonly bool _startOnPartyIsInCombat2 = false;
-    
+
     [ConditionBool, UI("Auto turn on auto mode when alliance is in combat.",
-			   Parent = nameof(AutoOnYes))]
+               Parent = nameof(AutoOnYes))]
     private static readonly bool _startOnAllianceIsInCombat2 = false;
-    
+
     [ConditionBool, UI("Auto turn on auto mode when in combat in Bozja/Eureka/Occult Fate/CE",
-			   Parent = nameof(AutoOnYes))]
+               Parent = nameof(AutoOnYes))]
     private static readonly bool _startOnFieldOpInCombat2 = false;
 
     /// <markdown file="Auto" name="Use healing abilities when playing a non-healer role" section="Healing Usage and Control">
@@ -265,7 +265,7 @@ internal partial class Configs : IPluginConfiguration
     [ConditionBool, UI("Debug Mode", Filter = Debug)]
     private static readonly bool _inDebug = false;
 
-	[ConditionBool, UI("Make /rotation Manual a toggle command.",
+    [ConditionBool, UI("Make /rotation Manual a toggle command.",
         Filter = BasicParams)]
     private static readonly bool _toggleManual = false;
 
@@ -706,7 +706,7 @@ internal partial class Configs : IPluginConfiguration
     /// Remove extra lag-induced animation lock delay from instant casts (read tooltip!)
     /// Do NOT use with XivAlexander or NoClippy - this should automatically disable itself if they are detected, but double check first!
     /// </summary>
-    [ConditionBool, UI("Remove extra lag-induced animation lock delay from instant casts (read tooltip!)", 
+    [ConditionBool, UI("Remove extra lag-induced animation lock delay from instant casts (read tooltip!)",
     Description = "Do NOT use with XivAlexander, BMR tweaks enabled, or NoClippy - this should automatically disable itself if they are detected, but double check first!",
     Filter = Extra)]
     private static readonly bool _removeAnimationLockDelay = false;
@@ -717,7 +717,7 @@ internal partial class Configs : IPluginConfiguration
     /// Setting this to 20ms will enable triple-weaving when using autorotation. The minimum setting to remove triple-weaving is 26ms.
     /// The minimum of 20ms has been accepted by FFLogs and should not cause issues with your logs.
     /// </summary>
-    [UI("Animation lock max. simulated delay (read tooltip!)", 
+    [UI("Animation lock max. simulated delay (read tooltip!)",
     Description = "Configures the maximum simulated delay in milliseconds when using animation lock removal - this is required and cannot be reduced to zero. Setting this to 20ms will enable triple-weaving when using autorotation. The minimum setting to remove triple-weaving is 26ms. The minimum of 20ms has been accepted by FFLogs and should not cause issues with your logs.",
     Parent = nameof(RemoveAnimationLockDelay), Filter = Extra)]
     [Range(20, 50, ConfigUnitType.None, 1f)]
@@ -731,7 +731,7 @@ internal partial class Configs : IPluginConfiguration
     /// Remove extra framerate-induced cooldown delay
     /// Dynamically adjusts cooldown and animation locks to ensure queued actions resolve immediately regardless of framerate limitations
     /// </summary>
-    [ConditionBool, UI("Remove extra framerate-induced cooldown delay", 
+    [ConditionBool, UI("Remove extra framerate-induced cooldown delay",
     Description = "Dynamically adjusts cooldown and animation locks to ensure queued actions resolve immediately regardless of framerate limitations",
     Filter = Extra)]
     private static readonly bool _removeCooldownDelay = false;
@@ -814,6 +814,11 @@ internal partial class Configs : IPluginConfiguration
     [ConditionBool, UI("Set target to closest targetable enemy if no valid action target nearby and target not set (This works in Manual mode as well)",
         Filter = TargetConfig, Section = 3)]
     private static readonly bool _targetFreely = false;
+
+    [ConditionBool, UI("Respect manual target selection",
+        Description = "When enabled, if you manually change your target while auto-targeting is active, ParseLord will respect your choice and not override it until the target dies, you clear your target, or combat ends.",
+        Filter = TargetConfig, Section = 3)]
+    private static readonly bool _respectManualTarget = true;
 
     [ConditionBool, UI("Only attack targets in view.",
         Filter = TargetConfig, Section = 1)]

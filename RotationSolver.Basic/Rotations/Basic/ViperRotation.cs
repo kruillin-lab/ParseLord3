@@ -5,8 +5,8 @@ public partial class ViperRotation
     /// <inheritdoc/>
     public override MedicineType MedicineType => MedicineType.Dexterity;
 
-	/// <inheritdoc/>
-	public override bool IsBursting()
+    /// <inheritdoc/>
+    public override bool IsBursting()
     {
         if (HasHunterAndSwift)
         {
@@ -169,9 +169,9 @@ public partial class ViperRotation
         ImGui.Text($"SerpentOffering: {SerpentOffering}/100");
         ImGui.Text($"RattlingCoilStacks: {RattlingCoilStacks}/{MaxRattling}");
         ImGui.Text($"AnguineTributeStacks: {AnguineTributeStacks}/{MaxAnguine}");
-		ImGui.Text($"VicewinderHasCharges: {VicewinderHasCharges}");
-		ImGui.Text($"VicepitHasCharges: {VicepitHasCharges}");
-		ImGui.Spacing();
+        ImGui.Text($"VicewinderHasCharges: {VicewinderHasCharges}");
+        ImGui.Text($"VicepitHasCharges: {VicepitHasCharges}");
+        ImGui.Spacing();
         ImGui.Text("DreadCombo: " + DreadCombo.ToString());
         ImGui.Text("NODREAD: " + NODREAD.ToString());
         ImGui.Text("DreadActive: " + DreadActive.ToString());
@@ -230,22 +230,22 @@ public partial class ViperRotation
     /// </summary>
     public static bool HasHunterAndSwift => IsHunter && IsSwift;
 
-	/// <summary>
-	/// Returns true if Vicepit has at least one charge.
-	/// </summary>
-	public static bool VicepitHasCharges
-		=> (DataCenter.CurrentRotation is ViperRotation viper ? viper.VicepitPvE.Cooldown.CurrentCharges : 0) > 0;
+    /// <summary>
+    /// Returns true if Vicepit has at least one charge.
+    /// </summary>
+    public static bool VicepitHasCharges
+        => (DataCenter.CurrentRotation is ViperRotation viper ? viper.VicepitPvE.Cooldown.CurrentCharges : 0) > 0;
 
-	/// <summary>
-	/// Returns true if Vicewinder has at least one charge.
-	/// </summary>
-	public static bool VicewinderHasCharges
-		=> (DataCenter.CurrentRotation is ViperRotation viper ? viper.VicewinderPvE.Cooldown.CurrentCharges : 0) > 0;
+    /// <summary>
+    /// Returns true if Vicewinder has at least one charge.
+    /// </summary>
+    public static bool VicewinderHasCharges
+        => (DataCenter.CurrentRotation is ViperRotation viper ? viper.VicewinderPvE.Cooldown.CurrentCharges : 0) > 0;
 
-	/// <summary>
-	/// 
-	/// </summary>
-	public static bool WillSwiftEnd => StatusHelper.PlayerWillStatusEnd(5, true, StatusID.Swiftscaled);
+    /// <summary>
+    /// 
+    /// </summary>
+    public static bool WillSwiftEnd => StatusHelper.PlayerWillStatusEnd(5, true, StatusID.Swiftscaled);
 
     /// <summary>
     /// 
@@ -837,37 +837,37 @@ public partial class ViperRotation
     #region PvP Actions
     static partial void ModifyRavenousBitePvP(ref ActionSetting setting)
     {
-        
+
     }
 
     static partial void ModifySwiftskinsStingPvP(ref ActionSetting setting)
     {
-        
+
     }
 
     static partial void ModifyPiercingFangsPvP(ref ActionSetting setting)
     {
-        
+
     }
 
     static partial void ModifyBarbarousBitePvP(ref ActionSetting setting)
     {
-        
+
     }
 
     static partial void ModifyHuntersStingPvP(ref ActionSetting setting)
     {
-        
+
     }
 
     static partial void ModifySteelFangsPvP(ref ActionSetting setting)
     {
-        
+
     }
 
     static partial void ModifyBloodcoilPvP(ref ActionSetting setting)
     {
-        
+
     }
 
     static partial void ModifyUncoiledFuryPvP(ref ActionSetting setting)
@@ -889,17 +889,17 @@ public partial class ViperRotation
 
     static partial void ModifySlitherPvP(ref ActionSetting setting)
     {
-        
+
     }
 
     static partial void ModifySnakeScalesPvP(ref ActionSetting setting)
     {
-        
+
     }
 
     static partial void ModifyRattlingCoilPvP(ref ActionSetting setting)
     {
-        
+
     }
 
     static partial void ModifyFirstGenerationPvP(ref ActionSetting setting)
@@ -959,26 +959,26 @@ public partial class ViperRotation
     static partial void ModifyDeathRattlePvP(ref ActionSetting setting)
     {
         setting.ActionCheck = () => Service.GetAdjustedActionId(ActionID.SerpentsTailPvP) == ActionID.DeathRattlePvP;
-		setting.MPOverride = () => 0;
-	}
+        setting.MPOverride = () => 0;
+    }
 
     static partial void ModifyTwinfangBitePvP(ref ActionSetting setting)
     {
         setting.ActionCheck = () => Service.GetAdjustedActionId(ActionID.SerpentsTailPvP) == ActionID.TwinfangBitePvP;
-		setting.MPOverride = () => 0;
-	}
+        setting.MPOverride = () => 0;
+    }
 
     static partial void ModifyTwinbloodBitePvP(ref ActionSetting setting)
     {
         setting.ActionCheck = () => Service.GetAdjustedActionId(ActionID.SerpentsTailPvP) == ActionID.TwinbloodBitePvP;
-		setting.MPOverride = () => 0;
-	}
+        setting.MPOverride = () => 0;
+    }
 
     static partial void ModifyUncoiledTwinfangPvP(ref ActionSetting setting)
     {
         setting.ActionCheck = () => Service.GetAdjustedActionId(ActionID.SerpentsTailPvP) == ActionID.UncoiledTwinfangPvP;
-		setting.MPOverride = () => 0;
-		setting.CreateConfig = () => new ActionConfig()
+        setting.MPOverride = () => 0;
+        setting.CreateConfig = () => new ActionConfig()
         {
             AoeCount = 1,
         };
@@ -987,8 +987,8 @@ public partial class ViperRotation
     static partial void ModifyUncoiledTwinbloodPvP(ref ActionSetting setting)
     {
         setting.ActionCheck = () => Service.GetAdjustedActionId(ActionID.SerpentsTailPvP) == ActionID.UncoiledTwinbloodPvP;
-		setting.MPOverride = () => 0;
-		setting.CreateConfig = () => new ActionConfig()
+        setting.MPOverride = () => 0;
+        setting.CreateConfig = () => new ActionConfig()
         {
             AoeCount = 1,
         };
@@ -997,8 +997,8 @@ public partial class ViperRotation
     static partial void ModifyFirstLegacyPvP(ref ActionSetting setting)
     {
         setting.ActionCheck = () => Service.GetAdjustedActionId(ActionID.SerpentsTailPvP) == ActionID.FirstLegacyPvP;
-		setting.MPOverride = () => 0;
-		setting.CreateConfig = () => new ActionConfig()
+        setting.MPOverride = () => 0;
+        setting.CreateConfig = () => new ActionConfig()
         {
             AoeCount = 1,
         };
@@ -1007,8 +1007,8 @@ public partial class ViperRotation
     static partial void ModifySecondLegacyPvP(ref ActionSetting setting)
     {
         setting.ActionCheck = () => Service.GetAdjustedActionId(ActionID.SerpentsTailPvP) == ActionID.SecondLegacyPvP;
-		setting.MPOverride = () => 0;
-		setting.CreateConfig = () => new ActionConfig()
+        setting.MPOverride = () => 0;
+        setting.CreateConfig = () => new ActionConfig()
         {
             AoeCount = 1,
         };
@@ -1017,8 +1017,8 @@ public partial class ViperRotation
     static partial void ModifyThirdLegacyPvP(ref ActionSetting setting)
     {
         setting.ActionCheck = () => Service.GetAdjustedActionId(ActionID.SerpentsTailPvP) == ActionID.ThirdLegacyPvP;
-		setting.MPOverride = () => 0;
-		setting.CreateConfig = () => new ActionConfig()
+        setting.MPOverride = () => 0;
+        setting.CreateConfig = () => new ActionConfig()
         {
             AoeCount = 1,
         };
@@ -1027,8 +1027,8 @@ public partial class ViperRotation
     static partial void ModifyFourthLegacyPvP(ref ActionSetting setting)
     {
         setting.ActionCheck = () => Service.GetAdjustedActionId(ActionID.SerpentsTailPvP) == ActionID.FourthLegacyPvP;
-		setting.MPOverride = () => 0;
-		setting.CreateConfig = () => new ActionConfig()
+        setting.MPOverride = () => 0;
+        setting.CreateConfig = () => new ActionConfig()
         {
             AoeCount = 1,
         };
@@ -1037,8 +1037,8 @@ public partial class ViperRotation
     static partial void ModifyBacklashPvP(ref ActionSetting setting)
     {
         setting.ActionCheck = () => Service.GetAdjustedActionId(ActionID.SnakeScalesPvP) == ActionID.BacklashPvP;
-		setting.MPOverride = () => 0;
-		setting.CreateConfig = () => new ActionConfig()
+        setting.MPOverride = () => 0;
+        setting.CreateConfig = () => new ActionConfig()
         {
             AoeCount = 1,
         };

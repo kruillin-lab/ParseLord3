@@ -1,19 +1,20 @@
-# A Lecture on How RSR Does What It Does: Demystified
-## Rotation Solver Reborn (RSR) in Brief, Purpose
+# A Lecture on How ParseLord Does What It Does: Demystified
+## ParseLord in Brief
 
-Hopefully you know that Rotation Solver Reborn (RSR) is a Dalamud plugin for FFXIV that assists users in performing rotations. By default, the plugin makes a best effort attempt to provide an optimal action choice for the user, but also provides the ability to be shown the action instead of performing it itself. How RSR makes this determination is the core purpose of this document. This may assist you in understanding why RSR does what it does. I will only be using pseudocode examples throughout this document, and trivializing some portions of the program for the sake of brevity and necessity. Any asterisks you see are indications of such leaps.
+ParseLord is a Dalamud plugin for FFXIV that assists users in performing rotations. By default, the plugin makes a best effort attempt to provide an optimal action choice for the user, but it can also simply highlight the recommended action instead of executing it. How ParseLord makes this determination is the core purpose of this document. This may assist you in understanding why ParseLord does what it does. I will only be using pseudocode examples throughout this document, and trivializing some portions of the program for the sake of brevity and necessity. Any asterisks you see are indications of such leaps.
 
-## RSR is Not Smart
 
-If you do not have a strong understanding of programming - or, if you are lost in the current AI wave - then you might be under the impression that RSR is somehow making strategic decisions (considering all known and *quid sit* quantities to come to a determination that will benefit the user) when in reality it is making prescriptive choices. It does not decide anything. Let's get into the anatomy of that which is the primary concern of the average reader: the rotation.
+## ParseLord is Not Smart
 
-During this section I will be building out a diagram of RSR's "brain" using the Default Machinist Rotation as my running example.
+If you do not have a strong understanding of programming - or, if you are lost in the current AI wave - then you might be under the impression that ParseLord is somehow making strategic decisions (considering all known and *quid sit* quantities to come to a determination that will benefit the user) when in reality it is making prescriptive choices. It does not decide anything. Let's get into the anatomy of that which is the primary concern of the average reader: the rotation.
+
+During this section I will be building out a diagram of ParseLord's "brain" using the Default Machinist Rotation as my running example.
 
 ## The Anatomy of a Rotation
-It is first worth getting out into the open that, in the simplest of terms, RSR does what it does because a human told it to. It does these things based off the following:
+It is first worth getting out into the open that, in the simplest of terms, ParseLord does what it does because a human told it to. It does these things based off the following:
 
 ### The GCD / Ability Loop
-As a FFXIV player you should understand that there are two kinds of actions: spells/weaponskills (GCDs) and abilities (oGCDs). It should be further understood that putting oGCDs between GCDs is called "Weaving." You generally do not want to use more than 2 oGCDs per GCD. Let's piece together the first layer of our RSR brain diagram.
+As a FFXIV player you should understand that there are two kinds of actions: spells/weaponskills (GCDs) and abilities (oGCDs). It should be further understood that putting oGCDs between GCDs is called "Weaving." You generally do not want to use more than 2 oGCDs per GCD. Let's piece together the first layer of our ParseLord brain diagram.
 
 ```mermaid
 stateDiagram-v2
@@ -23,7 +24,7 @@ stateDiagram-v2
     oGCD2 --> GCD
 ```
 
-RSR harshly maintains this cadence through priority of choice, but we'll cover that later. It does not want you "Triple weaving" and god forbid you truly succeed (enjoy your flag.)
+ParseLord harshly maintains this cadence through priority of choice, but we'll cover that later. It does not want you "Triple weaving" and god forbid you truly succeed (enjoy your flag.)
 
 Let me now include some pretty word-y "conditional phrases." I will also include the assumed "not currently in combat" or "nothing to do" state indicators, but will omit them after this diagram.
 
@@ -50,7 +51,7 @@ stateDiagram-v2
     oGCD2 --> GCD
 ```
 
-This example would be a completely valid rotation. Not a good one, but a completely valid one. We have told, in code, RSR to use Split Shot and while it is cooling down use two iconic Machinist oGCDs. You check each conditional statement in order, from top to bottom, returning to the top whenever you use an action of any kind. Let's assume that return to the top going forward, and the oGCD / GCD ratio "restriction", so our diagram now looks like this.
+This example would be a completely valid rotation. Not a good one, but a completely valid one. We have told, in code, ParseLord to use Split Shot and while it is cooling down use two iconic Machinist oGCDs. You check each conditional statement in order, from top to bottom, returning to the top whenever you use an action of any kind. Let's assume that return to the top going forward, and the oGCD / GCD ratio "restriction", so our diagram now looks like this.
 
 ```mermaid
 stateDiagram-v2
@@ -77,7 +78,7 @@ AttackAbility{
 
 }
 ```
-I've laid out the above pseudocode in the way that RSR manages things behind the scenes (what we in the business call the DataCenter), though how any rotation is laid out doesn't actually matter function to function. GeneralGCD could be at the end, etc., RSR doesn't care.
+I've laid out the above pseudocode in the way that ParseLord manages things behind the scenes (what we in the business call the DataCenter), though how any rotation is laid out doesn't actually matter function to function. GeneralGCD could be at the end, etc., ParseLord doesn't care.
 
 The three sections I've displayed here (there are many more) are:
 
@@ -108,7 +109,7 @@ Again, quite simple. A human could read down this list and follow these orders. 
 
 That means our Machinist, as written, would use Reassemble twice (wasting one charge) then use SplitShot. Skip Reassemble (no charges), skip SplitShot(GCD is cooling down), and use Ricochet. Right back down the list, and use Ricochet again. Then SplitShot, then Ricochet, then GaussRound because it skipped over the still cooling down Reassemble, SplitShot, and out of charges Ricochet.
 
-Not a great rotation. However, one of the final missing pieces is the intricate web of logic that goes into a much more effective rotation. Everything before this point should be enough to demystify how RSR works from an end user rotational point of view. There is no magic, there is no AI at work. It is simply a recipe of can I do it, and if not, what can I do next instead?
+Not a great rotation. However, one of the final missing pieces is the intricate web of logic that goes into a much more effective rotation. Everything before this point should be enough to demystify how ParseLord works from an end user rotational point of view. There is no magic, there is no AI at work. It is simply a recipe of can I do it, and if not, what can I do next instead?
 
 ### Logic and Conditionals
 What gives the facade of a higher order of intelligence over a simple recipe is the amount of work the rotation author does or does not put into the rotation. A rotation that will clear normal, simple content could be quite normal and simple. A rotation that performs at a level useful in EX+ is much more complex. Consider the following:
@@ -161,11 +162,11 @@ You can see from the brief expasnion of pseudocode above that there is a mixture
 ### A note on the Interface versus the Mechanism
 When it comes to writing rotations the author will generally be interacting with something that can be referred to as an Interface. Not to be confused with a UI; an Interface in programming is a layer intended to be used by another programmer for purposes of extending the capabilities of that program. The rotations that you can find in #3rd-party-rotations in the Discord are examples of authors producing rotation files that use this Interface. It standardizes what the author can write and interact with. It also removes the need for the author to build the entire plugin from source.
 
-What is my point here? You see in the pseudocode above where it says `MCH_Default : MachinistRotation`? This is telling us that MCH_Default is our rotation - our interaction with the Interface - and it is sitting over the MachinistRotation "Mechanism." Which the moment you cross that colon into the Mechanism you get into the guts of the RSR machine. Things like the targetting system, the conditional system, all the little lights and switches you can flick throughout RSR. This is the beast that is contended with when a question outside of things like "why does the dragoon dot wear off?" go.
+What is my point here? You see in the pseudocode above where it says `MCH_Default : MachinistRotation`? This is telling us that MCH_Default is our rotation - our interaction with the Interface - and it is sitting over the MachinistRotation "Mechanism." Which the moment you cross that colon into the Mechanism you get into the guts of the ParseLord machine. Things like the targetting system, the conditional system, all the little lights and switches you can flick throughout ParseLord. This is the beast that is contended with when a question outside of things like "why does the dragoon dot wear off?" go.
 
 ## Final Thoughts
-If you made it this far I want to thank you for taking the time to read, or at least skim through the content I've written here. As always this document is only as good as it is young, so there will be drift in time. Further, espcially there at the end, I hope it inspires you to consider writing rotation content for RSR. While it may seem pretty big at first I guarantee you rotation writing is only as complex as you make it, and potentially a good way to get into coding if you haven't before. I might even produce a series on how to get started some day. Or I might not, that's the beauty of RSR.
+If you made it this far I want to thank you for taking the time to read, or at least skim through the content I've written here. As always this document is only as good as it is young, so there will be drift in time. Further, espcially there at the end, I hope it inspires you to consider writing rotation content for ParseLord. While it may seem pretty big at first I guarantee you rotation writing is only as complex as you make it, and potentially a good way to get into coding if you haven't before. I might even produce a series on how to get started some day. Or I might not, that's the beauty of ParseLord.
 
 Take care and remember someone has to press all these buttons,
 
-Crito and the RSR Team
+Crito and the ParseLord Team

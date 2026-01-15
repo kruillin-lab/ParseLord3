@@ -21,6 +21,118 @@ internal static class MajorUpdater
     private static bool _isActivatedThisCycle;
     private static bool _rotationsLoaded;
 
+    // Manual target override tracking
+    private static ulong _lastKnownTargetId = 0;
+    private static bool _parseLordIsSettingTarget = false;
+
+    /// <summary>
+    /// Call this before ParseLord sets a target to prevent it from being detected as a manual change.
+    /// </summary>
+    internal static void BeginParseLordTargetChange()
+    {
+        _parseLordIsSettingTarget = true;
+    }
+
+    /// <summary>
+    /// Call this after ParseLord sets a target.
+    /// </summary>
+    internal static void EndParseLordTargetChange()
+    {
+        _parseLordIsSettingTarget = false;
+        _lastKnownTargetId = Svc.Targets.Target?.GameObjectId ?? 0;
+    }
+
+    /// <summary>
+    /// Checks if the current target differs from the last known target set by ParseLord.
+    /// If so, the player manually changed their target.
+    /// </summary>
+    private static void UpdateManualTargetOverride()
+    {
+        if (!Service.Config.RespectManualTarget)
+        {
+            DataCenter.ManualTargetOverride = false;
+            return;
+        }
+
+        ulong currentTargetId = Svc.Targets.Target?.GameObjectId ?? 0;
+
+        // If ParseLord is currently setting a target, don't treat this as manual
+        if (_parseLordIsSettingTarget)
+        {
+            return;
+        }
+
+        // If target changed and ParseLord didn't do it, it's a manual change
+        if (currentTargetId != _lastKnownTargetId && currentTargetId != 0)
+        {
+            // Verify the new target is a valid hostile target
+            var newTarget = Svc.Targets.Target;
+            if (newTarget is IBattleChara bc && bc.IsEnemy())
+            {
+                DataCenter.ManualTargetOverride = true;
+                DataCenter.ManualTargetId = currentTargetId;
+                DataCenter.ManualTargetTime = DateTime.Now;
+                PluginLog.Debug($"Manual target override detected: {newTarget.Name}");
+            }
+        }
+
+        // Clear manual override if:
+        // 1. The manually selected target died or is no longer valid
+        // 2. The player cleared their target (currentTargetId == 0)
+        // 3. Combat ended
+        if (DataCenter.ManualTargetOverride)
+        {
+            bool shouldClear = false;
+
+            // Target was cleared
+            if (currentTargetId == 0)
+            {
+                shouldClear = true;
+            }
+            // Target changed to something else (player selected a different target)
+            else if (currentTargetId != DataCenter.ManualTargetId)
+            {
+                // Update to the new manual target
+                var newTarget = Svc.Targets.Target;
+                if (newTarget is IBattleChara bc && bc.IsEnemy())
+                {
+                    DataCenter.ManualTargetId = currentTargetId;
+                    DataCenter.ManualTargetTime = DateTime.Now;
+                }
+                else
+                {
+                    shouldClear = true;
+                }
+            }
+            // Manual target died or became untargetable
+            else
+            {
+                var manualTarget = Svc.Objects.SearchById(DataCenter.ManualTargetId);
+                if (manualTarget == null || !manualTarget.IsTargetable ||
+                    (manualTarget is IBattleChara bc && bc.CurrentHp == 0))
+                {
+                    shouldClear = true;
+                }
+            }
+
+            // Combat ended
+            if (!DataCenter.InCombat && DataCenter.NotInCombatDelay)
+            {
+                shouldClear = true;
+            }
+
+            if (shouldClear)
+            {
+                DataCenter.ManualTargetOverride = false;
+                DataCenter.ManualTargetId = 0;
+                DataCenter.ManualTargetTime = DateTime.MinValue;
+                PluginLog.Debug("Manual target override cleared");
+            }
+        }
+
+        _lastKnownTargetId = currentTargetId;
+    }
+
     public static bool IsValid
     {
         get
@@ -48,19 +160,20 @@ internal static class MajorUpdater
     {
         ActionSequencerUpdater.Enable(Svc.PluginInterface.ConfigDirectory.FullName + "\\Conditions");
 
-        Svc.Framework.Update += RSRGateUpdate;
-        Svc.Framework.Update += RSRTeachingClearUpdate;
-        Svc.Framework.Update += RSRInvalidUpdate;
-        Svc.Framework.Update += RSRActivatedCoreUpdate;
-        Svc.Framework.Update += RSRActivatedHighlightUpdate;
-        Svc.Framework.Update += RSRCommonUpdate;
-        Svc.Framework.Update += RSRCleanupUpdate;
-        Svc.Framework.Update += RSRRotationAndStateUpdate;
-        Svc.Framework.Update += RSRMiscAndTargetFreelyUpdate;
-        Svc.Framework.Update += RSRResetUpdate;
+        Svc.Framework.Update += ParseLordGateUpdate;
+        Svc.Framework.Update += ParseLordTeachingClearUpdate;
+        Svc.Framework.Update += ParseLordInvalidUpdate;
+        Svc.Framework.Update += ParseLordActivatedCoreUpdate;
+        Svc.Framework.Update += ParseLordActivatedHighlightUpdate;
+        Svc.Framework.Update += ParseLordCommonUpdate;
+        Svc.Framework.Update += ParseLordCleanupUpdate;
+        Svc.Framework.Update += ParseLordRotationAndStateUpdate;
+        Svc.Framework.Update += ParseLordMiscAndTargetFreelyUpdate;
+        Svc.Framework.Update += ParseLordResetUpdate;
     }
 
-    private static void RSRGateUpdate(IFramework framework)
+    private static void ParseLordGateUpdate(IFramework framework)
+
     {
         try
         {
@@ -90,7 +203,8 @@ internal static class MajorUpdater
         }
     }
 
-    private static void RSRTeachingClearUpdate(IFramework framework)
+    private static void ParseLordTeachingClearUpdate(IFramework framework)
+
     {
         if (!_shouldRunThisCycle)
             return;
@@ -108,7 +222,8 @@ internal static class MajorUpdater
         }
     }
 
-    private static void RSRInvalidUpdate(IFramework framework)
+    private static void ParseLordInvalidUpdate(IFramework framework)
+
     {
         if (!_shouldRunThisCycle)
             return;
@@ -132,14 +247,15 @@ internal static class MajorUpdater
         }
     }
 
-    private static void RSRActivatedCoreUpdate(IFramework framework)
+    private static void ParseLordActivatedCoreUpdate(IFramework framework)
+
     {
         if (!_shouldRunThisCycle)
             return;
 
-        var autoOnEnabled = (Service.Config.StartOnAllianceIsInCombat2 
-            || Service.Config.StartOnAttackedBySomeone2 
-            || Service.Config.StartOnFieldOpInCombat2 
+        var autoOnEnabled = (Service.Config.StartOnAllianceIsInCombat2
+            || Service.Config.StartOnAttackedBySomeone2
+            || Service.Config.StartOnFieldOpInCombat2
             || Service.Config.StartOnPartyIsInCombat2) && !DataCenter.IsInDutyReplay();
 
         try
@@ -174,15 +290,16 @@ internal static class MajorUpdater
             }
 
             ActionSequencerUpdater.UpdateActionSequencerAction();
-			Wrath_IPCSubscriber.DisableAutoRotation();
-		}
+            Wrath_IPCSubscriber.DisableAutoRotation();
+        }
         catch (Exception ex)
         {
             LogOnce("RSRUpdate DC Exception", ex);
         }
     }
 
-    private static void RSRActivatedHighlightUpdate(IFramework framework)
+    private static void ParseLordActivatedHighlightUpdate(IFramework framework)
+
     {
         if (!_shouldRunThisCycle || !_isActivatedThisCycle)
             return;
@@ -216,21 +333,22 @@ internal static class MajorUpdater
             }
         }
 
-		// Apply reddening of disabled actions on hotbars alongside highlight
-		if (Service.Config.ReddenDisabledHotbarActions)
-		{
-			try
-			{
-				HotbarDisabledColor.ApplyFrame();
-			}
-			catch (Exception ex)
-			{
-				LogOnce("Hotbar Disabled Redden Exception", ex);
-			}
-		}
+        // Apply reddening of disabled actions on hotbars alongside highlight
+        if (Service.Config.ReddenDisabledHotbarActions)
+        {
+            try
+            {
+                HotbarDisabledColor.ApplyFrame();
+            }
+            catch (Exception ex)
+            {
+                LogOnce("Hotbar Disabled Redden Exception", ex);
+            }
+        }
     }
 
-	private static void RSRCommonUpdate(IFramework framework)
+    private static void ParseLordCommonUpdate(IFramework framework)
+
     {
         if (!_shouldRunThisCycle)
             return;
@@ -252,7 +370,8 @@ internal static class MajorUpdater
         }
     }
 
-    private static void RSRCleanupUpdate(IFramework framework)
+    private static void ParseLordCleanupUpdate(IFramework framework)
+
     {
         if (!_shouldRunThisCycle)
             return;
@@ -292,7 +411,8 @@ internal static class MajorUpdater
         }
     }
 
-    private static void RSRRotationAndStateUpdate(IFramework framework)
+    private static void ParseLordRotationAndStateUpdate(IFramework framework)
+
     {
         if (!_shouldRunThisCycle)
             return;
@@ -323,7 +443,7 @@ internal static class MajorUpdater
         }
     }
 
-    private static void RSRMiscAndTargetFreelyUpdate(IFramework framework)
+    private static void ParseLordMiscAndTargetFreelyUpdate(IFramework framework)
     {
         if (!_shouldRunThisCycle)
             return;
@@ -332,8 +452,15 @@ internal static class MajorUpdater
         {
             MiscUpdater.UpdateMisc();
 
+            // Update manual target override detection
+            UpdateManualTargetOverride();
+
             if (Service.Config.TargetFreely && !DataCenter.IsPvP && DataCenter.State)
             {
+                // Skip auto-targeting if manual override is active
+                if (DataCenter.ManualTargetOverride)
+                    return;
+
                 IAction? nextAction2 = ActionUpdater.NextAction;
                 if (nextAction2 == null)
                 {
@@ -360,7 +487,9 @@ internal static class MajorUpdater
                         {
                             if (!Service.Config.TargetDelayEnable)
                             {
+                                BeginParseLordTargetChange();
                                 Svc.Targets.Target = closestEnemy;
+                                EndParseLordTargetChange();
                             }
                             // Respect TargetDelay before auto-targeting the closest enemy
                             if (Service.Config.TargetDelayEnable)
@@ -375,11 +504,12 @@ internal static class MajorUpdater
         }
         catch (Exception ex)
         {
-            LogOnce("Secondary RSRUpdate Exception", ex);
+            LogOnce("Secondary ParseLordUpdate Exception", ex);
         }
     }
 
-    private static void RSRResetUpdate(IFramework framework)
+    private static void ParseLordResetUpdate(IFramework framework)
+
     {
         if (!_shouldRunThisCycle)
             return;
@@ -423,16 +553,17 @@ internal static class MajorUpdater
 
     public static void Dispose()
     {
-        Svc.Framework.Update -= RSRGateUpdate;
-        Svc.Framework.Update -= RSRTeachingClearUpdate;
-        Svc.Framework.Update -= RSRInvalidUpdate;
-        Svc.Framework.Update -= RSRActivatedCoreUpdate;
-        Svc.Framework.Update -= RSRActivatedHighlightUpdate;
-        Svc.Framework.Update -= RSRCommonUpdate;
-        Svc.Framework.Update -= RSRCleanupUpdate;
-        Svc.Framework.Update -= RSRRotationAndStateUpdate;
-        Svc.Framework.Update -= RSRMiscAndTargetFreelyUpdate;
-        Svc.Framework.Update -= RSRResetUpdate;
+        Svc.Framework.Update -= ParseLordGateUpdate;
+        Svc.Framework.Update -= ParseLordTeachingClearUpdate;
+        Svc.Framework.Update -= ParseLordInvalidUpdate;
+        Svc.Framework.Update -= ParseLordActivatedCoreUpdate;
+        Svc.Framework.Update -= ParseLordActivatedHighlightUpdate;
+        Svc.Framework.Update -= ParseLordCommonUpdate;
+        Svc.Framework.Update -= ParseLordCleanupUpdate;
+        Svc.Framework.Update -= ParseLordRotationAndStateUpdate;
+        Svc.Framework.Update -= ParseLordMiscAndTargetFreelyUpdate;
+        Svc.Framework.Update -= ParseLordResetUpdate;
+
 
         MiscUpdater.Dispose();
         ActionSequencerUpdater.SaveFiles();

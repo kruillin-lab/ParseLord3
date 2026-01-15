@@ -24,9 +24,9 @@ public sealed class ChurinSMN : SummonerRotation
     private static bool HasAnyAttunement => InGaruda || InIfrit || InTitan;
     private static bool NoAttunement => !InIfrit && !InGaruda && !InTitan;
     private static bool InSolar => DataCenter.PlayerSyncedLevel() == 100 ? !InBahamut && !InPhoenix && InSolarBahamut : InBahamut && !InPhoenix;
-    private bool BahamutBurst => ((SummonSolarBahamutPvE.EnoughLevel && InSolarBahamut) 
-    || (SummonSolarBahamutPvE.EnoughLevel && (InBahamut || InPhoenix)) 
-    || (!SummonSolarBahamutPvE.EnoughLevel && InBahamut) 
+    private bool BahamutBurst => ((SummonSolarBahamutPvE.EnoughLevel && InSolarBahamut)
+    || (SummonSolarBahamutPvE.EnoughLevel && (InBahamut || InPhoenix))
+    || (!SummonSolarBahamutPvE.EnoughLevel && InBahamut)
     || !SummonBahamutPvE.EnoughLevel) && CanBurst;
     private static SMNGauge SummonerGauge => Svc.Gauges.Get<SMNGauge>();
     private static double LateWeaveWindow => (float)(WeaponTotal * 0.45);
@@ -139,13 +139,13 @@ public sealed class ChurinSMN : SummonerRotation
             UpdateCustomTimings();
         }
     }
-    
+
     [RotationConfig(CombatType.PvE, Name = "Enable Fight Presets? (Experimental)")]
-    private bool EnableFightPresets {get; set;}
+    private bool EnableFightPresets { get; set; }
 
     [RotationConfig(CombatType.PvE, Name = "Choose a Fight", Parent = nameof(EnableFightPresets))]
     public FightPreset FightPresets { get; set; } = FightPreset.None;
-     
+
     #endregion
 
     #region Tracking Properties
@@ -216,7 +216,7 @@ public sealed class ChurinSMN : SummonerRotation
         ImGui.Text($"Add Crimson Cyclone: {AddCrimsonCyclone}");
         ImGui.Text($"Add Swiftcast on Garuda: {AddSwiftcastOnGaruda}");
         ImGui.Text($"Skip Attunement: {SkipAttunement}");
-        
+
         ImGui.Text($"Fight Preset Check: {FightPresetCheck(FightPresets)}");
     }
 
@@ -345,7 +345,7 @@ public sealed class ChurinSMN : SummonerRotation
 
     protected override bool AttackAbility(IAction nextGCD, out IAction? act)
     {
-        return  TryUseSearingFlash(out act)
+        return TryUseSearingFlash(out act)
             || TryUseAetherflow(out act)
             || MountainBusterPvE.CanUse(out act)
             || base.AttackAbility(nextGCD, out act);
@@ -371,7 +371,7 @@ public sealed class ChurinSMN : SummonerRotation
     #endregion
 
     #region GCD Logic
-    
+
     [RotationDesc(ActionID.CrimsonCyclonePvE)]
     protected override bool MoveForwardGCD(out IAction? act)
     {
@@ -401,7 +401,7 @@ public sealed class ChurinSMN : SummonerRotation
             || SummonFiller(out act)
             || base.GeneralGCD(out act);
     }
-    
+
     #endregion
 
     #region Extra Methods
@@ -411,148 +411,326 @@ public sealed class ChurinSMN : SummonerRotation
     #region Big Summons
 
     private bool BigSummonTime(out IAction? act)
+    {
+        act = null;
+        if (!SummonBahamutPvE.IsEnabled || !SummonSolarBahamutPvE.IsEnabled || !SummonPhoenixPvE.IsEnabled)
         {
-            act = null;
-            if (!SummonBahamutPvE.IsEnabled || !SummonSolarBahamutPvE.IsEnabled || !SummonPhoenixPvE.IsEnabled)
-            {
-                return false;
-            }
-
-            if (SummonSolarBahamutPvE.EnoughLevel && IsSolarBahamutReady)
-            {
-                return SummonSolarBahamutPvE.CanUse(out act);
-            }
-
-            if (SummonPhoenixPvE.EnoughLevel && IsPhoenixReady)
-            {
-                return SummonPhoenixPvE.CanUse(out act);
-            }
-
-            switch (SummonBahamutPvE.EnoughLevel)
-            {
-                case true when IsBahamutReady:
-                    return SummonBahamutPvE.CanUse(out act);
-
-                case false when DreadwyrmTrancePvE.EnoughLevel:
-                    return DreadwyrmTrancePvE.CanUse(out act);
-            }
-
-            if (!DreadwyrmTrancePvE.EnoughLevel && AetherchargePvE.EnoughLevel)
-            {
-                return AetherchargePvE.CanUse(out act);
-            }
-
             return false;
         }
-    private bool SummonFiller(out IAction? act)
-        {
-            act = null;
-            var solarBahamutReadySoon = IsSolarBahamutReady && SummonSolarBahamutPvE.Cooldown.WillHaveOneChargeGCD(1) && SummonSolarBahamutPvE.IsEnabled;
-            var bahamutReadySoon = IsBahamutReady && SummonBahamutPvE.Cooldown.WillHaveOneChargeGCD(1) && SummonBahamutPvE.IsEnabled;
-            var phoenixReadySoon = IsPhoenixReady && SummonPhoenixPvE.Cooldown.WillHaveOneChargeGCD(1) && SummonPhoenixPvE.IsEnabled;
-            var bigSummonReadySoon = solarBahamutReadySoon || bahamutReadySoon || phoenixReadySoon;
 
-            if ((!InBigSummon && AnyPrimalReady && NoAttunement) || HasAnyFavor || HasAnyAttunement)
+        if (SummonSolarBahamutPvE.EnoughLevel && IsSolarBahamutReady)
+        {
+            return SummonSolarBahamutPvE.CanUse(out act);
+        }
+
+        if (SummonPhoenixPvE.EnoughLevel && IsPhoenixReady)
+        {
+            return SummonPhoenixPvE.CanUse(out act);
+        }
+
+        switch (SummonBahamutPvE.EnoughLevel)
+        {
+            case true when IsBahamutReady:
+                return SummonBahamutPvE.CanUse(out act);
+
+            case false when DreadwyrmTrancePvE.EnoughLevel:
+                return DreadwyrmTrancePvE.CanUse(out act);
+        }
+
+        if (!DreadwyrmTrancePvE.EnoughLevel && AetherchargePvE.EnoughLevel)
+        {
+            return AetherchargePvE.CanUse(out act);
+        }
+
+        return false;
+    }
+    private bool SummonFiller(out IAction? act)
+    {
+        act = null;
+        var solarBahamutReadySoon = IsSolarBahamutReady && SummonSolarBahamutPvE.Cooldown.WillHaveOneChargeGCD(1) && SummonSolarBahamutPvE.IsEnabled;
+        var bahamutReadySoon = IsBahamutReady && SummonBahamutPvE.Cooldown.WillHaveOneChargeGCD(1) && SummonBahamutPvE.IsEnabled;
+        var phoenixReadySoon = IsPhoenixReady && SummonPhoenixPvE.Cooldown.WillHaveOneChargeGCD(1) && SummonPhoenixPvE.IsEnabled;
+        var bigSummonReadySoon = solarBahamutReadySoon || bahamutReadySoon || phoenixReadySoon;
+
+        if ((!InBigSummon && AnyPrimalReady && NoAttunement) || HasAnyFavor || HasAnyAttunement)
+        {
+            return false;
+        }
+
+        if (InBigSummon)
+        {
+            if (InPhoenix)
             {
-                return false;
+                return BrandOfPurgatoryPvE.CanUse(out act)
+                || FountainOfFirePvE.CanUse(out act);
             }
 
-            if (InBigSummon)
+            if (InBahamut)
             {
-                if (InPhoenix)
+                return AstralFlarePvE.CanUse(out act)
+                || AstralImpulsePvE.CanUse(out act);
+            }
+
+            if (InSolarBahamut)
+            {
+                return UmbralFlarePvE.CanUse(out act)
+                || UmbralImpulsePvE.CanUse(out act);
+            }
+        }
+        else
+        {
+            if (IsMoving)
+            {
+                if (HasFurtherRuin)
                 {
-                    return BrandOfPurgatoryPvE.CanUse(out act)
-                    || FountainOfFirePvE.CanUse(out act);
+                    return RuinIvPvE.CanUse(out act);
                 }
 
-                if (InBahamut)
+                if (Ruin3Count < 1)
                 {
-                    return AstralFlarePvE.CanUse(out act)
-                    || AstralImpulsePvE.CanUse(out act);
-                }
-
-                if (InSolarBahamut)
-                {
-                    return UmbralFlarePvE.CanUse(out act)
-                    || UmbralImpulsePvE.CanUse(out act);
+                    return OutburstPvE.CanUse(out act)
+                           || RuinIiiPvE.CanUse(out act)
+                           || RuinIiPvE.CanUse(out act)
+                           || RuinPvE.CanUse(out act);
                 }
             }
             else
             {
-                if (IsMoving)
+                if (HasFurtherRuin)
                 {
-                    if (HasFurtherRuin)
-                    {
-                        return RuinIvPvE.CanUse(out act);
-                    }
-
-                    if (Ruin3Count < 1)
+                    if (!bigSummonReadySoon && Ruin3Count < 1)
                     {
                         return OutburstPvE.CanUse(out act)
-                               || RuinIiiPvE.CanUse(out act)
-                               || RuinIiPvE.CanUse(out act)
-                               || RuinPvE.CanUse(out act);
+                        || RuinIiiPvE.CanUse(out act)
+                        || RuinIiPvE.CanUse(out act)
+                        || RuinPvE.CanUse(out act);
                     }
+
+                    return RuinIvPvE.CanUse(out act);
                 }
-                else
+
+                if (!bigSummonReadySoon || Ruin3Count < 1)
                 {
-                    if (HasFurtherRuin)
-                    {
-                        if (!bigSummonReadySoon && Ruin3Count < 1)
-                        {
-                            return OutburstPvE.CanUse(out act)
-                            || RuinIiiPvE.CanUse(out act)
-                            || RuinIiPvE.CanUse(out act)
-                            || RuinPvE.CanUse(out act);
-                        }
-
-                        return RuinIvPvE.CanUse(out act);
-                    }
-
-                    if (!bigSummonReadySoon || Ruin3Count < 1)
-                    {
-                        return OutburstPvE.CanUse(out act)
-                               || RuinIiiPvE.CanUse(out act)
-                               || RuinIiPvE.CanUse(out act)
-                               || RuinPvE.CanUse(out act);
-                    }
+                    return OutburstPvE.CanUse(out act)
+                           || RuinIiiPvE.CanUse(out act)
+                           || RuinIiPvE.CanUse(out act)
+                           || RuinPvE.CanUse(out act);
                 }
             }
-            return false;
         }
+        return false;
+    }
     private int BigSummonGCDLeft
+    {
+        get
         {
-            get
+            if (InBigSummon)
             {
-                if (InBigSummon)
+                var maxImpulse = Math.Abs(SummonTimer / (double)RuinPvE.Cooldown.RecastTime);
                 {
-                    var maxImpulse = Math.Abs(SummonTimer / (double)RuinPvE.Cooldown.RecastTime);
+                    if (maxImpulse > 0)
                     {
-                        if (maxImpulse > 0)
-                        {
-                            return (int)(maxImpulse + 1);
-                        }
+                        return (int)(maxImpulse + 1);
                     }
                 }
-                return 0;
             }
+            return 0;
         }
+    }
 
     #endregion
 
     #region Primals
 
     private bool PrimalsTime(out IAction? act)
-        {
-            act = null;
+    {
+        act = null;
 
-            if (((InBigSummon && !SummonTimeEndAfterGCD())
-            || (NoAttunement && (HasGarudaFavor || HasIfritFavor || HasTitanFavor))
-            || (AttunementCount > 0 && !AttunmentTimeEndAfterGCD())
-            || NoPrimalReady) && !SkipAttunement)
-            {
-                return false;
-            }
+        if (((InBigSummon && !SummonTimeEndAfterGCD())
+        || (NoAttunement && (HasGarudaFavor || HasIfritFavor || HasTitanFavor))
+        || (AttunementCount > 0 && !AttunmentTimeEndAfterGCD())
+        || NoPrimalReady) && !SkipAttunement)
+        {
+            return false;
+        }
+
+        if (UseRuin3 && Ruin3Count < 1)
+        {
+            return RuinIiiPvE.CanUse(out act);
+        }
+
+        if (UseRuin4 && HasFurtherRuin)
+        {
+            return RuinIvPvE.CanUse(out act);
+        }
+
+        return SummonOrder switch
+        {
+            SummonOrderType.TopazRubyEmerald =>
+                TitanTime(out act)
+                || IfritTime(out act)
+                || GarudaTime(out act),
+
+            SummonOrderType.TopazEmeraldRuby =>
+                TitanTime(out act)
+                || GarudaTime(out act)
+                || IfritTime(out act),
+
+            SummonOrderType.EmeraldTopazRuby =>
+                GarudaTime(out act)
+                || TitanTime(out act)
+                || IfritTime(out act),
+
+            SummonOrderType.EmeraldRubyTopaz =>
+                GarudaTime(out act)
+                || IfritTime(out act)
+                || TitanTime(out act),
+
+            SummonOrderType.RubyEmeraldTopaz =>
+                IfritTime(out act)
+                || GarudaTime(out act)
+                || TitanTime(out act),
+
+            SummonOrderType.RubyTopazEmerald =>
+                IfritTime(out act)
+                || TitanTime(out act)
+                || GarudaTime(out act),
+
+            _ => false,
+        };
+    }
+    private bool PrimalsFiller(out IAction? act)
+    {
+        act = null;
+
+        if (InBigSummon)
+        {
+            return false;
+        }
+
+        if (SkipAttunement)
+        {
+            return PrimalsTime(out act);
+        }
+
+        return TitanAttunement(out act)
+        || GarudaAttunement(out act)
+        || IfritAttunement(out act);
+    }
+    private bool GemshineTime(out IAction? act)
+    {
+        act = null;
+        if (InBigSummon || AttunementCount < 1)
+        {
+            return false;
+        }
+
+        if (InIfrit)
+        {
+            return RubyRitePvE.CanUse(out act)
+            || RubyRuinIiiPvE.CanUse(out act)
+            || RubyRuinIiPvE.CanUse(out act)
+            || RubyRuinPvE.CanUse(out act);
+        }
+
+        if (InGaruda)
+        {
+            return EmeraldRitePvE.CanUse(out act)
+            || EmeraldRuinIiiPvE.CanUse(out act)
+            || EmeraldRuinIiPvE.CanUse(out act)
+            || EmeraldRuinPvE.CanUse(out act);
+        }
+
+        if (InTitan)
+        {
+            return TopazRitePvE.CanUse(out act)
+            || TopazRuinIiiPvE.CanUse(out act)
+            || TopazRuinIiPvE.CanUse(out act)
+            || TopazRuinPvE.CanUse(out act);
+        }
+
+        return false;
+    }
+    private bool PreciousBrillianceTime(out IAction? act)
+    {
+        act = null;
+        if (InBigSummon || AttunementCount < 1)
+        {
+            return false;
+        }
+
+        if (InIfrit)
+        {
+            return RubyCatastrophePvE.CanUse(out act)
+            || RubyDisasterPvE.CanUse(out act)
+            || RubyOutburstPvE.CanUse(out act);
+        }
+        if (InGaruda)
+        {
+            return EmeraldCatastrophePvE.CanUse(out act)
+            || EmeraldDisasterPvE.CanUse(out act)
+            || EmeraldOutburstPvE.CanUse(out act);
+        }
+        if (InTitan)
+        {
+            return TopazCatastrophePvE.CanUse(out act)
+            || TopazDisasterPvE.CanUse(out act)
+            || TopazOutburstPvE.CanUse(out act);
+        }
+        return false;
+    }
+
+    #region Titan
+
+    private bool TitanTime(out IAction? act)
+    {
+        act = null;
+        if (!IsTitanReady || HasGarudaFavor || HasIfritFavor)
+        {
+            return false;
+        }
+        return SummonTitanPvE.CanUse(out act)
+        || SummonTitanIiPvE.CanUse(out act)
+        || SummonTopazPvE.CanUse(out act);
+    }
+    private bool TitanAttunement(out IAction? act)
+    {
+        act = null;
+        if (InIfrit || InGaruda || HasGarudaFavor || HasIfritFavor || !HasTitanFavor && AttunementCount < 1)
+        {
+            return false;
+        }
+
+        return PreciousBrillianceTime(out act)
+        || GemshineTime(out act);
+    }
+
+    #endregion
+
+    #region Garuda
+
+    private bool GarudaTime(out IAction? act)
+    {
+        act = null;
+        if (!IsGarudaReady || HasTitanFavor || HasIfritFavor)
+        {
+            return false;
+        }
+        return SummonGarudaPvE.CanUse(out act)
+        || SummonGarudaIiPvE.CanUse(out act)
+        || SummonEmeraldPvE.CanUse(out act);
+    }
+    private bool GarudaAttunement(out IAction? act)
+    {
+        act = null;
+        if (InTitan || InIfrit || HasIfritFavor || HasTitanFavor || (!HasGarudaFavor && AttunementCount < 1))
+        {
+            return false;
+        }
+
+        if (EnableFightPresets)
+        {
+            PresetEnabled(FightPresets);
 
             if (UseRuin3 && Ruin3Count < 1)
             {
@@ -563,205 +741,114 @@ public sealed class ChurinSMN : SummonerRotation
             {
                 return RuinIvPvE.CanUse(out act);
             }
-
-            return SummonOrder switch
-            {
-                SummonOrderType.TopazRubyEmerald =>
-                    TitanTime(out act)
-                    || IfritTime(out act)
-                    || GarudaTime(out act),
-
-                SummonOrderType.TopazEmeraldRuby =>
-                    TitanTime(out act)
-                    || GarudaTime(out act)
-                    || IfritTime(out act),
-
-                SummonOrderType.EmeraldTopazRuby =>
-                    GarudaTime(out act)
-                    || TitanTime(out act)
-                    || IfritTime(out act),
-
-                SummonOrderType.EmeraldRubyTopaz =>
-                    GarudaTime(out act)
-                    || IfritTime(out act)
-                    || TitanTime(out act),
-
-                SummonOrderType.RubyEmeraldTopaz =>
-                    IfritTime(out act)
-                    || GarudaTime(out act)
-                    || TitanTime(out act),
-
-                SummonOrderType.RubyTopazEmerald =>
-                    IfritTime(out act)
-                    || TitanTime(out act)
-                    || GarudaTime(out act),
-
-                _ => false,
-            };
-        }
-    private bool PrimalsFiller(out IAction? act)
-        {
-            act = null;
-
-            if (InBigSummon)
-            {
-                return false;
-            }
-
-            if (SkipAttunement)
-            {
-                return PrimalsTime(out act);
-            }
-
-            return TitanAttunement(out act)
-            || GarudaAttunement(out act)
-            || IfritAttunement(out act);
-        }
-    private bool GemshineTime(out IAction? act)
-        {
-            act = null;
-            if (InBigSummon || AttunementCount < 1)
-            {
-                return false;
-            }
-
-            if (InIfrit)
-            {
-                return RubyRitePvE.CanUse(out act)
-                || RubyRuinIiiPvE.CanUse(out act)
-                || RubyRuinIiPvE.CanUse(out act)
-                || RubyRuinPvE.CanUse(out act);
-            }
-
-            if (InGaruda)
-            {
-                return EmeraldRitePvE.CanUse(out act)
-                || EmeraldRuinIiiPvE.CanUse(out act)
-                || EmeraldRuinIiPvE.CanUse(out act)
-                || EmeraldRuinPvE.CanUse(out act);
-            }
-
-            if (InTitan)
-            {
-                return TopazRitePvE.CanUse(out act)
-                || TopazRuinIiiPvE.CanUse(out act)
-                || TopazRuinIiPvE.CanUse(out act)
-                || TopazRuinPvE.CanUse(out act);
-            }
-
-            return false;
-        }
-    private bool PreciousBrillianceTime(out IAction? act)
-        {
-            act = null;
-            if (InBigSummon || AttunementCount < 1)
-            {
-                return false;
-            }
-
-            if (InIfrit)
-            {
-                return RubyCatastrophePvE.CanUse(out act)
-                || RubyDisasterPvE.CanUse(out act)
-                || RubyOutburstPvE.CanUse(out act);
-            }
-            if (InGaruda)
-            {
-                return EmeraldCatastrophePvE.CanUse(out act)
-                || EmeraldDisasterPvE.CanUse(out act)
-                || EmeraldOutburstPvE.CanUse(out act);
-            }
-            if (InTitan)
-            {
-                return TopazCatastrophePvE.CanUse(out act)
-                || TopazDisasterPvE.CanUse(out act)
-                || TopazOutburstPvE.CanUse(out act);
-            }
-            return false;
         }
 
-    #region Titan
+        return GarudaStrategy(IsMoving, out act);
+    }
+    private bool GarudaStrategy(bool isMoving, out IAction? act)
+    {
+        act = null;
+        var canSwiftcastSlipstream = AddSwiftcastOnGaruda && (HasSwift || !SwiftcastPvE.Cooldown.IsCoolingDown);
 
-    private bool TitanTime(out IAction? act)
+        if (isMoving)
         {
-            act = null;
-            if (!IsTitanReady || HasGarudaFavor || HasIfritFavor)
+            if (HasGarudaFavor)
             {
-                return false;
-            }
-            return SummonTitanPvE.CanUse(out act)
-            || SummonTitanIiPvE.CanUse(out act)
-            || SummonTopazPvE.CanUse(out act);
-        }
-    private bool TitanAttunement(out IAction? act)
-        {
-            act = null;
-            if (InIfrit || InGaruda || HasGarudaFavor || HasIfritFavor || !HasTitanFavor && AttunementCount < 1)
-            {
-                return false;
-            }
-
-            return PreciousBrillianceTime(out act)
-            || GemshineTime(out act);
-        }
-
-    #endregion
-
-    #region Garuda
-
-    private bool GarudaTime(out IAction? act)
-        {
-            act = null;
-            if (!IsGarudaReady || HasTitanFavor || HasIfritFavor)
-            {
-                return false;
-            }
-            return SummonGarudaPvE.CanUse(out act)
-            || SummonGarudaIiPvE.CanUse(out act)
-            || SummonEmeraldPvE.CanUse(out act);
-        }
-    private bool GarudaAttunement(out IAction? act)
-        {
-            act = null;
-            if (InTitan || InIfrit || HasIfritFavor || HasTitanFavor || (!HasGarudaFavor && AttunementCount < 1))
-            {
-                return false;
-            }
-
-            if (EnableFightPresets)
-            {
-                PresetEnabled(FightPresets);
-
-                if (UseRuin3 && Ruin3Count < 1)
+                if (canSwiftcastSlipstream)
                 {
-                    return RuinIiiPvE.CanUse(out act);
+                    return SlipstreamPvE.CanUse(out act, skipCastingCheck: true);
                 }
 
-                if (UseRuin4 && HasFurtherRuin)
+                if (AttunementCount > 0)
+                {
+                    return PreciousBrillianceTime(out act) || GemshineTime(out act);
+                }
+
+                if (HasFurtherRuin)
                 {
                     return RuinIvPvE.CanUse(out act);
                 }
+
             }
-
-            return GarudaStrategy(IsMoving, out act);
         }
-    private bool GarudaStrategy(bool isMoving, out IAction? act)
+        else
         {
-            act = null;
-            var canSwiftcastSlipstream = AddSwiftcastOnGaruda && (HasSwift || !SwiftcastPvE.Cooldown.IsCoolingDown);
-
-            if (isMoving)
+            if (HasGarudaFavor && (canSwiftcastSlipstream || !AddSwiftcastOnGaruda))
             {
-                if (HasGarudaFavor)
+                return SlipstreamPvE.CanUse(out act, skipCastingCheck: AddSwiftcastOnGaruda);
+            }
+        }
+
+        if (AttunementCount > 0)
+        {
+            return PreciousBrillianceTime(out act) || GemshineTime(out act);
+        }
+
+        return false;
+    }
+
+    #endregion
+
+    #region Ifrit
+
+    private bool IfritTime(out IAction? act)
+    {
+        act = null;
+        if (!IsIfritReady || HasGarudaFavor || HasTitanFavor)
+        {
+            return false;
+        }
+        return SummonIfritPvE.CanUse(out act)
+        || SummonIfritIiPvE.CanUse(out act)
+        || SummonRubyPvE.CanUse(out act);
+    }
+    private bool IfritAttunement(out IAction? act)
+    {
+        act = null;
+
+        if (InTitan || InGaruda || HasGarudaFavor || HasTitanFavor || (!HasIfritFavor && !HasCrimsonStrike && AttunementCount < 1))
+        {
+            return false;
+        }
+
+        if (EnableFightPresets)
+        {
+            PresetEnabled(FightPresets);
+        }
+
+        return HasCrimsonStrike ? CrimsonStrikePvE.CanUse(out act) : IfritStrategy(IsMoving, out act);
+    }
+    private bool IfritStrategy(bool isMoving, out IAction? act)
+    {
+        act = null;
+        var canUseCrimsonCyclone = AddCrimsonCyclone || CrimsonCyclonePvE.Target.Target.DistanceToPlayer() <= CrimsonCycloneDistance;
+        var cycloneAvailable = canUseCrimsonCyclone && HasIfritFavor;
+        var cycloneMoveAllowed = AddCrimsonCycloneMoving;
+        var cycloneBaseCondition = (UseCycloneFirst && AttunementCount > 1)
+                                    || (UseOneAttunement && AttunementCount == 1)
+                                    || (AttunementCount < 1 && UseBothAttunements && !UseOneAttunement);
+        var cycloneMoveCondition = cycloneAvailable && cycloneMoveAllowed && cycloneBaseCondition;
+        var usedOneAttunement = Player != null && IsCasting && Player.CastActionId == (uint)ActionID.RubyRitePvE && !IsLastGCD(ActionID.RubyRitePvE) && AttunementCount >= 1;
+        switch (isMoving)
+        {
+            case true:
                 {
-                    if (canSwiftcastSlipstream)
+                    if (EnableFightPresets)
                     {
-                        return SlipstreamPvE.CanUse(out act, skipCastingCheck: true);
+                        if (UseRuin4 && HasFurtherRuin)
+                        {
+                            return RuinIvPvE.CanUse(out act);
+                        }
+
+                        if (cycloneMoveCondition)
+                        {
+                            return CrimsonCyclonePvE.CanUse(out act);
+                        }
                     }
 
-                    if (AttunementCount > 0)
+                    if (canUseCrimsonCyclone && AddCrimsonCycloneMoving)
                     {
-                        return PreciousBrillianceTime(out act) || GemshineTime(out act);
+                        return CrimsonCyclonePvE.CanUse(out act);
                     }
 
                     if (HasFurtherRuin)
@@ -769,167 +856,80 @@ public sealed class ChurinSMN : SummonerRotation
                         return RuinIvPvE.CanUse(out act);
                     }
 
+                    break;
                 }
-            }
-            else
-            {
-                if (HasGarudaFavor && (canSwiftcastSlipstream || !AddSwiftcastOnGaruda))
+
+            case false:
                 {
-                    return SlipstreamPvE.CanUse(out act, skipCastingCheck: AddSwiftcastOnGaruda);
+                    if (EnableFightPresets)
+                    {
+                        PresetEnabled(FightPresets);
+
+                        if (UseRuin3 && Ruin3Count < 1)
+                        {
+                            return RuinIiiPvE.CanUse(out act);
+                        }
+
+                        if (UseRuin4 && HasFurtherRuin)
+                        {
+                            return RuinIvPvE.CanUse(out act);
+                        }
+
+                        if (HasIfritFavor)
+                        {
+                            if (canUseCrimsonCyclone && UseCycloneFirst)
+                            {
+                                return CrimsonCyclonePvE.CanUse(out act);
+                            }
+
+                            if ((UseOneAttunement && usedOneAttunement && (UseBothAttunements || !UseBothAttunements))
+                                || (AttunementCount < 1 && UseBothAttunements && !UseOneAttunement))
+                            {
+                                if (canUseCrimsonCyclone)
+                                {
+                                    return CrimsonCyclonePvE.CanUse(out act);
+                                }
+                            }
+                        }
+
+                        if (UseBothAttunements && AttunementCount > 0
+                            || UseOneAttunement && (AttunementCount == 2 || !UseBothAttunements && AttunementCount is <= 2 and >= 1 && !IsCasting)
+                            || UseOneAttunement && UseBothAttunements && !HasIfritFavor && !HasCrimsonStrike && AttunementCount == 1)
+                        {
+                            return PreciousBrillianceTime(out act) || GemshineTime(out act);
+                        }
+
+                        if (UseOneAttunement && !UseBothAttunements && !HasIfritFavor && !HasCrimsonStrike && AttunementCount == 1)
+                        {
+                            return false;
+                        }
+                    }
+
+                    if (AttunementCount > 0)
+                    {
+                        return PreciousBrillianceTime(out act) || GemshineTime(out act);
+                    }
+
+                    if (HasIfritFavor && canUseCrimsonCyclone)
+                    {
+                        return CrimsonCyclonePvE.CanUse(out act);
+                    }
+
+                    if (HasFurtherRuin)
+                    {
+                        return RuinIvPvE.CanUse(out act);
+                    }
+
+                    if (Ruin3Count < 1)
+                    {
+                        return RuinIiiPvE.CanUse(out act);
+                    }
+
+                    break;
                 }
-            }
-
-            if (AttunementCount > 0)
-            {
-                return PreciousBrillianceTime(out act) || GemshineTime(out act);
-            }
-
-            return false;
         }
-
-    #endregion
-
-    #region Ifrit
-
-    private bool IfritTime(out IAction? act)
-        {
-            act = null;
-            if (!IsIfritReady || HasGarudaFavor || HasTitanFavor)
-            {
-                return false;
-            }
-            return SummonIfritPvE.CanUse(out act)
-            || SummonIfritIiPvE.CanUse(out act)
-            || SummonRubyPvE.CanUse(out act);
-        }
-    private bool IfritAttunement(out IAction? act)
-        {
-            act = null;
-
-            if (InTitan || InGaruda || HasGarudaFavor || HasTitanFavor || (!HasIfritFavor && !HasCrimsonStrike && AttunementCount < 1))
-            {
-                return false;
-            }
-
-            if (EnableFightPresets)
-            {
-                PresetEnabled(FightPresets);
-            }
-
-            return HasCrimsonStrike ? CrimsonStrikePvE.CanUse(out act) : IfritStrategy(IsMoving, out act);
-        }
-    private bool IfritStrategy(bool isMoving, out IAction? act)
-       {
-           act = null;
-           var canUseCrimsonCyclone = AddCrimsonCyclone || CrimsonCyclonePvE.Target.Target.DistanceToPlayer() <= CrimsonCycloneDistance;
-           var cycloneAvailable = canUseCrimsonCyclone && HasIfritFavor;
-           var cycloneMoveAllowed = AddCrimsonCycloneMoving;
-           var cycloneBaseCondition = (UseCycloneFirst && AttunementCount > 1)
-                                       || (UseOneAttunement && AttunementCount == 1)
-                                       || (AttunementCount < 1 && UseBothAttunements && !UseOneAttunement);
-           var cycloneMoveCondition = cycloneAvailable && cycloneMoveAllowed && cycloneBaseCondition;
-		    var usedOneAttunement = Player != null && IsCasting && Player.CastActionId == (uint)ActionID.RubyRitePvE && !IsLastGCD(ActionID.RubyRitePvE) && AttunementCount >= 1;
-		switch (isMoving)
-           {
-               case true:
-               {
-                   if (EnableFightPresets)
-                   {
-                       if (UseRuin4 && HasFurtherRuin)
-                       {
-                           return RuinIvPvE.CanUse(out act);
-                       }
-
-                       if (cycloneMoveCondition)
-                       {
-                           return CrimsonCyclonePvE.CanUse(out act);
-                       }
-                   }
-
-                   if (canUseCrimsonCyclone && AddCrimsonCycloneMoving)
-                   {
-                       return CrimsonCyclonePvE.CanUse(out act);
-                   }
-
-                   if (HasFurtherRuin)
-                   {
-                       return RuinIvPvE.CanUse(out act);
-                   }
-
-                   break;
-               }
-
-               case false:
-               {
-                   if (EnableFightPresets)
-                   {
-                       PresetEnabled(FightPresets);
-
-                       if (UseRuin3 && Ruin3Count < 1)
-                       {
-                           return RuinIiiPvE.CanUse(out act);
-                       }
-
-                       if (UseRuin4 && HasFurtherRuin)
-                       {
-                           return RuinIvPvE.CanUse(out act);
-                       }
-
-                       if (HasIfritFavor)
-                       {
-                           if (canUseCrimsonCyclone && UseCycloneFirst)
-                           {
-                               return CrimsonCyclonePvE.CanUse(out act);
-                           }
-
-                           if ((UseOneAttunement && usedOneAttunement && (UseBothAttunements || !UseBothAttunements))
-                               || (AttunementCount < 1 && UseBothAttunements && !UseOneAttunement))
-                           {
-                               if (canUseCrimsonCyclone)
-                               {
-                                   return CrimsonCyclonePvE.CanUse(out act);
-                               }
-                           }
-                       }
-
-                       if (UseBothAttunements && AttunementCount > 0
-                           || UseOneAttunement && (AttunementCount == 2 || !UseBothAttunements && AttunementCount is <= 2 and >=1 && !IsCasting)
-                           || UseOneAttunement && UseBothAttunements && !HasIfritFavor && !HasCrimsonStrike && AttunementCount == 1)
-                       {
-                           return PreciousBrillianceTime(out act) || GemshineTime(out act);
-                       }
-
-                       if (UseOneAttunement && !UseBothAttunements && !HasIfritFavor && !HasCrimsonStrike && AttunementCount == 1)
-                       {
-                           return false;
-                       }
-                   }
-
-                   if (AttunementCount > 0)
-                   {
-                       return PreciousBrillianceTime(out act) || GemshineTime(out act);
-                   }
-
-                   if (HasIfritFavor && canUseCrimsonCyclone)
-                   {
-                       return CrimsonCyclonePvE.CanUse(out act);
-                   }
-
-                   if (HasFurtherRuin)
-                   {
-                       return RuinIvPvE.CanUse(out act);
-                   }
-
-                   if (Ruin3Count < 1)
-                   {
-                       return RuinIiiPvE.CanUse(out act);
-                   }
-
-                   break;
-               }
-           }
-           return false;
-       }
+        return false;
+    }
 
     #endregion
 
@@ -946,8 +946,8 @@ public sealed class ChurinSMN : SummonerRotation
             return false;
         }
 
-        if (((SummonSolarBahamutPvE.EnoughLevel && InSolarBahamut 
-        || !SummonSolarBahamutPvE.EnoughLevel && (InBahamut|| InPhoenix)) && BigSummonGCDLeft <= 4)
+        if (((SummonSolarBahamutPvE.EnoughLevel && InSolarBahamut
+        || !SummonSolarBahamutPvE.EnoughLevel && (InBahamut || InPhoenix)) && BigSummonGCDLeft <= 4)
         || (SummonSolarBahamutPvE.EnoughLevel && (InBahamut || InPhoenix))
         || (HasSearingLight && !InBigSummon && !NoAttunement))
         {
@@ -982,8 +982,8 @@ public sealed class ChurinSMN : SummonerRotation
         }
         if (BigSummonGCDLeft <= 3)
         {
-            return EnkindleSolarBahamutPvE.CanUse(out act) 
-            || EnkindleBahamutPvE.CanUse(out act) 
+            return EnkindleSolarBahamutPvE.CanUse(out act)
+            || EnkindleBahamutPvE.CanUse(out act)
             || EnkindlePhoenixPvE.CanUse(out act);
         }
         return false;
@@ -998,7 +998,7 @@ public sealed class ChurinSMN : SummonerRotation
         }
         if (BigSummonGCDLeft <= 3)
         {
-            return SunflarePvE.CanUse(out act) 
+            return SunflarePvE.CanUse(out act)
             || DeathflarePvE.CanUse(out act);
         }
         return false;
@@ -1027,7 +1027,7 @@ public sealed class ChurinSMN : SummonerRotation
             return false;
         }
 
-        if (HasSearingLight && (InBigSummon && BigSummonGCDLeft <= 4 || !InBigSummon) 
+        if (HasSearingLight && (InBigSummon && BigSummonGCDLeft <= 4 || !InBigSummon)
         || !SearingLightPvE.EnoughLevel)
         {
             return PainflarePvE.CanUse(out act)
@@ -1090,8 +1090,8 @@ public sealed class ChurinSMN : SummonerRotation
 
             return base.CanHealSingleSpell && aliveHealerCount == 0;
         }
-    }    
-    
+    }
+
     #region Potions
     private void UpdateCustomTimings()
     {
@@ -1100,15 +1100,15 @@ public sealed class ChurinSMN : SummonerRotation
             Timings = [FirstPotionTiming, SecondPotionTiming, ThirdPotionTiming]
         };
     }
-    
+
     private static readonly ChurinSMNPotions ChurinPotions = new();
-    
+
     private float _firstPotionTiming;
-   
+
     private float _secondPotionTiming;
-    
+
     private float _thirdPotionTiming;
-    
+
     /// <summary>
     /// SMN-specific potion manager that extends base potion logic with job-specific conditions.
     /// </summary>
@@ -1145,66 +1145,66 @@ public sealed class ChurinSMN : SummonerRotation
 
             return false;
         }
-    
+
     }
-    
+
     #endregion
-    
+
     #region Experimental Methods
-    
-    private bool JustInBigSummon {get; set;}
-    
-    private int Ruin3Count { get; set;}
-    
-    private bool JustUsedRuin3 { get; set;}
-    
-    private bool UseRuin4 { get; set;}
-    
-    private int InBigSummonCount{ get; set;}
-    
-    private bool UseRuin3 { get; set;}
-    
+
+    private bool JustInBigSummon { get; set; }
+
+    private int Ruin3Count { get; set; }
+
+    private bool JustUsedRuin3 { get; set; }
+
+    private bool UseRuin4 { get; set; }
+
+    private int InBigSummonCount { get; set; }
+
+    private bool UseRuin3 { get; set; }
+
     private bool CrimsonCycloneTargetTooFar => (CrimsonCyclonePvE.Target.Target.DistanceToPlayer() > CrimsonCycloneDistance) && HasIfritFavor;
-    
-    private bool SkipAttunement { get; set;}
 
-    private bool UseBothAttunements { get; set;}
+    private bool SkipAttunement { get; set; }
 
-    private bool UseOneAttunement { get; set;}
+    private bool UseBothAttunements { get; set; }
 
-    private bool UseCycloneFirst { get; set;}
-    
+    private bool UseOneAttunement { get; set; }
+
+    private bool UseCycloneFirst { get; set; }
+
     private readonly Dictionary<int, SummonOrderType> _m4SOrderMap = [];
-    
+
     private static bool FightPresetCheck(FightPreset preset)
     {
         ushort territory;
         switch (preset)
         {
-            case FightPreset.CruiserweightM4S: 
-            territory = 1263;
-            break;
+            case FightPreset.CruiserweightM4S:
+                territory = 1263;
+                break;
 
-            case FightPreset.CruiserweightM3S: 
-            territory = 1261;
-            break;
+            case FightPreset.CruiserweightM3S:
+                territory = 1261;
+                break;
 
-            case FightPreset.CruiserweightM2S: 
-            territory = 1259;
-            break;
+            case FightPreset.CruiserweightM2S:
+                territory = 1259;
+                break;
 
-            case FightPreset.CruiserweightM1S: 
-            territory = 1257;
-            break;
+            case FightPreset.CruiserweightM1S:
+                territory = 1257;
+                break;
 
             case FightPreset.None:
             default:
-            return false;
+                return false;
         }
 
         return IsInTerritory(territory) || CurrentTarget != null && CurrentTarget.IsDummy();
     }
-    
+
     private void SetIfritAttunementFlags(bool both, bool one, bool cycloneFirst, bool addCyclone)
     {
         UseBothAttunements = both;
@@ -1212,17 +1212,17 @@ public sealed class ChurinSMN : SummonerRotation
         UseCycloneFirst = cycloneFirst;
         AddCrimsonCyclone = addCyclone;
     }
-    
+
     private void SetRuin3Flag(bool ruin3Flags)
     {
         UseRuin3 = ruin3Flags;
     }
-    
+
     private void SetRuin4Flag(bool ruin4Flags)
     {
         UseRuin4 = ruin4Flags;
     }
-    
+
     private void SetSkipAttunementFlag(bool skipAttunementFlag)
     {
         SkipAttunement = skipAttunementFlag;
@@ -1239,14 +1239,14 @@ public sealed class ChurinSMN : SummonerRotation
         UseCycloneFirst = false;
         SkipAttunement = false;
         UseRuin3 = false;
-        UseRuin4 = false; 
+        UseRuin4 = false;
     }
 
     private void UpdateCounts()
     {
         // Avoid updating while out of combat
         if (!InCombat)
-        {   
+        {
             ResetCounts();
             return;
         }
@@ -1261,13 +1261,13 @@ public sealed class ChurinSMN : SummonerRotation
                 _m4SOrderMap.Remove(k);
             }
         }
-        
+
         if (IsLastGCD(ActionID.RuinIiiPvE) && !JustUsedRuin3)
         {
             Ruin3Count++;
             JustUsedRuin3 = true;
         }
-        
+
         if (!IsLastGCD(ActionID.RuinIiiPvE))
         {
             JustUsedRuin3 = false;
@@ -1280,7 +1280,7 @@ public sealed class ChurinSMN : SummonerRotation
     {
         if (FightPresetCheck(preset))
         {
-           switch(preset)
+            switch (preset)
             {
                 case FightPreset.CruiserweightM4S:
                     M4SPreset();
@@ -1295,10 +1295,10 @@ public sealed class ChurinSMN : SummonerRotation
         {
             DefaultPreset();
         }
-    }    
-    
+    }
+
     #region Default Preset Logic
-    
+
     private void DefaultPreset()
     {
         if (!InCombat)
@@ -1313,11 +1313,11 @@ public sealed class ChurinSMN : SummonerRotation
         UseRuin3 = false;
         UseRuin4 = false;
     }
-    
+
     #endregion
-    
+
     #region M4S Preset Logic
-    
+
     private void M4SPreset()
     {
         if (!InCombat)
@@ -1336,10 +1336,10 @@ public sealed class ChurinSMN : SummonerRotation
         }
         M4SInPrimals();
     }
-    
+
     private void M4SPrimalsOrder()
     {
-       if (InBigSummonCount < 0) return;
+        if (InBigSummonCount < 0) return;
 
         for (var c = InBigSummonCount; c <= M4SMaxOrderCount; c++)
         {
@@ -1356,19 +1356,19 @@ public sealed class ChurinSMN : SummonerRotation
 
     private void M4SInPrimals()
     {
-		var isCastingRubyRite = Player != null && Player.CastActionId == (uint)ActionID.RubyRitePvE;
-		var castAlmostFinished = Player != null && IsCasting && isCastingRubyRite && WeaponRemain < 1f;
-		var attunementUsedUp = (HasIfritFavor && !InIfrit) || (Player != null && IsLastGCD(ActionID.RubyRitePvE) && castAlmostFinished && AttunementCount <= 1);
-		var hasOneAttunementLeft = (castAlmostFinished && AttunementCount <= 2) || (Player != null && IsLastGCD(ActionID.RubyRitePvE) && AttunementCount == 1);
-		var crimsonCycloneTargetInRange = CrimsonCyclonePvE.Target.Target.DistanceToPlayer() <= CrimsonCycloneDistance;
-		var defaultCycloneCondition = (CrimsonCycloneTargetTooFar || crimsonCycloneTargetInRange) && attunementUsedUp;
+        var isCastingRubyRite = Player != null && Player.CastActionId == (uint)ActionID.RubyRitePvE;
+        var castAlmostFinished = Player != null && IsCasting && isCastingRubyRite && WeaponRemain < 1f;
+        var attunementUsedUp = (HasIfritFavor && !InIfrit) || (Player != null && IsLastGCD(ActionID.RubyRitePvE) && castAlmostFinished && AttunementCount <= 1);
+        var hasOneAttunementLeft = (castAlmostFinished && AttunementCount <= 2) || (Player != null && IsLastGCD(ActionID.RubyRitePvE) && AttunementCount == 1);
+        var crimsonCycloneTargetInRange = CrimsonCyclonePvE.Target.Target.DistanceToPlayer() <= CrimsonCycloneDistance;
+        var defaultCycloneCondition = (CrimsonCycloneTargetTooFar || crimsonCycloneTargetInRange) && attunementUsedUp;
 
-		UseRuin3 = false;
+        UseRuin3 = false;
         UseRuin4 = false;
         AddCrimsonCyclone = false;
         SkipAttunement = false;
         UseCycloneFirst = false;
-    
+
         switch (InBigSummonCount)
         {
             case <= 1 or 3:
@@ -1382,12 +1382,12 @@ public sealed class ChurinSMN : SummonerRotation
                 break;
             case 5:
                 SetIfritAttunementFlags(false, true, false, hasOneAttunementLeft && (CrimsonCycloneTargetTooFar || crimsonCycloneTargetInRange));
-                SetSkipAttunementFlag((InIfrit &&  !HasIfritFavor && !HasCrimsonStrike && AttunementCount == 1 && IsGarudaReady && IsLastGCD(ActionID.CrimsonStrikePvE)) || (InGaruda && !HasGarudaFavor && AttunementCount < 3 && IsTitanReady));
+                SetSkipAttunementFlag((InIfrit && !HasIfritFavor && !HasCrimsonStrike && AttunementCount == 1 && IsGarudaReady && IsLastGCD(ActionID.CrimsonStrikePvE)) || (InGaruda && !HasGarudaFavor && AttunementCount < 3 && IsTitanReady));
                 break;
             case 6:
                 SetRuin3Flag(attunementUsedUp && Ruin3Count < 1);
                 SetIfritAttunementFlags(true, false, false, defaultCycloneCondition && Ruin3Count == 1);
-                break;   
+                break;
             case 8:
                 SetRuin3Flag(!InIfrit && !HasCrimsonStrike && !HasIfritFavor && IsLastGCD(ActionID.CrimsonStrikePvE) && !IsIfritReady && IsGarudaReady && IsTitanReady && Ruin3Count < 1);
                 break;
@@ -1421,14 +1421,14 @@ public sealed class ChurinSMN : SummonerRotation
                 break;
         }
     }
-    
+
     #endregion
-    
-    #endregion
-    
+
     #endregion
 
     #endregion
 
-}   
+    #endregion
+
+}
 

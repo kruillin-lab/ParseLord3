@@ -97,7 +97,7 @@ internal static class ActionContextMenu
     private static void AddActionMenu(IMenuOpenedArgs args)
     {
         if (!Service.Config.ShowContext)
-        {   
+        {
             return;
         }
 

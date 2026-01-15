@@ -116,10 +116,10 @@ internal abstract class ActionGetterBase(Lumina.GameData gameData) : ExcelRowGet
     {
         var transient = _gameData.GetExcelSheet<ActionTransient>()?.GetRow(item.RowId);
         var desc = transient?.Description.ToString() ?? string.Empty;
-        
+
         // Sanitize the description to remove invalid XML tags
         desc = Util.SanitizeXmlDescription(desc);
-        
+
         return $"<para>{desc.Replace("\n", "</para>\n/// <para>")}</para>";
     }
 }

@@ -263,7 +263,7 @@ public sealed class VPR_Reborn : ViperRotation
 
             return base.GeneralGCD(out act);
         }
-            
+
         ////Reawaken Combo
         if (OuroborosPvE.CanUse(out act))
         {

@@ -62,7 +62,7 @@ public sealed class ChurinDNC : DancerRotation
     private bool ShouldUseStandardStep => StandardStepPvE.IsEnabled && !HasLastDance;
     private bool ShouldUseFinishingMove => FinishingMovePvE.IsEnabled && !HasLastDance;
     private static bool CanWeave => WeaponRemain >= AnimationLock && DataCenter.DefaultGCDElapsed > 0 && DataCenter.DefaultGCDElapsed >= AnimationLock;
-    
+
     private static bool HasAnyPartyMembers
     {
         get
@@ -96,7 +96,7 @@ public sealed class ChurinDNC : DancerRotation
                 }
                 else return true;
             }
-            
+
             if (TechHoldStrategy == HoldStrategy.HoldFinishOnly)
             {
                 if (HasTillana || HasTechnicalStep)
@@ -172,11 +172,11 @@ public sealed class ChurinDNC : DancerRotation
             {
                 return CanUseStepHoldCheck(TechHoldStrategy);
             }
-            
+
             return false;
         }
     }
-    
+
     private bool CanUseStandardStep
     {
         get
@@ -220,7 +220,7 @@ public sealed class ChurinDNC : DancerRotation
                 return CanUseStepHoldCheck(StandardHoldStrategy);
             }
 
-            if (!HasFinishingMove && (StandardStepPvE.CanUse(out _) || StandardStepPvE.Cooldown.WillHaveOneCharge(WeaponTotal - WeaponRemain)) 
+            if (!HasFinishingMove && (StandardStepPvE.CanUse(out _) || StandardStepPvE.Cooldown.WillHaveOneCharge(WeaponTotal - WeaponRemain))
             || HasFinishingMove && (FinishingMovePvE.CanUse(out _) || FinishingMovePvE.Cooldown.WillHaveOneCharge(WeaponTotal - WeaponRemain)))
             {
                 return CanUseStepHoldCheck(StandardHoldStrategy);
@@ -248,12 +248,12 @@ public sealed class ChurinDNC : DancerRotation
 
     #region Config Options
     [RotationConfig(CombatType.PvE, Name = "Technical Step, Technical Finish & Tillana Hold Strategy")]
-    private HoldStrategy TechHoldStrategy  { get; set; }
+    private HoldStrategy TechHoldStrategy { get; set; }
 
     [RotationConfig(CombatType.PvE, Name = "Standard Step, Standard Finish & Finishing Move Hold Strategy")]
     private HoldStrategy StandardHoldStrategy { get; set; }
 
-    [Range(0,16, ConfigUnitType.Seconds, 0)]
+    [Range(0, 16, ConfigUnitType.Seconds, 0)]
     [RotationConfig(CombatType.PvE, Name = "How many seconds before combat starts to use Standard Step?")]
     private float OpenerStandardStepTime { get; set; } = 15.5f;
 
@@ -278,7 +278,7 @@ public sealed class ChurinDNC : DancerRotation
     private static PotionStrategy PotionUsagePresets
     { get => _churinPotions.Strategy; set => _churinPotions.Strategy = value; }
 
-    [Range(0,20, ConfigUnitType.Seconds, 0)]
+    [Range(0, 20, ConfigUnitType.Seconds, 0)]
     [RotationConfig(CombatType.PvE, Name = "Use Opener Potion at minus (value in seconds)", Parent = nameof(PotionUsageEnabled))]
     private static float OpenerPotionTime { get => _churinPotions.OpenerPotionTime; set => _churinPotions.OpenerPotionTime = value; }
 
@@ -329,7 +329,7 @@ public sealed class ChurinDNC : DancerRotation
     #endregion
 
     #region Main Combat Logic
-    
+
     #region Countdown Logic
 
     // Override the method for actions to be taken during the countdown phase of combat
@@ -343,7 +343,7 @@ public sealed class ChurinDNC : DancerRotation
         {
             return base.CountDownAction(remainTime);
         }
-        
+
         if (TryUseClosedPosition(out var act)
             || remainTime <= OpenerStandardStepTime && StandardStepPvE.CanUse(out act)
             || ExecuteStepGCD(out act)
@@ -408,7 +408,7 @@ public sealed class ChurinDNC : DancerRotation
                 act = StandardStepPvE;
                 return true;
             }
-            
+
             if (CanUseStandardStep && HasFinishingMove)
             {
                 act = FinishingMovePvE;
@@ -420,7 +420,7 @@ public sealed class ChurinDNC : DancerRotation
         {
             return true;
         }
-        
+
         if (TryUseProcs(out act))
         {
             return true;
@@ -461,7 +461,7 @@ public sealed class ChurinDNC : DancerRotation
 
         if ((StandardStepPvE.Cooldown.WillHaveOneCharge(5)
         || FinishingMovePvE.Cooldown.WillHaveOneCharge(5)
-        || TechnicalStepPvE.Cooldown.WillHaveOneCharge(5)) 
+        || TechnicalStepPvE.Cooldown.WillHaveOneCharge(5))
         && ShouldSwapDancePartner)
         {
             return EndingPvE.CanUse(out act);
@@ -470,7 +470,7 @@ public sealed class ChurinDNC : DancerRotation
     }
 
     #endregion
-    
+
     #region Dance Logic
 
     private bool TryUseDance(out IAction? act)
@@ -557,7 +557,7 @@ public sealed class ChurinDNC : DancerRotation
     }
 
     #endregion
-    
+
     #region Burst Logic
     private bool TryUseBurstGCD(out IAction? act)
     {
@@ -594,7 +594,7 @@ public sealed class ChurinDNC : DancerRotation
         {
             return false;
         }
-        
+
         if (HasTillana && !CanUseStepHoldCheck(TechHoldStrategy))
         {
             return false;
@@ -604,7 +604,7 @@ public sealed class ChurinDNC : DancerRotation
         {
             return false;
         }
-        
+
         if (StandardStepPvE.Cooldown.WillHaveOneCharge(5f) && Esprit >= 40 && HasLastDance)
         {
             return false;
@@ -688,7 +688,7 @@ public sealed class ChurinDNC : DancerRotation
             }
 
             if (Esprit < SaberDanceEspritCost && ((!HasLastDance && HasFinishingMove)
-            || (HasLastDance && !HasFinishingMove)) && !HasTillana)   
+            || (HasLastDance && !HasFinishingMove)) && !HasTillana)
             {
                 return true;
             }
@@ -709,13 +709,13 @@ public sealed class ChurinDNC : DancerRotation
         return false;
     }
     #endregion
-    
+
     #region GCD Skills
     private bool TryUseFillerGCD(out IAction? act)
     {
         act = null;
         if (CanUseStandardStep || CanUseTechnicalStep) return false;
-        
+
         if (TryUseTillana(out act)) return true;
         if (TryUseProcs(out act)) return true;
         if (TryUseFeatherGCD(out act)) return true;
@@ -726,7 +726,7 @@ public sealed class ChurinDNC : DancerRotation
     }
 
     private bool TryUseBasicGCD(out IAction? act)
-    {   
+    {
         act = null;
         if (CanUseStandardStep || CanUseTechnicalStep) return false;
         if (BloodshowerPvE.CanUse(out act)) return true;
@@ -769,7 +769,7 @@ public sealed class ChurinDNC : DancerRotation
 
         if (SaberDancePvE.CanUse(out act))
         {
-            if (IsBurstPhase && !StatusHelper.PlayerWillStatusEndGCD(0,0, true, StatusID.TechnicalFinish))
+            if (IsBurstPhase && !StatusHelper.PlayerWillStatusEndGCD(0, 0, true, StatusID.TechnicalFinish))
             {
                 if (Esprit >= SaberDanceEspritCost && !CanUseStandardStep)
                 {
@@ -839,7 +839,7 @@ public sealed class ChurinDNC : DancerRotation
     }
 
     #endregion
-    
+
     #region OGCD Abilities
     private bool TryUseDevilment(out IAction? act)
     {
@@ -899,7 +899,7 @@ public sealed class ChurinDNC : DancerRotation
     /// DNC-specific potion manager that extends base potion logic with job-specific conditions.
     /// </summary>
     private class ChurinDNCPotions : Potions
-    { 
+    {
         public override bool IsConditionMet()
         {
             var churinDNC = new ChurinDNC();
@@ -910,11 +910,11 @@ public sealed class ChurinDNC : DancerRotation
             }
 
             // Check for Technical Step completion (4+ steps) or Standard Step completion (2+ steps)
-            return (HasTechnicalStep && CompletedSteps > 3) 
-            || ((InCombat && !churinDNC.TechnicalStepPvE.Cooldown.WillHaveOneCharge(30) 
+            return (HasTechnicalStep && CompletedSteps > 3)
+            || ((InCombat && !churinDNC.TechnicalStepPvE.Cooldown.WillHaveOneCharge(30)
             || !InCombat) && HasStandardStep && CompletedSteps > 1);
         }
-        
+
         protected override bool IsTimingValid(float timing)
         {
             if (timing > 0 && DataCenter.CombatTimeRaw >= timing && DataCenter.CombatTimeRaw - timing <= TimingWindowSeconds)
@@ -934,7 +934,7 @@ public sealed class ChurinDNC : DancerRotation
     }
 
     #endregion
-    
+
     #endregion
 
 }

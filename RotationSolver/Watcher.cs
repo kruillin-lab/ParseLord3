@@ -149,56 +149,56 @@ public static class Watcher
         }
     }
 
-	private static void ActionFromSelf(ActionEffectSet set)
-	{
-		try
-		{
-			PluginLog.Debug($"ActionFromSelf invoked. Source: {set.Source?.GameObjectId}, Action: {set.Action?.Name.ExtractText() ?? "null"}");
+    private static void ActionFromSelf(ActionEffectSet set)
+    {
+        try
+        {
+            PluginLog.Debug($"ActionFromSelf invoked. Source: {set.Source?.GameObjectId}, Action: {set.Action?.Name.ExtractText() ?? "null"}");
 
-			IPlayerCharacter? playerObject = Player.Object;
-			if (set.Source == null || playerObject == null)
-			{
-				PluginLog.Debug("ActionFromSelf: Source or playerObject is null. Exiting.");
-				return;
-			}
+            IPlayerCharacter? playerObject = Player.Object;
+            if (set.Source == null || playerObject == null)
+            {
+                PluginLog.Debug("ActionFromSelf: Source or playerObject is null. Exiting.");
+                return;
+            }
 
-			if (set.Source.GameObjectId != playerObject.GameObjectId)
-			{
-				PluginLog.Debug($"ActionFromSelf: Source.GameObjectId ({set.Source.GameObjectId}) does not match playerObject.GameObjectId ({playerObject.GameObjectId}). Exiting.");
-				return;
-			}
+            if (set.Source.GameObjectId != playerObject.GameObjectId)
+            {
+                PluginLog.Debug($"ActionFromSelf: Source.GameObjectId ({set.Source.GameObjectId}) does not match playerObject.GameObjectId ({playerObject.GameObjectId}). Exiting.");
+                return;
+            }
 
-			// TODO: Review if we need this check
-			//if (set.Header.ActionType is not ActionType.Action and not ActionType.Item)
-			//{
-			//	PluginLog.Debug($"ActionFromSelf: ActionType is {set.Header.ActionType}, not Action or Item. Exiting.");
-			//	return;
-			//}
+            // TODO: Review if we need this check
+            //if (set.Header.ActionType is not ActionType.Action and not ActionType.Item)
+            //{
+            //	PluginLog.Debug($"ActionFromSelf: ActionType is {set.Header.ActionType}, not Action or Item. Exiting.");
+            //	return;
+            //}
 
-			if (set.Action == null)
-			{
-				PluginLog.Debug("ActionFromSelf: set.Action is null. Exiting.");
-				return;
-			}
+            if (set.Action == null)
+            {
+                PluginLog.Debug("ActionFromSelf: set.Action is null. Exiting.");
+                return;
+            }
 
-			if (set.Action?.ActionCategory.Value.RowId == (uint)ActionCate.Autoattack)
-			{
-				PluginLog.Debug("ActionFromSelf: ActionCategory is Autoattack. Exiting.");
-				return;
-			}
+            if (set.Action?.ActionCategory.Value.RowId == (uint)ActionCate.Autoattack)
+            {
+                PluginLog.Debug("ActionFromSelf: ActionCategory is Autoattack. Exiting.");
+                return;
+            }
 
-			if (set.TargetEffects.Length == 0)
-			{
-				PluginLog.Debug("ActionFromSelf: No TargetEffects. Exiting.");
-				return;
-			}
+            if (set.TargetEffects.Length == 0)
+            {
+                PluginLog.Debug("ActionFromSelf: No TargetEffects. Exiting.");
+                return;
+            }
 
-			Lumina.Excel.Sheets.Action? action = set.Action;
+            Lumina.Excel.Sheets.Action? action = set.Action;
             IGameObject? tar = set.Target;
 
-			// Record
-			PluginLog.Debug($"ActionFromSelf: ActionType is {set.Header.ActionType}.");
-			DataCenter.AddActionRec(action!.Value);
+            // Record
+            PluginLog.Debug($"ActionFromSelf: ActionType is {set.Header.ActionType}.");
+            DataCenter.AddActionRec(action!.Value);
             ShowStrSelf = set.ToString();
 
             DataCenter.HealHP = set.GetSpecificTypeEffect(ActionEffectType.Heal);

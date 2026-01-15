@@ -131,18 +131,18 @@ public partial class DancerRotation
     /// </summary>
     public static bool HasClosedPosition => StatusHelper.PlayerHasStatus(true, StatusID.ClosedPosition);
 
-	/// <summary>
-	/// Has Closed Position status.
-	/// </summary>
-	public static bool HasHoningDance => StatusHelper.PlayerHasStatus(true, StatusID.HoningDance);
-	#endregion
+    /// <summary>
+    /// Has Closed Position status.
+    /// </summary>
+    public static bool HasHoningDance => StatusHelper.PlayerHasStatus(true, StatusID.HoningDance);
+    #endregion
 
-	#region PvE Actions Unassignable
+    #region PvE Actions Unassignable
 
-	/// <summary>
-	/// 
-	/// </summary>
-	public static bool StandardFinishPvEReady => Service.GetAdjustedActionId(ActionID.StandardStepPvE) == ActionID.StandardFinishPvE;
+    /// <summary>
+    /// 
+    /// </summary>
+    public static bool StandardFinishPvEReady => Service.GetAdjustedActionId(ActionID.StandardStepPvE) == ActionID.StandardFinishPvE;
 
     /// <summary>
     /// 

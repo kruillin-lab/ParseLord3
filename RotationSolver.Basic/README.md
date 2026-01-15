@@ -1,5 +1,5 @@
-# RotationSolver.Basic
+# ParseLord.Basic
 
 ## Description
 
-A basic library for rotation development in FFXIV in RotationSolver.
+A basic library for rotation development in FFXIV for ParseLord.

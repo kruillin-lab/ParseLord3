@@ -27,7 +27,7 @@ public partial class SummonerRotation
     /// </summary>
     public static byte AttunementCount => JobGauge.AttunementCount;
 
-    
+
 
     /// <summary>
     /// 
@@ -235,8 +235,8 @@ public partial class SummonerRotation
     static partial void ModifyRadiantAegisPvE(ref ActionSetting setting)
     {
         setting.ActionCheck = () => HasSummon;
-		setting.StatusProvide = [StatusID.RadiantAegis];
-		setting.IsFriendly = true;
+        setting.StatusProvide = [StatusID.RadiantAegis];
+        setting.IsFriendly = true;
     }
 
     static partial void ModifyPhysickPvE(ref ActionSetting setting)
@@ -260,7 +260,7 @@ public partial class SummonerRotation
 
     static partial void ModifyGemshinePvE(ref ActionSetting setting)
     {
-        
+
     }
 
     static partial void ModifyFesterPvE(ref ActionSetting setting)
@@ -294,7 +294,7 @@ public partial class SummonerRotation
     static partial void ModifyOutburstPvE(ref ActionSetting setting)
     {
         setting.ActionCheck = () => !InBahamut && !InPhoenix;
-    }    
+    }
 
     static partial void ModifyRuinIiPvE(ref ActionSetting setting)
     {
@@ -689,7 +689,7 @@ public partial class SummonerRotation
 
     static partial void ModifySlipstreamPvE(ref ActionSetting setting)
     {
-        setting.ActionCheck = () => !HasSwift && !StatusHelper.PlayerWillStatusEnd(ActionID.SlipstreamPvE.GetCastTime(), true, StatusID.GarudasFavor) 
+        setting.ActionCheck = () => !HasSwift && !StatusHelper.PlayerWillStatusEnd(ActionID.SlipstreamPvE.GetCastTime(), true, StatusID.GarudasFavor)
                                     || HasSwift && !StatusHelper.PlayerWillStatusEndGCD(0, 0, true, StatusID.GarudasFavor);
         setting.StatusNeed = [StatusID.GarudasFavor];
         setting.StatusProvide = [StatusID.Slipstream];

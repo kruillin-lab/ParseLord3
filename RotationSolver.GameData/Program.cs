@@ -32,7 +32,7 @@ public class Program
             Console.WriteLine($"Assembly location: {typeof(Program).Assembly.Location}");
             dirInfo = dirInfo.Parent!.Parent!.Parent!.Parent!.Parent!.Parent!;
             Console.WriteLine($"Resolved directory: {dirInfo.FullName}");
-            
+
             var resourcePath = Path.Combine(dirInfo.FullName, "RotationSolver.SourceGenerators\\Properties\\Resources.resx");
             Console.WriteLine($"Resource path: {resourcePath}");
             Console.WriteLine($"Resource path exists: {File.Exists(resourcePath)}");

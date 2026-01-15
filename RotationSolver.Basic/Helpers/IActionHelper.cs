@@ -21,7 +21,7 @@ public static class IActionHelper
         //ActionID.SpineshatterDivePvE,
         ActionID.DragonfireDivePvE,
     ];
-    
+
     internal static ActionID[] HealingActions { get; } =
     [
         // AST
@@ -178,7 +178,7 @@ public static class IActionHelper
             foreach (var action in list)
             {
                 if ((isAdjust && action.AdjustedID == (uint)id) ||
-                    (! isAdjust && action.ID == (uint)id)) return action;
+                    (!isAdjust && action.ID == (uint)id)) return action;
             }
         }
 

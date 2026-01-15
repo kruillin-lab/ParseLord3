@@ -46,7 +46,7 @@ public sealed unsafe class AnimationLockTweak
         _lastReqInitialAnimLock = initialAnimLock;
         _lastReqSequence = expectedSequence;
     }
-    
+
     /// <summary>
     /// Apply the tweak: calculate animation lock delay and determine how much animation lock should be reduced
     /// </summary>
@@ -60,23 +60,23 @@ public sealed unsafe class AnimationLockTweak
     public float Apply(uint sequence, float gamePrevAnimLock, float gameCurrAnimLock, float packetPrevAnimLock, float packetCurrAnimLock, out float delay)
     {
         delay = Math.Max(0, _lastReqInitialAnimLock - gamePrevAnimLock);
-        
+
         if (_lastReqSequence != sequence && gameCurrAnimLock != gamePrevAnimLock)
         {
             PluginLog.Debug($"[AnimLockTweak] Animation lock updated by action with unexpected sequence ID #{sequence}: {gamePrevAnimLock:f3} -> {gameCurrAnimLock:f3}");
         }
-        
+
         float reduction = 0;
-        
+
         if (_lastReqSequence == sequence && _lastReqInitialAnimLock > 0)
         {
             SanityCheck(packetPrevAnimLock, packetCurrAnimLock, gameCurrAnimLock);
             DelayAverage = Math.Clamp(delay * (1 - DelaySmoothing) + DelayAverage * DelaySmoothing, 0f, 0.5f); // Update the exponential average with bounds
-            
+
             // The result will be subtracted from current animation lock (and thus from adjusted lock delay)
             reduction = Service.Config.RemoveAnimationLockDelay ? Math.Clamp(delay - DelayMax, 0, gameCurrAnimLock) : 0;
         }
-        
+
         _lastReqInitialAnimLock = 0;
         _lastReqSequence = uint.MaxValue;
         return reduction;

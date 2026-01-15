@@ -1,4 +1,4 @@
-﻿using Dalamud.Game.Command;
+using Dalamud.Game.Command;
 using ECommons.DalamudServices;
 using RotationSolver.Data;
 
@@ -18,6 +18,11 @@ namespace RotationSolver.Commands
                 HelpMessage = UiString.Commands_Rotation.GetDescription(),
                 ShowInHelp = true,
             });
+            _ = Svc.Commands.AddHandler(Service.PLCOMMAND, new CommandInfo(OnCommand)
+            {
+                HelpMessage = "Open ParseLord3 settings",
+                ShowInHelp = true,
+            });
             _ = Svc.Commands.AddHandler(Service.AUTOCOMMAND, new CommandInfo(OnCommand)
             {
                 HelpMessage = UiString.Commands_Start.GetDescription(),
@@ -34,6 +39,7 @@ namespace RotationSolver.Commands
         {
             _ = Svc.Commands.RemoveHandler(Service.COMMAND);
             _ = Svc.Commands.RemoveHandler(Service.ALTCOMMAND);
+            _ = Svc.Commands.RemoveHandler(Service.PLCOMMAND);
             _ = Svc.Commands.RemoveHandler(Service.AUTOCOMMAND);
             _ = Svc.Commands.RemoveHandler(Service.OFFCOMMAND);
         }
@@ -76,15 +82,15 @@ namespace RotationSolver.Commands
                         if (idx >= 0)
                         {
                             Service.Config.TargetingIndex = idx;
-							if (Service.Config.ShowToggledSettingInChat)
-							{
-								Svc.Chat.Print($"Set current TargetingType to {targetingTypeSet}.");
-							}
+                            if (Service.Config.ShowToggledSettingInChat)
+                            {
+                                Svc.Chat.Print($"Set current TargetingType to {targetingTypeSet}.");
+                            }
                             index = idx;
                         }
                         else
                         {
-							Svc.Chat.PrintError($"{targetingTypeSet} is not in TargetingTypes list.");
+                            Svc.Chat.PrintError($"{targetingTypeSet} is not in TargetingTypes list.");
                             return;
                         }
                     }

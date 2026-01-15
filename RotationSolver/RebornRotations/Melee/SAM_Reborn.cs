@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 
 namespace RotationSolver.RebornRotations.Melee;
 
@@ -102,6 +102,7 @@ public sealed class SAM_Reborn : SamuraiRotation
             }
         }
 
+        // Use potions during the 2-minute burst window.
         if ((HasOgiNamikiri || HasZanshinReady) && InCombat && UseBurstMedicine(out act))
         {
             return true;
@@ -150,14 +151,29 @@ public sealed class SAM_Reborn : SamuraiRotation
 
         if (!HasZanshinReady)
         {
-            if (!CombatElapsedLessGCD(2) && Kenki <= 50 && IkishotenPvE.CanUse(out act))
+            // If Ikishoten is ready, dump Kenki to avoid overcap, then use it.
+            if (IkishotenPvE.Cooldown.CurrentCharges > 0 && Kenki >= 75)
+            {
+                if (HissatsuKyutenPvE.CanUse(out act))
+                {
+                    return true;
+                }
+
+                if (HissatsuShintenPvE.CanUse(out act))
+                {
+                    return true;
+                }
+            }
+
+            if (Kenki <= 50 && IkishotenPvE.CanUse(out act))
             {
                 return true;
             }
 
-            if (IkishotenPvE.Cooldown.IsCoolingDown && Kenki >= 25)
+            // Use big Kenki spenders on cooldown (Guren is gain at 2+ targets).
+            if (Kenki >= 25)
             {
-                if (HissatsuGurenPvE.CanUse(out act, skipAoeCheck: !HissatsuSeneiPvE.EnoughLevel))
+                if (NumberOfHostilesInRange >= 2 && HissatsuGurenPvE.CanUse(out act))
                 {
                     return true;
                 }
@@ -168,6 +184,7 @@ public sealed class SAM_Reborn : SamuraiRotation
                 }
             }
 
+            // Dump excess Kenki.
             if (Kenki >= 50 || (!IkishotenPvE.EnoughLevel && Kenki >= 25))
             {
                 if (HissatsuKyutenPvE.CanUse(out act))
@@ -192,7 +209,13 @@ public sealed class SAM_Reborn : SamuraiRotation
     {
         bool isTargetBoss = CurrentTarget?.IsBossFromTTK() ?? false;
 
-        if (!HiganbanaTargets || (HiganbanaTargets && NumberOfAllHostilesInRange < 2) && HasFugetsuAndFuka && !WillFugetsuEnd && !WillFukaEnd && !HasMeikyoShisui && !MidareSetsugekkaReady)
+        // Higanbana is a core 60s DoT; allow usage during Meikyo windows.
+        // Never use it in full AoE (3+ targets).
+        if (NumberOfAllHostilesInRange < 3
+            && (!HiganbanaTargets || (HiganbanaTargets && NumberOfAllHostilesInRange < 2))
+            && HasFugetsuAndFuka
+            && !WillFugetsuEnd
+            && !WillFukaEnd)
         {
             if (HiganbanaPvE.CanUse(out act, skipComboCheck: true, skipTTKCheck: isTargetBoss || IsInHighEndDuty))
             {

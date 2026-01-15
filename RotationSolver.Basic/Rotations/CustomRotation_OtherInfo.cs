@@ -7,30 +7,31 @@ using Lumina.Excel;
 using Lumina.Excel.Sheets;
 
 namespace RotationSolver.Basic.Rotations;
+
 public partial class CustomRotation
 {
-	#region Player
-	/// <summary>
-	/// This is the player.
-	/// </summary>
-	protected static IPlayerCharacter? Player => ECommons.GameHelpers.Player.Object;
+    #region Player
+    /// <summary>
+    /// This is the player.
+    /// </summary>
+    protected static IPlayerCharacter? Player => ECommons.GameHelpers.Player.Object;
 
-	/// <summary>
-	/// 
-	/// </summary>
-	[Description("IsCasting")]
-	public static bool IsCasting => Player?.IsCasting ?? false;
+    /// <summary>
+    /// 
+    /// </summary>
+    [Description("IsCasting")]
+    public static bool IsCasting => Player?.IsCasting ?? false;
 
-	/// <summary>
-	/// Does player have swift cast, dual cast or triple cast.
-	/// </summary>
-	[Description("Has Swift")]
+    /// <summary>
+    /// Does player have swift cast, dual cast or triple cast.
+    /// </summary>
+    [Description("Has Swift")]
     public static bool HasSwift => StatusHelper.PlayerHasStatus(true, StatusHelper.SwiftcastStatus);
 
-	/// <summary>
-	/// 
-	/// </summary>
-	[Description("Has tank stance")]
+    /// <summary>
+    /// 
+    /// </summary>
+    [Description("Has tank stance")]
     public static bool HasTankStance => StatusHelper.PlayerHasStatus(true, StatusHelper.TankStanceStatus);
 
     /// <summary>
@@ -44,27 +45,27 @@ public partial class CustomRotation
     /// </summary>
     public static bool HasVariantCure => StatusHelper.PlayerHasStatus(true, StatusID.VariantCureSet);
 
-	/// <summary>
-	/// 
-	/// </summary>
-	public static bool HasPVPGuard => StatusHelper.PlayerHasStatus(true, StatusID.Guard);
+    /// <summary>
+    /// 
+    /// </summary>
+    public static bool HasPVPGuard => StatusHelper.PlayerHasStatus(true, StatusID.Guard);
 
-	/// <summary>
-	/// Check the player is moving, such as running, walking or jumping.
-	/// </summary>
-	[Description("Is Moving or Jumping")]
+    /// <summary>
+    /// Check the player is moving, such as running, walking or jumping.
+    /// </summary>
+    [Description("Is Moving or Jumping")]
     public static bool IsMoving => DataCenter.IsMoving;
 
     /// <summary>
     /// Check if the player is dead.
     /// </summary>
     [Description("Is Dead, or inversely, is Alive")]
-	public static bool IsDead => Player?.IsDead ?? false;
+    public static bool IsDead => Player?.IsDead ?? false;
 
-	/// <summary>
-	/// Is in combat.
-	/// </summary>
-	[Description("In Combat")]
+    /// <summary>
+    /// Is in combat.
+    /// </summary>
+    [Description("In Combat")]
     public static bool InCombat => DataCenter.InCombat;
 
     /// <summary>
@@ -184,42 +185,42 @@ public partial class CustomRotation
         }
     }
 
-        /// <summary>
-        /// Gets the duration (remaining time in seconds) of the status effect (buff or debuff) that will expire last among all active ones.
-        /// </summary>
-        public static float PartyBuffDuration
+    /// <summary>
+    /// Gets the duration (remaining time in seconds) of the status effect (buff or debuff) that will expire last among all active ones.
+    /// </summary>
+    public static float PartyBuffDuration
+    {
+        get
         {
-            get
+            StatusList();
+
+            if (Buffs.Count == 0) return 0;
+
+            float maxDuration = 0;
+            foreach (var buff in Buffs)
             {
-                StatusList();
-
-                if (Buffs.Count == 0) return 0;
-
-                float maxDuration = 0;
-                foreach (var buff in Buffs)
+                if (buff.Type == StatusType.Buff)
                 {
-                    if (buff.Type == StatusType.Buff)
-                    {
-                        if (Player == null) continue;
-                        if (!StatusHelper.PlayerHasStatus(false, buff.Ids)) continue;
+                    if (Player == null) continue;
+                    if (!StatusHelper.PlayerHasStatus(false, buff.Ids)) continue;
 
-                        float remaining = StatusHelper.PlayerStatusTime(true, buff.Ids[0]);
-                        if (remaining > maxDuration) maxDuration = remaining;
-                    }
-                    else if (buff.Type == StatusType.Debuff)
-                    {
-                        if (HostileTarget == null) continue;
-                        if (!HostileTarget.HasStatus(false, buff.Ids)) continue;
-
-                        float remaining = HostileTarget.StatusTime(true, buff.Ids[0]);
-                        if (remaining > maxDuration) maxDuration = remaining;
-                    }
+                    float remaining = StatusHelper.PlayerStatusTime(true, buff.Ids[0]);
+                    if (remaining > maxDuration) maxDuration = remaining;
                 }
+                else if (buff.Type == StatusType.Debuff)
+                {
+                    if (HostileTarget == null) continue;
+                    if (!HostileTarget.HasStatus(false, buff.Ids)) continue;
 
-                return maxDuration;
+                    float remaining = HostileTarget.StatusTime(true, buff.Ids[0]);
+                    if (remaining > maxDuration) maxDuration = remaining;
+                }
             }
+
+            return maxDuration;
         }
-    
+    }
+
 
     /// <summary>
     /// Gets the static list of status effects (buffs and debuffs) that are relevant to the current rotation configuration.
@@ -240,15 +241,15 @@ public partial class CustomRotation
         Buffs.Clear();
         var processedJobs = new HashSet<string>();
 
-		if (PartyComposition == null)
-		{
-			if (Player?.ClassJob.Value.Abbreviation != null)
-			{
-				var abbr = Player.ClassJob.Value.Abbreviation.ToString();
-				AddJobBuffs(abbr, processedJobs);
-			}
-		}
-		else
+        if (PartyComposition == null)
+        {
+            if (Player?.ClassJob.Value.Abbreviation != null)
+            {
+                var abbr = Player.ClassJob.Value.Abbreviation.ToString();
+                AddJobBuffs(abbr, processedJobs);
+            }
+        }
+        else
         {
             foreach (var job in PartyComposition)
             {
@@ -545,9 +546,9 @@ public partial class CustomRotation
         }
 
         // Tank LB3: -80% all damage
-        if (HasPartyStatus(StatusID.LastBastion) 
-            || HasPartyStatus(StatusID.DarkForce) 
-            || HasPartyStatus(StatusID.GunmetalSoul) 
+        if (HasPartyStatus(StatusID.LastBastion)
+            || HasPartyStatus(StatusID.DarkForce)
+            || HasPartyStatus(StatusID.GunmetalSoul)
             || HasPartyStatus(StatusID.LandWaker))
             damageFactor *= 0.2f;
 
@@ -587,37 +588,37 @@ public partial class CustomRotation
         return Math.Clamp(mitigated, 0f, 0.95f);
     }
 
-	/// <summary>
-	///
-	/// </summary>
-	[Description("Is an enemy casting magic AOE")]
-	public static bool IsMagicalDamageIncoming => DataCenter.IsMagicalDamageIncoming();
+    /// <summary>
+    ///
+    /// </summary>
+    [Description("Is an enemy casting magic AOE")]
+    public static bool IsMagicalDamageIncoming => DataCenter.IsMagicalDamageIncoming();
 
-	/// <summary>
-	///
-	/// </summary>
-	[Description("Is an enemy casting physical AOE")]
-	public static bool IsPhysicalDamageIncoming => DataCenter.IsPhysicalDamageIncoming();
+    /// <summary>
+    ///
+    /// </summary>
+    [Description("Is an enemy casting physical AOE")]
+    public static bool IsPhysicalDamageIncoming => DataCenter.IsPhysicalDamageIncoming();
 
-	/// <summary>
-	///
-	/// </summary>
-	[Description("Is an enemy casting a multihit AOE party stack")]
+    /// <summary>
+    ///
+    /// </summary>
+    [Description("Is an enemy casting a multihit AOE party stack")]
     public static bool IsCastingMultiHit => DataCenter.IsCastingMultiHit();
 
-	#endregion
+    #endregion
 
-	#region Target
-	/// <summary>
-	/// The player's target.
-	/// <br> WARNING: Do not use if there is more than one target, this is not the actions target, it is the players current hard target. Try to use <see cref="IBaseAction.Target"/> or <seealso cref="HostileTarget"/> instead after using this.</br>
-	/// </summary>
-	protected static IBattleChara Target => Svc.Targets.Target as IBattleChara ?? Player!;
+    #region Target
+    /// <summary>
+    /// The player's target.
+    /// <br> WARNING: Do not use if there is more than one target, this is not the actions target, it is the players current hard target. Try to use <see cref="IBaseAction.Target"/> or <seealso cref="HostileTarget"/> instead after using this.</br>
+    /// </summary>
+    protected static IBattleChara Target => Svc.Targets.Target as IBattleChara ?? Player!;
 
-	/// <summary>
-	/// The player's target, or null if no valid target. (null clears the target)
-	/// </summary>
-	protected static IBattleChara? CurrentTarget => Svc.Targets.Target is IBattleChara b ? b : null;
+    /// <summary>
+    /// The player's target, or null if no valid target. (null clears the target)
+    /// </summary>
+    protected static IBattleChara? CurrentTarget => Svc.Targets.Target is IBattleChara b ? b : null;
 
     /// <summary>
     /// The last attacked hostile target.

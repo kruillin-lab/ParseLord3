@@ -152,15 +152,15 @@ public partial class BlackMageRotation
     /// </summary>
     protected static bool HasFire => StatusHelper.PlayerHasStatus(true, StatusID.Firestarter);
 
-	/// <summary>
-	/// 
-	/// </summary>
-	protected static bool HasLeyLines => StatusHelper.PlayerHasStatus(true, StatusID.LeyLines);
+    /// <summary>
+    /// 
+    /// </summary>
+    protected static bool HasLeyLines => StatusHelper.PlayerHasStatus(true, StatusID.LeyLines);
 
-	/// <summary>
-	///
-	/// </summary>
-	protected static bool HasThunder => StatusHelper.PlayerHasStatus(true, StatusID.Thunderhead);
+    /// <summary>
+    ///
+    /// </summary>
+    protected static bool HasThunder => StatusHelper.PlayerHasStatus(true, StatusID.Thunderhead);
 
     /// <summary>
     /// Indicates whether the next GCD (Global Cooldown) action is instant.

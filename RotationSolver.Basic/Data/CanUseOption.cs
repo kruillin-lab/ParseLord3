@@ -53,9 +53,9 @@ public enum CanUseOption : byte
     [Description("Skip AoE check")]
     SkipAoeCheck = 1 << 6,
 
-	/// <summary>
-	/// Overriding targettype.
-	/// </summary>
-	[Description("Overriding targettype")]
-	targetOverride = 1 << 7,
+    /// <summary>
+    /// Overriding targettype.
+    /// </summary>
+    [Description("Overriding targettype")]
+    targetOverride = 1 << 7,
 }

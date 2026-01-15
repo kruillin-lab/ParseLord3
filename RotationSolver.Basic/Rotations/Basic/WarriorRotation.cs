@@ -152,8 +152,8 @@ public partial class WarriorRotation
     static partial void ModifyVengeancePvE(ref ActionSetting setting)
     {
         setting.StatusProvide = StatusHelper.RampartStatus;
-		setting.ActionCheck = () => ObjectHelper.PlayerIsTargetOnSelf();
-		setting.IsFriendly = true;
+        setting.ActionCheck = () => ObjectHelper.PlayerIsTargetOnSelf();
+        setting.IsFriendly = true;
     }
 
     static partial void ModifyMythrilTempestPvE(ref ActionSetting setting)
@@ -216,8 +216,8 @@ public partial class WarriorRotation
 
     static partial void ModifyRawIntuitionPvE(ref ActionSetting setting)
     {
-		setting.ActionCheck = () => ObjectHelper.PlayerIsTargetOnSelf();
-		setting.StatusProvide = [StatusID.RawIntuition];
+        setting.ActionCheck = () => ObjectHelper.PlayerIsTargetOnSelf();
+        setting.StatusProvide = [StatusID.RawIntuition];
         setting.UnlockedByQuestID = 66132;
         setting.IsFriendly = true;
     }
@@ -225,8 +225,8 @@ public partial class WarriorRotation
     static partial void ModifyEquilibriumPvE(ref ActionSetting setting)
     {
         setting.UnlockedByQuestID = 66134;
-		setting.ActionCheck = () => ObjectHelper.PlayerIsTargetOnSelf();
-		setting.StatusProvide = [StatusID.Equilibrium];
+        setting.ActionCheck = () => ObjectHelper.PlayerIsTargetOnSelf();
+        setting.StatusProvide = [StatusID.Equilibrium];
         setting.IsFriendly = true;
     }
 

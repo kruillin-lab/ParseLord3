@@ -1,4 +1,4 @@
-﻿using Dalamud.Game.ClientState.Conditions;
+using Dalamud.Game.ClientState.Conditions;
 using ECommons.DalamudServices;
 using ECommons.ExcelServices;
 using ECommons.GameHelpers;
@@ -9,484 +9,514 @@ using RotationSolver.Updaters;
 
 namespace RotationSolver.Commands
 {
-	public static partial class RSCommands
-	{
-		private static DateTime _lastClickTime = DateTime.MinValue;
-		private static bool _lastState;
-		private static bool started = false;
-		internal static DateTime _lastUsedTime = DateTime.MinValue;
-		internal static uint _lastActionID;
-		private static float _lastCountdownTime = 0;
-		private static Job _previousJob = Job.ADV;
-		private static readonly Random random = Random.Shared;
+    public static partial class RSCommands
+    {
+        private static DateTime _lastClickTime = DateTime.MinValue;
+        private static bool _lastState;
+        private static bool started = false;
+        internal static DateTime _lastUsedTime = DateTime.MinValue;
+        internal static uint _lastActionID;
+        private static float _lastCountdownTime = 0;
+        private static Job _previousJob = Job.ADV;
+        private static readonly Random random = Random.Shared;
 
-		public static void IncrementState()
-		{
-			if (!DataCenter.State) { DoStateCommandType(StateCommandType.Auto); return; }
-			if (DataCenter.State && !DataCenter.IsManual && DataCenter.TargetingType == TargetingType.Big) { DoStateCommandType(StateCommandType.Auto); return; }
-			if (DataCenter.State && !DataCenter.IsManual) { DoStateCommandType(StateCommandType.Manual); return; }
-			if (DataCenter.State && DataCenter.IsManual) { DoStateCommandType(StateCommandType.Off); return; }
-		}
+        public static void IncrementState()
+        {
+            if (!DataCenter.State) { DoStateCommandType(StateCommandType.Auto); return; }
+            if (DataCenter.State && !DataCenter.IsManual && DataCenter.TargetingType == TargetingType.Big) { DoStateCommandType(StateCommandType.Auto); return; }
+            if (DataCenter.State && !DataCenter.IsManual) { DoStateCommandType(StateCommandType.Manual); return; }
+            if (DataCenter.State && DataCenter.IsManual) { DoStateCommandType(StateCommandType.Off); return; }
+        }
 
-		internal static unsafe bool CanDoAnAction(bool isGCD)
-		{
-			// Cache frequently accessed properties to avoid redundant calls
-			bool currentState = DataCenter.State;
+        internal static unsafe bool CanDoAnAction(bool isGCD)
+        {
+            // Cache frequently accessed properties to avoid redundant calls
+            bool currentState = DataCenter.State;
 
-			if (!_lastState || !currentState)
-			{
-				_lastState = currentState;
-				return false;
-			}
-			_lastState = currentState;
+            if (!_lastState || !currentState)
+            {
+                _lastState = currentState;
+                return false;
+            }
+            _lastState = currentState;
 
-			// Precompute the delay range to avoid recalculating it multiple times
-			TimeSpan delayRange = TimeSpan.FromMilliseconds(random.Next(
-				(int)(Service.Config.ClickingDelay.X * 1000),
-				(int)(Service.Config.ClickingDelay.Y * 1000)));
+            // Precompute the delay range to avoid recalculating it multiple times
+            TimeSpan delayRange = TimeSpan.FromMilliseconds(random.Next(
+                (int)(Service.Config.ClickingDelay.X * 1000),
+                (int)(Service.Config.ClickingDelay.Y * 1000)));
 
-			if (DateTime.Now - _lastClickTime < delayRange)
-			{
-				return false;
-			}
+            if (DateTime.Now - _lastClickTime < delayRange)
+            {
+                return false;
+            }
 
-			_lastClickTime = DateTime.Now;
+            _lastClickTime = DateTime.Now;
 
-			// Avoid unnecessary checks if isGCD is true
-			return isGCD || ActionUpdater.NextAction is not IBaseAction nextAction || !nextAction.Info.IsRealGCD;
-		}
+            // Avoid unnecessary checks if isGCD is true
+            return isGCD || ActionUpdater.NextAction is not IBaseAction nextAction || !nextAction.Info.IsRealGCD;
+        }
 
-		private static StatusID[]? _cachedNoCastingStatusArray = null;
-		private static HashSet<uint>? _cachedNoCastingStatusSet = null;
+        private static StatusID[]? _cachedNoCastingStatusArray = null;
+        private static HashSet<uint>? _cachedNoCastingStatusSet = null;
 
-		public static void DoAction()
-		{
-			if (Player.Object != null && Player.Object.StatusList == null)
-			{
-				return;
-			}
+        public static void DoAction()
+        {
+            if (Player.Object != null && Player.Object.StatusList == null)
+            {
+                return;
+            }
 
-			HashSet<uint> noCastingStatus = OtherConfiguration.NoCastingStatus;
-			if (noCastingStatus != null)
-			{
-				if (_cachedNoCastingStatusSet != noCastingStatus)
-				{
-					_cachedNoCastingStatusArray = new StatusID[noCastingStatus.Count];
-					int index = 0;
-					foreach (uint status in noCastingStatus)
-					{
-						_cachedNoCastingStatusArray[index++] = (StatusID)status;
-					}
-					_cachedNoCastingStatusSet = noCastingStatus;
-				}
-			}
-			else
-			{
-				_cachedNoCastingStatusArray = [];
-				_cachedNoCastingStatusSet = null;
-			}
-			StatusID[] noCastingStatusArray = _cachedNoCastingStatusArray!;
+            HashSet<uint> noCastingStatus = OtherConfiguration.NoCastingStatus;
+            if (noCastingStatus != null)
+            {
+                if (_cachedNoCastingStatusSet != noCastingStatus)
+                {
+                    _cachedNoCastingStatusArray = new StatusID[noCastingStatus.Count];
+                    int index = 0;
+                    foreach (uint status in noCastingStatus)
+                    {
+                        _cachedNoCastingStatusArray[index++] = (StatusID)status;
+                    }
+                    _cachedNoCastingStatusSet = noCastingStatus;
+                }
+            }
+            else
+            {
+                _cachedNoCastingStatusArray = [];
+                _cachedNoCastingStatusSet = null;
+            }
+            StatusID[] noCastingStatusArray = _cachedNoCastingStatusArray!;
 
-			float minStatusTime = float.MaxValue;
-			int statusTimesCount = 0;
-			if (Player.Object != null)
-			{
-				foreach (float t in Player.Object.StatusTimes(false, noCastingStatusArray))
-				{
-					statusTimesCount++;
-					if (t < minStatusTime)
-					{
-						minStatusTime = t;
-					}
-				}
-			}
+            float minStatusTime = float.MaxValue;
+            int statusTimesCount = 0;
+            if (Player.Object != null)
+            {
+                foreach (float t in Player.Object.StatusTimes(false, noCastingStatusArray))
+                {
+                    statusTimesCount++;
+                    if (t < minStatusTime)
+                    {
+                        minStatusTime = t;
+                    }
+                }
+            }
 
-			if (statusTimesCount > 0 && Player.Object != null)
-			{
-				float remainingCastTime = Player.Object.TotalCastTime - Player.Object.CurrentCastTime;
-				if (minStatusTime > remainingCastTime && minStatusTime < 5)
-				{
-					return;
-				}
-			}
+            if (statusTimesCount > 0 && Player.Object != null)
+            {
+                float remainingCastTime = Player.Object.TotalCastTime - Player.Object.CurrentCastTime;
+                if (minStatusTime > remainingCastTime && minStatusTime < 5)
+                {
+                    return;
+                }
+            }
 
-			if (StatusHelper.PlayerHasStatus(false, StatusID.Transcendent))
-			{
-				return;
-			}
+            if (StatusHelper.PlayerHasStatus(false, StatusID.Transcendent))
+            {
+                return;
+            }
 
-			IAction? nextAction = ActionUpdater.NextAction;
-			if (nextAction == null)
-			{
-				return;
-			}
+            IAction? nextAction = ActionUpdater.NextAction;
+            if (nextAction == null)
+            {
+                return;
+            }
 
 #if DEBUG
-			// if (nextAction is BaseAction debugAct)
-			//     PluginLog.Debug($"Will Do {debugAct}");
+            // if (nextAction is BaseAction debugAct)
+            //     PluginLog.Debug($"Will Do {debugAct}");
 #endif
 
-			if (nextAction is BaseAction baseAct)
-			{
-				if (baseAct.Target.Target != null && baseAct.Target.Target is IBattleChara target && target != Player.Object && target.IsEnemy())
-				{
-					DataCenter.HostileTarget = target;
-					if (!DataCenter.IsManual &&
-						(Service.Config.SwitchTargetFriendly
-						|| (Svc.Targets.Target?.IsEnemy() ?? true)
-						|| (Svc.Targets.Target?.GetObjectKind() == Dalamud.Game.ClientState.Objects.Enums.ObjectKind.Treasure)))
-					{
-						Svc.Targets.Target = target;
-					}
-				}
-			}
+            if (nextAction is BaseAction baseAct)
+            {
+                if (baseAct.Target.Target != null && baseAct.Target.Target is IBattleChara target && target != Player.Object && target.IsEnemy())
+                {
+                    DataCenter.HostileTarget = target;
+                    // Only change the game target if:
+                    // 1. Not in manual mode, AND
+                    // 2. Not respecting a manual target override, AND
+                    // 3. Either SwitchTargetFriendly is enabled OR current target is hostile/treasure
+                    if (!DataCenter.IsManual &&
+                        !DataCenter.ManualTargetOverride &&
+                        (Service.Config.SwitchTargetFriendly
+                        || (Svc.Targets.Target?.IsEnemy() ?? true)
+                        || (Svc.Targets.Target?.GetObjectKind() == Dalamud.Game.ClientState.Objects.Enums.ObjectKind.Treasure)))
+                    {
+                        Updaters.MajorUpdater.BeginParseLordTargetChange();
+                        Svc.Targets.Target = target;
+                        Updaters.MajorUpdater.EndParseLordTargetChange();
+                    }
+                }
+            }
 
-			if (Service.Config.KeyBoardNoise)
-			{
-				MiscUpdater.PulseActionBar(nextAction.AdjustedID);
-			}
+            if (Service.Config.KeyBoardNoise)
+            {
+                MiscUpdater.PulseActionBar(nextAction.AdjustedID);
+            }
 
-			if (nextAction.Use())
-			{
-				if (Service.Config.EnableClickingCount)
-				{
-					OtherConfiguration.RotationSolverRecord.ClickingCount++;
-				}
+            if (nextAction.Use())
+            {
+                if (Service.Config.EnableClickingCount)
+                {
+                    OtherConfiguration.RotationSolverRecord.ClickingCount++;
+                }
 
-				_lastActionID = nextAction.AdjustedID;
-				_lastUsedTime = DateTime.Now;
+                _lastActionID = nextAction.AdjustedID;
+                _lastUsedTime = DateTime.Now;
 
-				if (nextAction is BaseAction finalAct)
-				{
-					if (Service.Config.KeyBoardNoise)
-					{
-						PulseSimulation(nextAction.AdjustedID);
-					}
+                if (nextAction is BaseAction finalAct)
+                {
+                    if (Service.Config.KeyBoardNoise)
+                    {
+                        PulseSimulation(nextAction.AdjustedID);
+                    }
 
-					if (finalAct.Setting.EndSpecial)
-					{
-						ResetSpecial();
-					}
-				}
-			}
-			else if (Service.Config.InDebug)
-			{
-				PluginLog.Verbose($"Failed to use the action {nextAction} ({nextAction.AdjustedID})");
-			}
-		}
+                    if (finalAct.Setting.EndSpecial)
+                    {
+                        ResetSpecial();
+                    }
+                }
+            }
+            else if (Service.Config.InDebug)
+            {
+                PluginLog.Verbose($"Failed to use the action {nextAction} ({nextAction.AdjustedID})");
+            }
+        }
 
-		private static void PulseSimulation(uint id)
-		{
-			if (started)
-			{
-				return;
-			}
+        private static void PulseSimulation(uint id)
+        {
+            if (started)
+            {
+                return;
+            }
 
-			started = true;
-			try
-			{
-				int pulseCount = random.Next(Service.Config.KeyboardNoise.X, Service.Config.KeyboardNoise.Y);
-				PulseAction(id, pulseCount);
-			}
-			catch (Exception ex)
-			{
-				PluginLog.Warning($"Pulse Failed!: {ex.Message}");
-				BasicWarningHelper.AddSystemWarning($"Action bar failed to pulse because: {ex.Message}");
-			}
-			finally
-			{
-				started = false;
-			}
-		}
+            started = true;
+            try
+            {
+                int pulseCount = random.Next(Service.Config.KeyboardNoise.X, Service.Config.KeyboardNoise.Y);
+                PulseAction(id, pulseCount);
+            }
+            catch (Exception ex)
+            {
+                PluginLog.Warning($"Pulse Failed!: {ex.Message}");
+                BasicWarningHelper.AddSystemWarning($"Action bar failed to pulse because: {ex.Message}");
+            }
+            finally
+            {
+                started = false;
+            }
+        }
 
-		private static void PulseAction(uint id, int remainingPulses)
-		{
-			if (remainingPulses <= 0)
-			{
-				started = false;
-				return;
-			}
+        private static void PulseAction(uint id, int remainingPulses)
+        {
+            if (remainingPulses <= 0)
+            {
+                started = false;
+                return;
+            }
 
-			MiscUpdater.PulseActionBar(id);
-			double time = Service.Config.ClickingDelay.X + (random.NextDouble() * (Service.Config.ClickingDelay.Y - Service.Config.ClickingDelay.X));
-			_ = Svc.Framework.RunOnTick(() =>
-			{
-				PulseAction(id, remainingPulses - 1);
-			}, TimeSpan.FromSeconds(time));
-		}
+            MiscUpdater.PulseActionBar(id);
+            double time = Service.Config.ClickingDelay.X + (random.NextDouble() * (Service.Config.ClickingDelay.Y - Service.Config.ClickingDelay.X));
+            _ = Svc.Framework.RunOnTick(() =>
+            {
+                PulseAction(id, remainingPulses - 1);
+            }, TimeSpan.FromSeconds(time));
+        }
 
-		internal static void ResetSpecial()
-		{
-			DoSpecialCommandType(SpecialCommandType.EndSpecial, false);
-		}
+        internal static void ResetSpecial()
+        {
+            DoSpecialCommandType(SpecialCommandType.EndSpecial, false);
+        }
 
-		internal static void CancelState()
-		{
-			DataCenter.ResetAllRecords();
-			if (DataCenter.State)
-			{
-				DoStateCommandType(StateCommandType.Off);
-			}
-		}
+        internal static void CancelState()
+        {
+            DataCenter.ResetAllRecords();
+            if (DataCenter.State)
+            {
+                DoStateCommandType(StateCommandType.Off);
+            }
+        }
 
-		internal static void SetTargetWithDelay(IGameObject? candidate)
-		{
-			if (candidate == null)
-			{
-				return;
-			}
+        internal static void SetTargetWithDelay(IGameObject? candidate)
+        {
+            if (candidate == null)
+            {
+                return;
+            }
 
-			// If no delay configured, set immediately
-			float min = Service.Config.TargetDelay.X;
-			float max = Service.Config.TargetDelay.Y;
-			double delay = Math.Max(0, min + (random.NextDouble() * Math.Max(0, max - min)));
-			if (delay <= 0)
-			{
-				Svc.Targets.Target = candidate;
-				return;
-			}
+            // Don't auto-target if manual override is active
+            if (DataCenter.ManualTargetOverride)
+            {
+                return;
+            }
 
-			ulong initialTargetId = Svc.Targets.Target?.GameObjectId ?? 0;
-			ulong candidateId = candidate.GameObjectId;
+            // If no delay configured, set immediately
+            float min = Service.Config.TargetDelay.X;
+            float max = Service.Config.TargetDelay.Y;
+            double delay = Math.Max(0, min + (random.NextDouble() * Math.Max(0, max - min)));
+            if (delay <= 0)
+            {
+                Updaters.MajorUpdater.BeginParseLordTargetChange();
+                Svc.Targets.Target = candidate;
+                Updaters.MajorUpdater.EndParseLordTargetChange();
+                return;
+            }
 
-			_ = Svc.Framework.RunOnTick(() =>
-			{
-				try
-				{
-					var current = Svc.Targets.Target;
-					ulong currentId = current?.GameObjectId ?? 0;
+            ulong initialTargetId = Svc.Targets.Target?.GameObjectId ?? 0;
+            ulong candidateId = candidate.GameObjectId;
 
-					if (currentId == initialTargetId)
-					{
-						IGameObject? cand = null;
-						foreach (var obj in Svc.Objects)
-						{
-							if (obj != null && obj.GameObjectId == candidateId)
-							{
-								cand = obj;
-								break;
-							}
-						}
+            _ = Svc.Framework.RunOnTick(() =>
+            {
+                try
+                {
+                    // Check again if manual override became active during the delay
+                    if (DataCenter.ManualTargetOverride)
+                    {
+                        return;
+                    }
 
-						if (cand != null && cand.IsTargetable)
-						{
-							Svc.Targets.Target = cand;
-						}
-					}
-				}
-				catch
-				{
-					// Intentionally swallow; candidate may have despawned
-				}
-			}, TimeSpan.FromSeconds(delay));
-		}
+                    var current = Svc.Targets.Target;
+                    ulong currentId = current?.GameObjectId ?? 0;
 
-		public static void UpdateTargetFromNextAction()
-		{
-			if (Player.Object == null)
-			{
-				return;
-			}
+                    if (currentId == initialTargetId)
+                    {
+                        IGameObject? cand = null;
+                        foreach (var obj in Svc.Objects)
+                        {
+                            if (obj != null && obj.GameObjectId == candidateId)
+                            {
+                                cand = obj;
+                                break;
+                            }
+                        }
 
-			IAction? nextAction = ActionUpdater.NextAction;
-			if (nextAction is BaseAction baseAct)
-			{
-				if (baseAct.Target.Target != null && baseAct.Target.Target is IBattleChara target && target != Player.Object && target.IsEnemy())
-				{
-					DataCenter.HostileTarget = target;
-					if (!DataCenter.IsManual &&
-						(Service.Config.SwitchTargetFriendly || ((Svc.Targets.Target?.IsEnemy() ?? true)
-						|| Svc.Targets.Target?.GetObjectKind() == Dalamud.Game.ClientState.Objects.Enums.ObjectKind.Treasure)))
-					{
-						Svc.Targets.Target = target;
-					}
-				}
-			}
-		}
+                        if (cand != null && cand.IsTargetable)
+                        {
+                            Updaters.MajorUpdater.BeginParseLordTargetChange();
+                            Svc.Targets.Target = cand;
+                            Updaters.MajorUpdater.EndParseLordTargetChange();
+                        }
+                    }
+                }
+                catch
+                {
+                    // Intentionally swallow; candidate may have despawned
+                }
+            }, TimeSpan.FromSeconds(delay));
+        }
 
-		internal static void UpdateRotationState()
-		{
-			try
-			{
-				if (Player.Object == null)
-				{
-					return;
-				}
+        public static void UpdateTargetFromNextAction()
+        {
+            if (Player.Object == null)
+            {
+                return;
+            }
 
-				// Avoid redundant checks for AutoCancelTime
-				if (ActionUpdater.AutoCancelTime != DateTime.MinValue &&
-					(!DataCenter.State || DataCenter.InCombat))
-				{
-					ActionUpdater.AutoCancelTime = DateTime.MinValue;
-				}
+            IAction? nextAction = ActionUpdater.NextAction;
+            if (nextAction is BaseAction baseAct)
+            {
+                if (baseAct.Target.Target != null && baseAct.Target.Target is IBattleChara target && target != Player.Object && target.IsEnemy())
+                {
+                    DataCenter.HostileTarget = target;
+                    // Only change the game target if:
+                    // 1. Not in manual mode, AND
+                    // 2. Not respecting a manual target override, AND
+                    // 3. Either SwitchTargetFriendly is enabled OR current target is hostile/treasure
+                    if (!DataCenter.IsManual &&
+                        !DataCenter.ManualTargetOverride &&
+                        (Service.Config.SwitchTargetFriendly || ((Svc.Targets.Target?.IsEnemy() ?? true)
+                        || Svc.Targets.Target?.GetObjectKind() == Dalamud.Game.ClientState.Objects.Enums.ObjectKind.Treasure)))
+                    {
+                        Updaters.MajorUpdater.BeginParseLordTargetChange();
+                        Svc.Targets.Target = target;
+                        Updaters.MajorUpdater.EndParseLordTargetChange();
+                    }
+                }
+            }
+        }
 
-				// Precompute hostile target object IDs for O(1) lookup
-				var hostileTargetObjectIds = new HashSet<ulong>();
-				foreach (var ht in DataCenter.AllHostileTargets)
-				{
-					if (ht != null && ht.TargetObjectId != 0) hostileTargetObjectIds.Add(ht.TargetObjectId);
-				}
+        internal static void UpdateRotationState()
+        {
+            try
+            {
+                if (Player.Object == null)
+                {
+                    return;
+                }
 
-				// Combine conditions to reduce redundant checks
-				if (Svc.Condition[ConditionFlag.LoggingOut] ||
-					(Service.Config.AutoOffWhenDead && DataCenter.Territory != null && !DataCenter.Territory.IsPvP && Player.Object != null && Player.Object.CurrentHp == 0) ||
-					(Service.Config.AutoOffWhenDeadPvP && DataCenter.Territory != null && DataCenter.Territory.IsPvP && Player.Object != null && Player.Object.CurrentHp == 0) ||
-					(Service.Config.AutoOffPvPMatchEnd && Svc.Condition[ConditionFlag.PvPDisplayActive]) ||
-					(Service.Config.AutoOffCutScene && !DataCenter.IsAutoDuty && Svc.Condition[ConditionFlag.OccupiedInCutSceneEvent]) ||
-					(Service.Config.AutoOffSwitchClass && Player.Job != _previousJob) ||
-					(Service.Config.AutoOffBetweenArea && !DataCenter.IsAutoDuty && (Svc.Condition[ConditionFlag.BetweenAreas] || Svc.Condition[ConditionFlag.BetweenAreas51])) ||
-					(Service.Config.CancelStateOnCombatBeforeCountdown && Service.CountDownTime > 0.2f && DataCenter.InCombat) ||
-					(ActionUpdater.AutoCancelTime != DateTime.MinValue && DateTime.Now > ActionUpdater.AutoCancelTime) || false)
-				{
-					CancelState();
-					if (Player.Job != _previousJob)
-					{
-						_previousJob = Player.Job;
-					}
+                // Avoid redundant checks for AutoCancelTime
+                if (ActionUpdater.AutoCancelTime != DateTime.MinValue &&
+                    (!DataCenter.State || DataCenter.InCombat))
+                {
+                    ActionUpdater.AutoCancelTime = DateTime.MinValue;
+                }
 
-					ActionUpdater.AutoCancelTime = DateTime.MinValue;
-					return;
-				}
+                // Precompute hostile target object IDs for O(1) lookup
+                var hostileTargetObjectIds = new HashSet<ulong>();
+                foreach (var ht in DataCenter.AllHostileTargets)
+                {
+                    if (ht != null && ht.TargetObjectId != 0) hostileTargetObjectIds.Add(ht.TargetObjectId);
+                }
 
-				// Simplify PvP match start condition
-				if (Service.Config.AutoOnPvPMatchStart &&
-					Svc.Condition[ConditionFlag.BetweenAreas] &&
-					Svc.Condition[ConditionFlag.BoundByDuty] &&
-					!DataCenter.State &&
-					(DataCenter.Territory?.IsPvP ?? false))
-				{
-					DoStateCommandType(StateCommandType.Auto);
-					return;
-				}
+                // Combine conditions to reduce redundant checks
+                if (Svc.Condition[ConditionFlag.LoggingOut] ||
+                    (Service.Config.AutoOffWhenDead && DataCenter.Territory != null && !DataCenter.Territory.IsPvP && Player.Object != null && Player.Object.CurrentHp == 0) ||
+                    (Service.Config.AutoOffWhenDeadPvP && DataCenter.Territory != null && DataCenter.Territory.IsPvP && Player.Object != null && Player.Object.CurrentHp == 0) ||
+                    (Service.Config.AutoOffPvPMatchEnd && Svc.Condition[ConditionFlag.PvPDisplayActive]) ||
+                    (Service.Config.AutoOffCutScene && !DataCenter.IsAutoDuty && Svc.Condition[ConditionFlag.OccupiedInCutSceneEvent]) ||
+                    (Service.Config.AutoOffSwitchClass && Player.Job != _previousJob) ||
+                    (Service.Config.AutoOffBetweenArea && !DataCenter.IsAutoDuty && (Svc.Condition[ConditionFlag.BetweenAreas] || Svc.Condition[ConditionFlag.BetweenAreas51])) ||
+                    (Service.Config.CancelStateOnCombatBeforeCountdown && Service.CountDownTime > 0.2f && DataCenter.InCombat) ||
+                    (ActionUpdater.AutoCancelTime != DateTime.MinValue && DateTime.Now > ActionUpdater.AutoCancelTime) || false)
+                {
+                    CancelState();
+                    if (Player.Job != _previousJob)
+                    {
+                        _previousJob = Player.Job;
+                    }
 
-				//PluginLog.Debug($"AllTargetsCount = {DataCenter.AllTargets.Count} && AllHostileTargets: {DataCenter.AllHostileTargets.Count} && PartyCount: {DataCenter.PartyMembers.Count} && DataCenter.State = {DataCenter.State} && StartOnPartyIsInCombat = {Service.Config.StartOnPartyIsInCombat} && StartOnAllianceIsInCombat = {Service.Config.StartOnAllianceIsInCombat} && StartOnFieldOpInCombat = {Service.Config.StartOnFieldOpInCombat}");
+                    ActionUpdater.AutoCancelTime = DateTime.MinValue;
+                    return;
+                }
 
-				if (Service.Config.StartOnPartyIsInCombat2 && !DataCenter.State && DataCenter.PartyMembers.Count > 1)
-				{
-					foreach (var p in DataCenter.PartyMembers)
-					{
+                // Simplify PvP match start condition
+                if (Service.Config.AutoOnPvPMatchStart &&
+                    Svc.Condition[ConditionFlag.BetweenAreas] &&
+                    Svc.Condition[ConditionFlag.BoundByDuty] &&
+                    !DataCenter.State &&
+                    (DataCenter.Territory?.IsPvP ?? false))
+                {
+                    DoStateCommandType(StateCommandType.Auto);
+                    return;
+                }
 
-						if (p != null && p.InCombat())
-						{
-							PluginLog.Debug($"StartOnPartyIsInCombat: {p.Name} InCombat: {p.InCombat()}.");
-							DoStateCommandType(StateCommandType.Auto);
-							return;
-						}
+                //PluginLog.Debug($"AllTargetsCount = {DataCenter.AllTargets.Count} && AllHostileTargets: {DataCenter.AllHostileTargets.Count} && PartyCount: {DataCenter.PartyMembers.Count} && DataCenter.State = {DataCenter.State} && StartOnPartyIsInCombat = {Service.Config.StartOnPartyIsInCombat} && StartOnAllianceIsInCombat = {Service.Config.StartOnAllianceIsInCombat} && StartOnFieldOpInCombat = {Service.Config.StartOnFieldOpInCombat}");
 
-						if (p != null && hostileTargetObjectIds.Contains(p.GameObjectId))
-						{
-							PluginLog.Debug($"StartOnPartyIsInCombat: {p.Name} Is Targeted By Hostile.");
-							DoStateCommandType(StateCommandType.Auto);
-							return;
-						}
-					}
+                if (Service.Config.StartOnPartyIsInCombat2 && !DataCenter.State && DataCenter.PartyMembers.Count > 1)
+                {
+                    foreach (var p in DataCenter.PartyMembers)
+                    {
 
-				}
+                        if (p != null && p.InCombat())
+                        {
+                            PluginLog.Debug($"StartOnPartyIsInCombat: {p.Name} InCombat: {p.InCombat()}.");
+                            DoStateCommandType(StateCommandType.Auto);
+                            return;
+                        }
 
-				if ((Service.Config.StartOnAllianceIsInCombat2 && !DataCenter.State && DataCenter.AllianceMembers.Count > 1) && !(DataCenter.IsInBozjanFieldOp || DataCenter.IsInBozjanFieldOpCE || DataCenter.IsInOccultCrescentOp))
-				{
-					foreach (var a in DataCenter.AllianceMembers)
-					{
+                        if (p != null && hostileTargetObjectIds.Contains(p.GameObjectId))
+                        {
+                            PluginLog.Debug($"StartOnPartyIsInCombat: {p.Name} Is Targeted By Hostile.");
+                            DoStateCommandType(StateCommandType.Auto);
+                            return;
+                        }
+                    }
 
-						if (a != null && a.InCombat())
-						{
-							PluginLog.Debug($"StartOnAllianceIsInCombat: {a.Name} InCombat: {a.InCombat()}.");
-							DoStateCommandType(StateCommandType.Auto);
-							return;
-						}
+                }
 
-						if (a != null && hostileTargetObjectIds.Contains(a.GameObjectId))
-						{
-							PluginLog.Debug($"StartOnAllianceIsInCombat: {a.Name} Is Targeted By Hostile.");
-							DoStateCommandType(StateCommandType.Auto);
-							return;
-						}
-					}
-				}
+                if ((Service.Config.StartOnAllianceIsInCombat2 && !DataCenter.State && DataCenter.AllianceMembers.Count > 1) && !(DataCenter.IsInBozjanFieldOp || DataCenter.IsInBozjanFieldOpCE || DataCenter.IsInOccultCrescentOp))
+                {
+                    foreach (var a in DataCenter.AllianceMembers)
+                    {
 
-				if (Service.Config.StartOnFieldOpInCombat2 && !DataCenter.State && (DataCenter.IsInBozjanFieldOp || DataCenter.IsInBozjanFieldOpCE || DataCenter.IsInOccultCrescentOp) && Player.Object != null)
-				{
-					foreach (var t in TargetHelper.GetTargetsByRange(30f))
-					{
-						if (t != null && DataCenter.AllHostileTargets.Contains(t) && !ObjectHelper.IsDummy(t))
-						{
-							continue;
-						}
-						if (t != null && t.GameObjectId != Player.Object.GameObjectId)
-						{
-							// PluginLog.Debug($"StartOnFieldOpInCombat: {t.Name} InCombat: {t.InCombat()} Distance: {t.DistanceToPlayer()} ");    
-						}
+                        if (a != null && a.InCombat())
+                        {
+                            PluginLog.Debug($"StartOnAllianceIsInCombat: {a.Name} InCombat: {a.InCombat()}.");
+                            DoStateCommandType(StateCommandType.Auto);
+                            return;
+                        }
 
-						if (t != null && t.InCombat())
-						{
-							PluginLog.Debug($"StartOnFieldOpInCombat: {t.Name} InCombat: {t.InCombat()}.");
-							DoStateCommandType(StateCommandType.Auto);
-							return;
-						}
-						if (t != null && hostileTargetObjectIds.Contains(t.GameObjectId))
-						{
-							PluginLog.Debug($"StartOnFieldOpInCombat: {t.Name} Is Targeted By Hostile.");
-							DoStateCommandType(StateCommandType.Auto);
-							return;
-						}
-					}
-				}
-				IBattleChara? target = null;
-				if (Service.Config.StartOnAttackedBySomeone2 && !DataCenter.State && Player.Object != null)
-				{
-					foreach (var t in DataCenter.AllHostileTargets)
-					{
-						if (t != null && t is IBattleChara battleChara && battleChara.TargetObjectId == Player.Object.GameObjectId)
-						{
-							target = battleChara;
-							break;
-						}
-					}
-					if (target != null && !ObjectHelper.IsDummy(target))
-					{
-						DoStateCommandType(StateCommandType.Manual);
-					}
-				}
+                        if (a != null && hostileTargetObjectIds.Contains(a.GameObjectId))
+                        {
+                            PluginLog.Debug($"StartOnAllianceIsInCombat: {a.Name} Is Targeted By Hostile.");
+                            DoStateCommandType(StateCommandType.Auto);
+                            return;
+                        }
+                    }
+                }
 
-				if (Service.Config.StartOnCountdown && !DataCenter.IsInDutyReplay())
-				{
-					if (Service.CountDownTime > 0)
-					{
-						_lastCountdownTime = Service.CountDownTime;
-						if (!DataCenter.State)
-						{
-							DoStateCommandType(Service.Config.CountdownStartsManualMode
-								? StateCommandType.Manual
-								: StateCommandType.Auto);
-						}
-						return;
-					}
-					else if (Service.CountDownTime == 0 && _lastCountdownTime > 0.2f)
-					{
-						_lastCountdownTime = 0;
-						CancelState();
-						return;
-					}
-				}
+                if (Service.Config.StartOnFieldOpInCombat2 && !DataCenter.State && (DataCenter.IsInBozjanFieldOp || DataCenter.IsInBozjanFieldOpCE || DataCenter.IsInOccultCrescentOp) && Player.Object != null)
+                {
+                    foreach (var t in TargetHelper.GetTargetsByRange(30f))
+                    {
+                        if (t != null && DataCenter.AllHostileTargets.Contains(t) && !ObjectHelper.IsDummy(t))
+                        {
+                            continue;
+                        }
+                        if (t != null && t.GameObjectId != Player.Object.GameObjectId)
+                        {
+                            // PluginLog.Debug($"StartOnFieldOpInCombat: {t.Name} InCombat: {t.InCombat()} Distance: {t.DistanceToPlayer()} ");    
+                        }
 
-				// Combine manual and auto condition checks
-				if (!DataCenter.State)
-				{
-					if (DataCenter.CurrentConditionValue.SwitchManualConditionSet?.IsTrue(DataCenter.CurrentRotation) ?? false)
-					{
-						DoStateCommandType(StateCommandType.Manual);
-					}
-					else if (DataCenter.CurrentConditionValue.SwitchAutoConditionSet?.IsTrue(DataCenter.CurrentRotation) ?? false)
-					{
-						DoStateCommandType(StateCommandType.Auto);
-					}
-				}
-			}
-			catch (Exception ex)
-			{
-				PluginLog.Error($"Exception in UpdateRotationState: {ex.Message}");
-			}
-		}
+                        if (t != null && t.InCombat())
+                        {
+                            PluginLog.Debug($"StartOnFieldOpInCombat: {t.Name} InCombat: {t.InCombat()}.");
+                            DoStateCommandType(StateCommandType.Auto);
+                            return;
+                        }
+                        if (t != null && hostileTargetObjectIds.Contains(t.GameObjectId))
+                        {
+                            PluginLog.Debug($"StartOnFieldOpInCombat: {t.Name} Is Targeted By Hostile.");
+                            DoStateCommandType(StateCommandType.Auto);
+                            return;
+                        }
+                    }
+                }
+                IBattleChara? target = null;
+                if (Service.Config.StartOnAttackedBySomeone2 && !DataCenter.State && Player.Object != null)
+                {
+                    foreach (var t in DataCenter.AllHostileTargets)
+                    {
+                        if (t != null && t is IBattleChara battleChara && battleChara.TargetObjectId == Player.Object.GameObjectId)
+                        {
+                            target = battleChara;
+                            break;
+                        }
+                    }
+                    if (target != null && !ObjectHelper.IsDummy(target))
+                    {
+                        DoStateCommandType(StateCommandType.Manual);
+                    }
+                }
 
-	}
+                if (Service.Config.StartOnCountdown && !DataCenter.IsInDutyReplay())
+                {
+                    if (Service.CountDownTime > 0)
+                    {
+                        _lastCountdownTime = Service.CountDownTime;
+                        if (!DataCenter.State)
+                        {
+                            DoStateCommandType(Service.Config.CountdownStartsManualMode
+                                ? StateCommandType.Manual
+                                : StateCommandType.Auto);
+                        }
+                        return;
+                    }
+                    else if (Service.CountDownTime == 0 && _lastCountdownTime > 0.2f)
+                    {
+                        _lastCountdownTime = 0;
+                        CancelState();
+                        return;
+                    }
+                }
+
+                // Combine manual and auto condition checks
+                if (!DataCenter.State)
+                {
+                    if (DataCenter.CurrentConditionValue.SwitchManualConditionSet?.IsTrue(DataCenter.CurrentRotation) ?? false)
+                    {
+                        DoStateCommandType(StateCommandType.Manual);
+                    }
+                    else if (DataCenter.CurrentConditionValue.SwitchAutoConditionSet?.IsTrue(DataCenter.CurrentRotation) ?? false)
+                    {
+                        DoStateCommandType(StateCommandType.Auto);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                PluginLog.Error($"Exception in UpdateRotationState: {ex.Message}");
+            }
+        }
+
+    }
 }

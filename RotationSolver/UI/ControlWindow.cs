@@ -1,4 +1,4 @@
-﻿using Dalamud.Interface.Colors;
+using Dalamud.Interface.Colors;
 using Dalamud.Interface.Textures.TextureWraps;
 using Dalamud.Interface.Utility.Raii;
 using ECommons.DalamudServices;
@@ -83,6 +83,13 @@ internal class ControlWindow : CtrlWindow
 
         TargetingType autoMode = DataCenter.TargetingType;
         ImGui.Text(" Targeting: " + autoMode.ToString());
+
+        // Show manual target override indicator
+        if (DataCenter.ManualTargetOverride)
+        {
+            ImGui.SameLine();
+            ImGui.TextColored(ImGuiColors.ParsedGold, " [Manual]");
+        }
 
         ConfigTypes.AoEType aoeType = Service.Config.AoEType;
         if (ImGuiHelper.SelectableButton("AoE: " + aoeType.ToString()))

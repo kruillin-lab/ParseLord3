@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 
 namespace RotationSolver.ExtraRotations.Magical;
+
 [Rotation("Rabbs Blackest Mage", CombatType.PvE, GameVersion = "7.3")]
 [SourceCode(Path = "main/ExtraRotations/Magical/Rabbs_BLM_All_Levels.cs")]
 [ExtraRotation]
@@ -411,7 +412,7 @@ public sealed class Rabbs_BLM : BlackMageRotation
         }
     }
     public bool ShouldTransposeLowLevel
-    {       
+    {
         get
         {
             if (!TransposePvE.Cooldown.IsCoolingDown)
@@ -781,7 +782,7 @@ public sealed class Rabbs_BLM : BlackMageRotation
             {
                 if (ManafontPvE.CanUse(out act, skipCastingCheck: true, skipComboCheck: true, skipAoeCheck: true, skipStatusProvideCheck: true, skipTargetStatusNeedCheck: true, skipTTKCheck: true, usedUp: true)) return true;
             }
-            if (IsLastAction(true,DespairPvE) && ManafontPvE.Cooldown.IsCoolingDown && !NextGCDisInstant)
+            if (IsLastAction(true, DespairPvE) && ManafontPvE.Cooldown.IsCoolingDown && !NextGCDisInstant)
             {
                 if (SwiftcastPvE.CanUse(out act)) return true;
             }
@@ -792,7 +793,7 @@ public sealed class Rabbs_BLM : BlackMageRotation
 
         }
 
-            return base.AttackAbility(nextGCD, out act);
+        return base.AttackAbility(nextGCD, out act);
     }
     #endregion
 
@@ -931,13 +932,13 @@ public sealed class Rabbs_BLM : BlackMageRotation
                     return true;
                 }
                 if ((!TransposePvE.Cooldown.IsCoolingDown || CurrentMp < 5000))
-                { 
-                if (GetAoeCount(FlarePvE) >= 3 && !ShouldTransposeLowLevel)
                 {
-                    
-                    if (FreezePvE.CanUse(out act, skipAoeCheck: true)) return true;
-                    if (BlizzardIiPvE.CanUse(out act, skipAoeCheck: true)) return true;
-                }
+                    if (GetAoeCount(FlarePvE) >= 3 && !ShouldTransposeLowLevel)
+                    {
+
+                        if (FreezePvE.CanUse(out act, skipAoeCheck: true)) return true;
+                        if (BlizzardIiPvE.CanUse(out act, skipAoeCheck: true)) return true;
+                    }
                     if (GetAoeCount(FlarePvE) < 3 && !ShouldTransposeLowLevel)
                     {
                         if (BlizzardIvPvE.CanUse(out act) && IsSoulStacksMaxed) return true;

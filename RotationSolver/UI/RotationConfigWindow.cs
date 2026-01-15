@@ -58,102 +58,102 @@ public partial class RotationConfigWindow : Window
     private bool _rsrIconTriggered = false;
     private const double RsrIconHoldSeconds = 1.2;
 
-	private static readonly string[] _supporters =
-	[
-	"Akurosuki",
-	"Baliha",
-	"BangPowNyoom",
-	"Biscuit",
-	"catfourteen",
-	"Chaos_co",
+    private static readonly string[] _supporters =
+    [
+    "Akurosuki",
+    "Baliha",
+    "BangPowNyoom",
+    "Biscuit",
+    "catfourteen",
+    "Chaos_co",
     "Chris",
-	"clean",
-	"Cole",
-	"DeadCode",
-	"deleted_user_e3b65ec0ca7v",
-	"Drama",
-	"Ecliptive",
-	"Elita",
-	"Ephi",
-	"eudesu39",
-	"Ghosty !",
-	"Hawa",
-	"kaen",
-	"Kialdir",
-	"kuromiromi",
-	"Lemon",
-	"LouBird",
-	"Lyn Undercroft",
-	"Miracle Ace",
-	"Miri",
-	"Nefertem",
-	"Nekomimi Bakeneko",
-	"Plogons",
-	"poop dealer",
-	"prismagreen",
-	"purrpletime",
-	"smf26",
-	"Taazaam",
-	"Toska",
-	"TuckingFypo-",
-	"Vaex_Darastrix",
-	"wax",
-	"Yona",
-	"Zoe",
-	"exialla",
-	"caffeinatedrose"
-	];
+    "clean",
+    "Cole",
+    "DeadCode",
+    "deleted_user_e3b65ec0ca7v",
+    "Drama",
+    "Ecliptive",
+    "Elita",
+    "Ephi",
+    "eudesu39",
+    "Ghosty !",
+    "Hawa",
+    "kaen",
+    "Kialdir",
+    "kuromiromi",
+    "Lemon",
+    "LouBird",
+    "Lyn Undercroft",
+    "Miracle Ace",
+    "Miri",
+    "Nefertem",
+    "Nekomimi Bakeneko",
+    "Plogons",
+    "poop dealer",
+    "prismagreen",
+    "purrpletime",
+    "smf26",
+    "Taazaam",
+    "Toska",
+    "TuckingFypo-",
+    "Vaex_Darastrix",
+    "wax",
+    "Yona",
+    "Zoe",
+    "exialla",
+    "caffeinatedrose"
+    ];
 
-	// Hints system fields
-	private static readonly string[] _baseUsageHints =
-	[
-		"Right-click any action, setting, or toggle to view/copy its macro chat command.",
-		"Use /rsr as a shorter alias for /rotation.",
-		"Use /rotation Auto, /rotation Manual, or /rotation Off to change modes quickly.",
-		"Use the search box (top-left) to jump directly to settings.",
-		"Click the external-link icon in search results to jump to that menu.",
-		"Right-click a setting label to copy a ready-to-use /rotation Settings command.",
-		"Actions tab: click an action icon to configure, enable/disable, or set hotkeys.",
-		"Actions: toggle 'Show on CD Window' to include an action in the cooldown overlay.",
-		"Actions: enable 'Intercepted' to let RSR fire an action you queue (PvE only).",
-		"UI > Information: enable DTR status, toasts, original cooldowns, and these hints.",
-		"UI > Windows: enable Next Action, Control, Cooldown, and Timeline windows.",
-		"Next Action: 'No Inputs' and 'No Move' options change overlay behavior.",
-		"Only show windows in duty or with enemies: UI > Windows > Only show with hostile or in duty.",
-		"List tab: manage dispels, priority statuses, knockbacks, invincibility, and no-casting lists.",
-		"List tab: use 'Reset and Update' to restore curated lists quickly.",
-		"Status lists: press '+' to search by name or ID; fuzzy search is supported.",
-		"Status lists: right-click an icon to remove; Delete key works in the popup too.",
-		"Target tab: tweak target selection, vision cone, engage behavior, and dummy/boss handling.",
-		"Target tab: set /rotation Cycle behaviour and targeting delays.",
-		"Manage TargetingTypes via chat: /rotation Settings TargetingTypes add|remove <Type>.",
-		"Auto > Action Usage: allow/deny oGCDs, set AoE style, tinctures, interrupts, and True North.",
-		"Auto > Healing: adjust thresholds and non-healer healing behavior.",
-		"Healer: customize Raise/Swiftcast and prioritization in Auto > Healing.",
-		"Ground AoEs: Auto > Healing has options to place beneficial ground actions smartly.",
-		"Basic > Timer: tune Action Ahead and Min Updating Time to balance performance vs weaving.",
-		"Basic > Auto Switch: auto on/off for countdowns, deaths, area transitions, and more.",
-		"Teaching Mode highlights targets; color is in UI > Information.",
-		"Job tab: edit DNC partner, SGE Kardia tank, and AST card priorities when on those jobs.",
-		"About > Macros lists available chat/macro commands and helpful syntax.",
-		"About > Links: open config folder, GitHub, Ko-fi, and Discord.",
-		"Extra > Internal: Backup/Restore configs safely.",
-		"Extra: optional tweaks like removing animation/cooldown delay.",
-		"Click the cube icon at the bottom-left of the sidebar to copy diagnostic info to clipboard.",
-		"Timeline window can visualize recent actions (UI > Windows).",
-		"Do damage, don't die",
-		"Healing: the only HP that matters is the last one",
-		"Be kind",
-		"You can remove some self-buffs with “/statusoff <Name>” (e.g., Peloton) when needed.",
-		"RSR works best with Legacy Type movement settings."
-	];
-	private int _hintIndex = 0;
-	private float _lastHintSwitch = 0f;
-	private static readonly Random _hintRng = new();
-	private string? _cachedTipText = null;
-	private int _cachedTipIndex = -1;
+    // Hints system fields
+    private static readonly string[] _baseUsageHints =
+    [
+        "Right-click any action, setting, or toggle to view/copy its macro chat command.",
+        "Use /rsr as a shorter alias for /rotation.",
+        "Use /rotation Auto, /rotation Manual, or /rotation Off to change modes quickly.",
+        "Use the search box (top-left) to jump directly to settings.",
+        "Click the external-link icon in search results to jump to that menu.",
+        "Right-click a setting label to copy a ready-to-use /rotation Settings command.",
+        "Actions tab: click an action icon to configure, enable/disable, or set hotkeys.",
+        "Actions: toggle 'Show on CD Window' to include an action in the cooldown overlay.",
+        "Actions: enable 'Intercepted' to let RSR fire an action you queue (PvE only).",
+        "UI > Information: enable DTR status, toasts, original cooldowns, and these hints.",
+        "UI > Windows: enable Next Action, Control, Cooldown, and Timeline windows.",
+        "Next Action: 'No Inputs' and 'No Move' options change overlay behavior.",
+        "Only show windows in duty or with enemies: UI > Windows > Only show with hostile or in duty.",
+        "List tab: manage dispels, priority statuses, knockbacks, invincibility, and no-casting lists.",
+        "List tab: use 'Reset and Update' to restore curated lists quickly.",
+        "Status lists: press '+' to search by name or ID; fuzzy search is supported.",
+        "Status lists: right-click an icon to remove; Delete key works in the popup too.",
+        "Target tab: tweak target selection, vision cone, engage behavior, and dummy/boss handling.",
+        "Target tab: set /rotation Cycle behaviour and targeting delays.",
+        "Manage TargetingTypes via chat: /rotation Settings TargetingTypes add|remove <Type>.",
+        "Auto > Action Usage: allow/deny oGCDs, set AoE style, tinctures, interrupts, and True North.",
+        "Auto > Healing: adjust thresholds and non-healer healing behavior.",
+        "Healer: customize Raise/Swiftcast and prioritization in Auto > Healing.",
+        "Ground AoEs: Auto > Healing has options to place beneficial ground actions smartly.",
+        "Basic > Timer: tune Action Ahead and Min Updating Time to balance performance vs weaving.",
+        "Basic > Auto Switch: auto on/off for countdowns, deaths, area transitions, and more.",
+        "Teaching Mode highlights targets; color is in UI > Information.",
+        "Job tab: edit DNC partner, SGE Kardia tank, and AST card priorities when on those jobs.",
+        "About > Macros lists available chat/macro commands and helpful syntax.",
+        "About > Links: open config folder, GitHub, Ko-fi, and Discord.",
+        "Extra > Internal: Backup/Restore configs safely.",
+        "Extra: optional tweaks like removing animation/cooldown delay.",
+        "Click the cube icon at the bottom-left of the sidebar to copy diagnostic info to clipboard.",
+        "Timeline window can visualize recent actions (UI > Windows).",
+        "Do damage, don't die",
+        "Healing: the only HP that matters is the last one",
+        "Be kind",
+        "You can remove some self-buffs with “/statusoff <Name>” (e.g., Peloton) when needed.",
+        "RSR works best with Legacy Type movement settings."
+    ];
+    private int _hintIndex = 0;
+    private float _lastHintSwitch = 0f;
+    private static readonly Random _hintRng = new();
+    private string? _cachedTipText = null;
+    private int _cachedTipIndex = -1;
 
-	public RotationConfigWindow()
+    public RotationConfigWindow()
     : base("###rsrConfigWindow", ImGuiWindowFlags.NoScrollbar, false)
     {
         SizeCondition = ImGuiCond.FirstUseEver;
@@ -408,17 +408,17 @@ public partial class RotationConfigWindow : Window
         }
         else
         {
-			_ = diagInfo.AppendLine($"OS Type: {_cachedDiagInfo.Platform}");
+            _ = diagInfo.AppendLine($"OS Type: {_cachedDiagInfo.Platform}");
             _ = diagInfo.AppendLine($"FFXIV Version: {_cachedDiagInfo.GameVersion}");
-			_ = diagInfo.AppendLine($"Dalamud Version: {Svc.PluginInterface.GetDalamudVersion().Version.ToString()}");
-			_ = diagInfo.AppendLine($"Rotation Solver Reborn v{_cachedDiagInfo.RSRVersion}");
+            _ = diagInfo.AppendLine($"Dalamud Version: {Svc.PluginInterface.GetDalamudVersion().Version.ToString()}");
+            _ = diagInfo.AppendLine($"Rotation Solver Reborn v{_cachedDiagInfo.RSRVersion}");
             _ = diagInfo.AppendLine($"Dalamud Staging: {DataCenter.DalamudStagingEnabled}");
             _ = diagInfo.AppendLine($"Game Language: {_cachedDiagInfo.Language}");
             _ = diagInfo.AppendLine($"Update Frequency: {Service.Config.MinUpdatingTime}");
             _ = diagInfo.AppendLine($"Intercept: {Service.Config.InterceptAction2}");
             _ = diagInfo.AppendLine($"Player Level: {DataCenter.PlayerSyncedLevel()}");
-			_ = diagInfo.AppendLine($"Rotation Name: {_curRotationAttribute?.Name ?? string.Empty}");
-			_ = diagInfo.AppendLine($"Player Job: {Player.Job}");
+            _ = diagInfo.AppendLine($"Rotation Name: {_curRotationAttribute?.Name ?? string.Empty}");
+            _ = diagInfo.AppendLine($"Player Job: {Player.Job}");
             _ = diagInfo.AppendLine($"AutoFaceTargetOnActionSetting: {DataCenter.AutoFaceTargetOnActionSetting()}");
             var moveModeValue = DataCenter.MoveModeSetting();
             string moveModeText = moveModeValue switch
@@ -859,172 +859,172 @@ public partial class RotationConfigWindow : Window
         ImguiTooltips.HoveredTooltip(warning);
     }
 
-	// Decide whether to show a normal tip or a dynamic special-thanks tip.
-	// Example: 1 out of 5 times show the special thanks.
-	private static string GetDynamicHintText(int index)
-	{
-		// Show a special thanks message 1 out of every 5 times, otherwise show a normal hint.
-		if (_supporters != null && _supporters.Length > 0 && index % 5 == 0)
-		{
-			// Pick a random supporter for the special thanks message.
-			int supporterIndex = _hintRng.Next(_supporters.Length);
-			string supporter = _supporters[supporterIndex];
-			return $"Special thanks to supporter: {supporter}!";
-		}
-		// Defensive: fallback to base hints if index is valid, else a default message.
-		if (_baseUsageHints != null && _baseUsageHints.Length > 0 && index >= 0 && index < _baseUsageHints.Length)
-		{
-			return _baseUsageHints[index];
-		}
-		return "Thank you for using Rotation Solver Reborn!";
-	}
+    // Decide whether to show a normal tip or a dynamic special-thanks tip.
+    // Example: 1 out of 5 times show the special thanks.
+    private static string GetDynamicHintText(int index)
+    {
+        // Show a special thanks message 1 out of every 5 times, otherwise show a normal hint.
+        if (_supporters != null && _supporters.Length > 0 && index % 5 == 0)
+        {
+            // Pick a random supporter for the special thanks message.
+            int supporterIndex = _hintRng.Next(_supporters.Length);
+            string supporter = _supporters[supporterIndex];
+            return $"Special thanks to supporter: {supporter}!";
+        }
+        // Defensive: fallback to base hints if index is valid, else a default message.
+        if (_baseUsageHints != null && _baseUsageHints.Length > 0 && index >= 0 && index < _baseUsageHints.Length)
+        {
+            return _baseUsageHints[index];
+        }
+        return "Thank you for using Rotation Solver Reborn!";
+    }
 
-	// Hint bar at the top of the body
-	// Hint bar at the top of the body
-	private void DrawHintsBar()
-	{
-		bool hasErrors = CheckErrors();
-		if (hasErrors)
-		{
-			string errorText = string.Empty;
-			float availableWidth = ImGui.GetContentRegionAvail().X; // Get the available width dynamically
+    // Hint bar at the top of the body
+    // Hint bar at the top of the body
+    private void DrawHintsBar()
+    {
+        bool hasErrors = CheckErrors();
+        if (hasErrors)
+        {
+            string errorText = string.Empty;
+            float availableWidth = ImGui.GetContentRegionAvail().X; // Get the available width dynamically
 
-			if (DataCenter.DalamudStagingEnabled)
-			{
-				ImGui.PushTextWrapPos(ImGui.GetCursorPos().X + availableWidth);
-				ImGui.PushStyleColor(ImGuiCol.Text, ImGuiColors.DalamudOrange);
-				ImGui.TextWrapped($"Warning: You are running the staging branch of Dalamud. For best compatibility, use the XIVLauncher and switch back to 'release' branch if available for your current version of FFXIV.");
-				ImGui.PopStyleColor();
-				ImGui.PopTextWrapPos();
-				ImGui.Spacing();
-			}
+            if (DataCenter.DalamudStagingEnabled)
+            {
+                ImGui.PushTextWrapPos(ImGui.GetCursorPos().X + availableWidth);
+                ImGui.PushStyleColor(ImGuiCol.Text, ImGuiColors.DalamudOrange);
+                ImGui.TextWrapped($"Warning: You are running the staging branch of Dalamud. For best compatibility, use the XIVLauncher and switch back to 'release' branch if available for your current version of FFXIV.");
+                ImGui.PopStyleColor();
+                ImGui.PopTextWrapPos();
+                ImGui.Spacing();
+            }
             //
-			if (_crashPlugins.Count > 0 && _crashPlugins[0].Name != null)
-			{
-				errorText = $"Disable {_crashPlugins[0].Name}, can cause conflicts/crashes.";
-			}
-			else if (Player.Available && (Player.Job == Job.CRP || Player.Job == Job.BSM || Player.Job == Job.ARM || Player.Job == Job.GSM ||
-					Player.Job == Job.LTW || Player.Job == Job.WVR || Player.Job == Job.ALC || Player.Job == Job.CUL ||
-					Player.Job == Job.MIN || Player.Job == Job.FSH || Player.Job == Job.BTN))
-			{
-				errorText = $"You are on an unsupported class: {Player.Job}";
-			}
+            if (_crashPlugins.Count > 0 && _crashPlugins[0].Name != null)
+            {
+                errorText = $"Disable {_crashPlugins[0].Name}, can cause conflicts/crashes.";
+            }
+            else if (Player.Available && (Player.Job == Job.CRP || Player.Job == Job.BSM || Player.Job == Job.ARM || Player.Job == Job.GSM ||
+                    Player.Job == Job.LTW || Player.Job == Job.WVR || Player.Job == Job.ALC || Player.Job == Job.CUL ||
+                    Player.Job == Job.MIN || Player.Job == Job.FSH || Player.Job == Job.BTN))
+            {
+                errorText = $"You are on an unsupported class: {Player.Job}";
+            }
 
-			if (DataCenter.SystemWarnings != null && DataCenter.SystemWarnings.Count != 0)
-			{
-				List<string> warningsToRemove = [];
+            if (DataCenter.SystemWarnings != null && DataCenter.SystemWarnings.Count != 0)
+            {
+                List<string> warningsToRemove = [];
 
-				foreach (string warning in DataCenter.SystemWarnings.Keys)
-				{
-					using ImRaii.Color color = ImRaii.PushColor(ImGuiCol.Text, ImGui.ColorConvertFloat4ToU32(ImGuiColors.DalamudOrange));
-					ImGui.PushTextWrapPos(ImGui.GetCursorPos().X + availableWidth); // Set text wrapping position dynamically
+                foreach (string warning in DataCenter.SystemWarnings.Keys)
+                {
+                    using ImRaii.Color color = ImRaii.PushColor(ImGuiCol.Text, ImGui.ColorConvertFloat4ToU32(ImGuiColors.DalamudOrange));
+                    ImGui.PushTextWrapPos(ImGui.GetCursorPos().X + availableWidth); // Set text wrapping position dynamically
 
-					// Calculate the required height for the button
-					Vector2 textSize = ImGui.CalcTextSize(warning, false, availableWidth);
-					float buttonHeight = textSize.Y + (ImGui.GetStyle().FramePadding.Y * 2);
-					float lineHeight = ImGui.GetTextLineHeight();
-					int lineCount = (int)Math.Ceiling(textSize.X / availableWidth);
+                    // Calculate the required height for the button
+                    Vector2 textSize = ImGui.CalcTextSize(warning, false, availableWidth);
+                    float buttonHeight = textSize.Y + (ImGui.GetStyle().FramePadding.Y * 2);
+                    float lineHeight = ImGui.GetTextLineHeight();
+                    int lineCount = (int)Math.Ceiling(textSize.X / availableWidth);
 
-					if (ImGui.Button(warning, new Vector2(availableWidth, buttonHeight)))
-					{
-						warningsToRemove.Add(warning);
-					}
+                    if (ImGui.Button(warning, new Vector2(availableWidth, buttonHeight)))
+                    {
+                        warningsToRemove.Add(warning);
+                    }
 
-					ImGui.PopTextWrapPos(); // Reset text wrapping position
-				}
+                    ImGui.PopTextWrapPos(); // Reset text wrapping position
+                }
 
-				// Remove warnings that were cleared
-				foreach (string warning in warningsToRemove)
-				{
-					_ = DataCenter.SystemWarnings.Remove(warning);
-				}
-			}
+                // Remove warnings that were cleared
+                foreach (string warning in warningsToRemove)
+                {
+                    _ = DataCenter.SystemWarnings.Remove(warning);
+                }
+            }
 
-			if (errorText != string.Empty)
-			{
-				ImGui.PushTextWrapPos(ImGui.GetCursorPos().X + availableWidth); // Set text wrapping position dynamically
-				ImGui.PushStyleColor(ImGuiCol.Text, ImGuiColors.DalamudRed); // Set text color to DalamudOrange
-				ImGui.Text(errorText);
-				ImGui.PopStyleColor(); // Reset text color
-				ImGui.PopTextWrapPos(); // Reset text wrapping position
-			}
+            if (errorText != string.Empty)
+            {
+                ImGui.PushTextWrapPos(ImGui.GetCursorPos().X + availableWidth); // Set text wrapping position dynamically
+                ImGui.PushStyleColor(ImGuiCol.Text, ImGuiColors.DalamudRed); // Set text color to DalamudOrange
+                ImGui.Text(errorText);
+                ImGui.PopStyleColor(); // Reset text color
+                ImGui.PopTextWrapPos(); // Reset text wrapping position
+            }
 
-			ImGui.Separator();
-			ImGui.Spacing();
-		}
+            ImGui.Separator();
+            ImGui.Spacing();
+        }
 
-		// If hints are disabled or we have no base hints, do nothing.
-		if (!Service.Config.ShowHints)
-		{
-			return;
-		}
-		if (_baseUsageHints == null || _baseUsageHints.Length == 0)
-		{
-			return;
-		}
+        // If hints are disabled or we have no base hints, do nothing.
+        if (!Service.Config.ShowHints)
+        {
+            return;
+        }
+        if (_baseUsageHints == null || _baseUsageHints.Length == 0)
+        {
+            return;
+        }
 
-		// Advance hint periodically when no errors are present (so warnings don't rapidly cycle tips).
-		const float HintSwitchIntervalSeconds = 8f;
-		float now = (float)ImGui.GetTime();
-		if (!hasErrors)
-		{
-			if (now - _lastHintSwitch >= HintSwitchIntervalSeconds)
-			{
-				_lastHintSwitch = now;
-				_hintIndex++;
-				if (_hintIndex >= _baseUsageHints.Length)
-				{
-					_hintIndex = 0;
-				}
-				// index changed, invalidate cached tip
-				_cachedTipIndex = -1;
-				_cachedTipText = null;
-			}
-		}
-		else
-		{
-			// When errors are shown, reset the switch timer so it resumes cleanly afterward.
-			_lastHintSwitch = now;
-		}
+        // Advance hint periodically when no errors are present (so warnings don't rapidly cycle tips).
+        const float HintSwitchIntervalSeconds = 8f;
+        float now = (float)ImGui.GetTime();
+        if (!hasErrors)
+        {
+            if (now - _lastHintSwitch >= HintSwitchIntervalSeconds)
+            {
+                _lastHintSwitch = now;
+                _hintIndex++;
+                if (_hintIndex >= _baseUsageHints.Length)
+                {
+                    _hintIndex = 0;
+                }
+                // index changed, invalidate cached tip
+                _cachedTipIndex = -1;
+                _cachedTipText = null;
+            }
+        }
+        else
+        {
+            // When errors are shown, reset the switch timer so it resumes cleanly afterward.
+            _lastHintSwitch = now;
+        }
 
-		// Generate tip only when index changes; this avoids random flicker per frame.
-		if (_cachedTipIndex != _hintIndex || string.IsNullOrEmpty(_cachedTipText))
-		{
-			_cachedTipText = $"Tip: {GetDynamicHintText(_hintIndex)}";
-			_cachedTipIndex = _hintIndex;
-		}
+        // Generate tip only when index changes; this avoids random flicker per frame.
+        if (_cachedTipIndex != _hintIndex || string.IsNullOrEmpty(_cachedTipText))
+        {
+            _cachedTipText = $"Tip: {GetDynamicHintText(_hintIndex)}";
+            _cachedTipIndex = _hintIndex;
+        }
 
-		using (ImRaii.Font _ = ImRaii.PushFont(FontManager.GetFont(12)))
-		using (ImRaii.Color __ = ImRaii.PushColor(ImGuiCol.Text, ImGui.ColorConvertFloat4ToU32(ImGuiColors.DalamudYellow)))
-		{
-			float avail = ImGui.GetContentRegionAvail().X;
-			ImGui.PushTextWrapPos(ImGui.GetCursorPos().X + avail);
+        using (ImRaii.Font _ = ImRaii.PushFont(FontManager.GetFont(12)))
+        using (ImRaii.Color __ = ImRaii.PushColor(ImGuiCol.Text, ImGui.ColorConvertFloat4ToU32(ImGuiColors.DalamudYellow)))
+        {
+            float avail = ImGui.GetContentRegionAvail().X;
+            ImGui.PushTextWrapPos(ImGui.GetCursorPos().X + avail);
 
-			ImGui.TextWrapped(_cachedTipText);
-			if (ImGui.IsItemHovered())
-			{
-				ImguiTooltips.HoveredTooltip("Right-click to copy this tip.");
-				if (ImGui.IsMouseReleased(ImGuiMouseButton.Right))
-				{
-					try
-					{
-						ImGui.SetClipboardText(_cachedTipText);
-					}
-					catch
-					{
-						// ignored
-					}
-				}
-			}
+            ImGui.TextWrapped(_cachedTipText);
+            if (ImGui.IsItemHovered())
+            {
+                ImguiTooltips.HoveredTooltip("Right-click to copy this tip.");
+                if (ImGui.IsMouseReleased(ImGuiMouseButton.Right))
+                {
+                    try
+                    {
+                        ImGui.SetClipboardText(_cachedTipText);
+                    }
+                    catch
+                    {
+                        // ignored
+                    }
+                }
+            }
 
-			ImGui.PopTextWrapPos();
-		}
-		ImGui.Spacing();
-		ImGui.Separator();
-		ImGui.Spacing();
-	}
+            ImGui.PopTextWrapPos();
+        }
+        ImGui.Spacing();
+        ImGui.Separator();
+        ImGui.Spacing();
+    }
 
-	private void DrawBody()
+    private void DrawBody()
     {
         // Adjust cursor position
         ImGui.SetCursorPos(ImGui.GetCursorPos() + (Vector2.One * 8 * Scale));
@@ -1466,269 +1466,269 @@ public partial class RotationConfigWindow : Window
 
     private static readonly CollapsingHeaderGroup _aboutHeaders = new(new()
     {
-		{ UiString.ConfigWindow_About_ThanksToSupporters.GetDescription, DrawThanksToSupporters },
-		{ UiString.ConfigWindow_About_Macros.GetDescription, DrawAboutMacros },
+        { UiString.ConfigWindow_About_ThanksToSupporters.GetDescription, DrawThanksToSupporters },
+        { UiString.ConfigWindow_About_Macros.GetDescription, DrawAboutMacros },
         { UiString.ConfigWindow_About_SettingMacros.GetDescription, DrawAboutSettingsCommands },
         { UiString.ConfigWindow_About_Compatibility.GetDescription, DrawAboutCompatibility },
         { UiString.ConfigWindow_About_Links.GetDescription, DrawAboutLinks },
     });
 
-	private static void DrawThanksToSupporters()
-	{
-		// Ko-fi CTA
-		if (ImGui.Button("Join this list!"))
-		{
-			Util.OpenLink("https://ko-fi.com/ltscombatreborn");
-		}
+    private static void DrawThanksToSupporters()
+    {
+        // Ko-fi CTA
+        if (ImGui.Button("Join this list!"))
+        {
+            Util.OpenLink("https://ko-fi.com/ltscombatreborn");
+        }
 
-		ImGui.Spacing();
-		ImGui.Separator();
-		ImGui.Spacing();
+        ImGui.Spacing();
+        ImGui.Separator();
+        ImGui.Spacing();
 
-		// Defensive: ensure we have supporters
-		if (_supporters == null || _supporters.Length == 0)
-		{
-			ImGui.TextWrapped("No supporters to display yet. Thank you for checking!");
-			return;
-		}
+        // Defensive: ensure we have supporters
+        if (_supporters == null || _supporters.Length == 0)
+        {
+            ImGui.TextWrapped("No supporters to display yet. Thank you for checking!");
+            return;
+        }
 
-		// Header text
-		using (ImRaii.Font _ = ImRaii.PushFont(FontManager.GetFont(16)))
-		using (ImRaii.Color __ = ImRaii.PushColor(ImGuiCol.Text, ImGui.ColorConvertFloat4ToU32(ImGuiColors.ParsedGreen)))
-		{
-			ImGui.TextWrapped($"Special thanks to {_supporters.Length} supporters:");
-		}
+        // Header text
+        using (ImRaii.Font _ = ImRaii.PushFont(FontManager.GetFont(16)))
+        using (ImRaii.Color __ = ImRaii.PushColor(ImGuiCol.Text, ImGui.ColorConvertFloat4ToU32(ImGuiColors.ParsedGreen)))
+        {
+            ImGui.TextWrapped($"Special thanks to {_supporters.Length} supporters:");
+        }
 
-		ImGui.Spacing();
+        ImGui.Spacing();
 
-		// Layout: table of supporter names (multi-column, wraps nicely)
-		const int columns = 3;
-		using ImRaii.IEndObject table = ImRaii.Table("SupportersTable", columns, ImGuiTableFlags.SizingStretchProp);
-		if (!table)
-			return;
+        // Layout: table of supporter names (multi-column, wraps nicely)
+        const int columns = 3;
+        using ImRaii.IEndObject table = ImRaii.Table("SupportersTable", columns, ImGuiTableFlags.SizingStretchProp);
+        if (!table)
+            return;
 
-		// Pre-sort for stable display
-		var names = new List<string>(_supporters);
-		names.Sort(StringComparer.OrdinalIgnoreCase);
+        // Pre-sort for stable display
+        var names = new List<string>(_supporters);
+        names.Sort(StringComparer.OrdinalIgnoreCase);
 
-		// Compute per-row distribution
-		int perCol = (int)Math.Ceiling(names.Count / (float)columns);
-		int idx = 0;
+        // Compute per-row distribution
+        int perCol = (int)Math.Ceiling(names.Count / (float)columns);
+        int idx = 0;
 
-		for (int col = 0; col < columns; col++)
-		{
-			ImGui.TableNextColumn();
-			int end = Math.Min(idx + perCol, names.Count);
+        for (int col = 0; col < columns; col++)
+        {
+            ImGui.TableNextColumn();
+            int end = Math.Min(idx + perCol, names.Count);
 
-			for (int i = idx; i < end; i++)
-			{
-				string name = names[i];
+            for (int i = idx; i < end; i++)
+            {
+                string name = names[i];
 
-				// Draw each name as a selectable text; right-click copies to clipboard
-				bool selected = ImGui.Selectable(name, false, ImGuiSelectableFlags.AllowDoubleClick);
+                // Draw each name as a selectable text; right-click copies to clipboard
+                bool selected = ImGui.Selectable(name, false, ImGuiSelectableFlags.AllowDoubleClick);
 
-				// Small visual break
-				ImGui.Spacing();
-			}
+                // Small visual break
+                ImGui.Spacing();
+            }
 
-			idx = end;
-		}
+            idx = end;
+        }
 
-		ImGui.Spacing();
-		ImGui.Separator();
-		ImGui.Spacing();
-	}
-	private static void DrawAboutMacros()
-	{
-		// Adjust item spacing for better layout
-		using ImRaii.Style style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, new Vector2(0f, 5f));
+        ImGui.Spacing();
+        ImGui.Separator();
+        ImGui.Spacing();
+    }
+    private static void DrawAboutMacros()
+    {
+        // Adjust item spacing for better layout
+        using ImRaii.Style style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, new Vector2(0f, 5f));
 
-		// Display command help for different state commands
-		DisplayCommandHelp(StateCommandType.Auto);
-		DisplayCommandHelp(StateCommandType.Manual);
-		DisplayCommandHelp(StateCommandType.Off);
-		DisplayCommandHelp(OtherCommandType.Cycle);
-		DisplayCommandHelp(StateCommandType.TargetOnly);
-		ImGui.NewLine();
+        // Display command help for different state commands
+        DisplayCommandHelp(StateCommandType.Auto);
+        DisplayCommandHelp(StateCommandType.Manual);
+        DisplayCommandHelp(StateCommandType.Off);
+        DisplayCommandHelp(OtherCommandType.Cycle);
+        DisplayCommandHelp(StateCommandType.TargetOnly);
+        ImGui.NewLine();
 
-		// Display command help for other commands
-		DisplayCommandHelp(OtherCommandType.NextAction);
+        // Display command help for other commands
+        DisplayCommandHelp(OtherCommandType.NextAction);
 
-		ImGui.NewLine();
+        ImGui.NewLine();
 
-		// Display command help for special commands
-		DisplayCommandHelp(SpecialCommandType.EndSpecial);
-		DisplayCommandHelp(SpecialCommandType.HealArea);
-		DisplayCommandHelp(SpecialCommandType.HealSingle);
-		DisplayCommandHelp(SpecialCommandType.DefenseArea);
-		DisplayCommandHelp(SpecialCommandType.DefenseSingle);
-		DisplayCommandHelp(SpecialCommandType.MoveForward);
-		DisplayCommandHelp(SpecialCommandType.MoveBack);
-		DisplayCommandHelp(SpecialCommandType.Speed);
-		DisplayCommandHelp(SpecialCommandType.DispelStancePositional);
-		DisplayCommandHelp(SpecialCommandType.RaiseShirk);
-		DisplayCommandHelp(SpecialCommandType.AntiKnockback);
-		DisplayCommandHelp(SpecialCommandType.Burst);
-		DisplayCommandHelp(SpecialCommandType.NoCasting);
-	}
+        // Display command help for special commands
+        DisplayCommandHelp(SpecialCommandType.EndSpecial);
+        DisplayCommandHelp(SpecialCommandType.HealArea);
+        DisplayCommandHelp(SpecialCommandType.HealSingle);
+        DisplayCommandHelp(SpecialCommandType.DefenseArea);
+        DisplayCommandHelp(SpecialCommandType.DefenseSingle);
+        DisplayCommandHelp(SpecialCommandType.MoveForward);
+        DisplayCommandHelp(SpecialCommandType.MoveBack);
+        DisplayCommandHelp(SpecialCommandType.Speed);
+        DisplayCommandHelp(SpecialCommandType.DispelStancePositional);
+        DisplayCommandHelp(SpecialCommandType.RaiseShirk);
+        DisplayCommandHelp(SpecialCommandType.AntiKnockback);
+        DisplayCommandHelp(SpecialCommandType.Burst);
+        DisplayCommandHelp(SpecialCommandType.NoCasting);
+    }
 
-	private static void DrawAboutSettingsCommands()
-	{
-		// Adjust item spacing for better layout
-		using ImRaii.Style style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, new Vector2(0f, 5f));
-		ImGui.NewLine();
-		ImGui.TextWrapped("These commands can be used to open or change plugin settings directly from chat or macros.");
-		ImGui.NewLine();
-		ImGui.TextWrapped("Simply right clicking any action, setting, or toggle will pop up the macro associated with it.");
-	}
+    private static void DrawAboutSettingsCommands()
+    {
+        // Adjust item spacing for better layout
+        using ImRaii.Style style = ImRaii.PushStyle(ImGuiStyleVar.ItemSpacing, new Vector2(0f, 5f));
+        ImGui.NewLine();
+        ImGui.TextWrapped("These commands can be used to open or change plugin settings directly from chat or macros.");
+        ImGui.NewLine();
+        ImGui.TextWrapped("Simply right clicking any action, setting, or toggle will pop up the macro associated with it.");
+    }
 
-	// Helper method to display command help
-	private static void DisplayCommandHelp<T>(T commandType) where T : Enum
-	{
-		commandType.DisplayCommandHelp(getHelp: Data.EnumExtensions.GetDescription);
-	}
+    // Helper method to display command help
+    private static void DisplayCommandHelp<T>(T commandType) where T : Enum
+    {
+        commandType.DisplayCommandHelp(getHelp: Data.EnumExtensions.GetDescription);
+    }
 
-	private static void DrawAboutCompatibility()
-	{
-		// Display the compatibility description
-		ImGui.TextWrapped(UiString.ConfigWindow_About_Compatibility_Description.GetDescription());
+    private static void DrawAboutCompatibility()
+    {
+        // Display the compatibility description
+        ImGui.TextWrapped(UiString.ConfigWindow_About_Compatibility_Description.GetDescription());
 
-		ImGui.Spacing();
+        ImGui.Spacing();
 
-		float iconSize = 40 * Scale;
+        float iconSize = 40 * Scale;
 
-		// Create a table to display incompatible plugins
-		using ImRaii.IEndObject table = ImRaii.Table("Incompatible plugin", 5, ImGuiTableFlags.BordersInner
-			| ImGuiTableFlags.Resizable
-			| ImGuiTableFlags.SizingStretchProp);
-		if (table)
-		{
-			ImGui.TableSetupScrollFreeze(0, 1);
-			ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
+        // Create a table to display incompatible plugins
+        using ImRaii.IEndObject table = ImRaii.Table("Incompatible plugin", 5, ImGuiTableFlags.BordersInner
+            | ImGuiTableFlags.Resizable
+            | ImGuiTableFlags.SizingStretchProp);
+        if (table)
+        {
+            ImGui.TableSetupScrollFreeze(0, 1);
+            ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
 
-			// Set up table headers
-			_ = ImGui.TableNextColumn();
-			ImGui.TableHeader("Name");
+            // Set up table headers
+            _ = ImGui.TableNextColumn();
+            ImGui.TableHeader("Name");
 
-			_ = ImGui.TableNextColumn();
-			ImGui.TableHeader("Icon/Link");
+            _ = ImGui.TableNextColumn();
+            ImGui.TableHeader("Icon/Link");
 
-			_ = ImGui.TableNextColumn();
-			ImGui.TableHeader("Features");
+            _ = ImGui.TableNextColumn();
+            ImGui.TableHeader("Features");
 
-			_ = ImGui.TableNextColumn();
-			ImGui.TableHeader("Type");
+            _ = ImGui.TableNextColumn();
+            ImGui.TableHeader("Type");
 
-			_ = ImGui.TableNextColumn();
-			ImGui.TableHeader("Enabled");
+            _ = ImGui.TableNextColumn();
+            ImGui.TableHeader("Enabled");
 
-			// Ensure that IncompatiblePlugins is not null
-			IncompatiblePlugin[] incompatiblePlugins = DownloadHelper.IncompatiblePlugins ?? [];
+            // Ensure that IncompatiblePlugins is not null
+            IncompatiblePlugin[] incompatiblePlugins = DownloadHelper.IncompatiblePlugins ?? [];
 
-			// Iterate over each incompatible plugin and display its details
-			foreach (IncompatiblePlugin item in incompatiblePlugins)
-			{
-				ImGui.TableNextRow();
-				_ = ImGui.TableNextColumn();
+            // Iterate over each incompatible plugin and display its details
+            foreach (IncompatiblePlugin item in incompatiblePlugins)
+            {
+                ImGui.TableNextRow();
+                _ = ImGui.TableNextColumn();
 
-				ImGui.Text(item.Name);
+                ImGui.Text(item.Name);
 
-				_ = ImGui.TableNextColumn();
+                _ = ImGui.TableNextColumn();
 
-				string icon = string.IsNullOrEmpty(item.Icon)
-					? "https://raw.githubusercontent.com/goatcorp/DalamudAssets/master/UIRes/defaultIcon.png"
-					: item.Icon;
+                string icon = string.IsNullOrEmpty(item.Icon)
+                    ? "https://raw.githubusercontent.com/goatcorp/DalamudAssets/master/UIRes/defaultIcon.png"
+                    : item.Icon;
 
-				if (IconSet.GetTexture(icon, out Dalamud.Interface.Textures.TextureWraps.IDalamudTextureWrap? texture))
-				{
-					if (ImGuiHelper.NoPaddingNoColorImageButton(texture, Vector2.One * iconSize))
-					{
-						Util.OpenLink(item.Url);
-					}
-				}
+                if (IconSet.GetTexture(icon, out Dalamud.Interface.Textures.TextureWraps.IDalamudTextureWrap? texture))
+                {
+                    if (ImGuiHelper.NoPaddingNoColorImageButton(texture, Vector2.One * iconSize))
+                    {
+                        Util.OpenLink(item.Url);
+                    }
+                }
 
-				_ = ImGui.TableNextColumn();
-				ImGui.TextWrapped(item.Features);
+                _ = ImGui.TableNextColumn();
+                ImGui.TextWrapped(item.Features);
 
-				_ = ImGui.TableNextColumn();
-				DisplayPluginType(item.Type);
+                _ = ImGui.TableNextColumn();
+                DisplayPluginType(item.Type);
 
-				_ = ImGui.TableNextColumn();
-				ImGui.Text(item.IsEnabled ? "Yes" : "No");
-			}
-		}
-	}
+                _ = ImGui.TableNextColumn();
+                ImGui.Text(item.IsEnabled ? "Yes" : "No");
+            }
+        }
+    }
 
-	// Helper method to display plugin type with appropriate colors and tooltips
-	private static void DisplayPluginType(CompatibleType type)
-	{
-		if (type.HasFlag(CompatibleType.Skill_Usage))
-		{
-			ImGui.TextColored(ImGuiColors.DalamudYellow, CompatibleType.Skill_Usage.GetDescription().Replace('_', ' '));
-			ImguiTooltips.HoveredTooltip(UiString.ConfigWindow_About_Compatibility_Mistake.GetDescription());
-		}
-		if (type.HasFlag(CompatibleType.Skill_Selection))
-		{
-			ImGui.TextColored(ImGuiColors.DalamudOrange, CompatibleType.Skill_Selection.GetDescription().Replace('_', ' '));
-			ImguiTooltips.HoveredTooltip(UiString.ConfigWindow_About_Compatibility_Mislead.GetDescription());
-		}
-		if (type.HasFlag(CompatibleType.Crash))
-		{
-			ImGui.TextColored(ImGuiColors.DalamudRed, CompatibleType.Crash.GetDescription().Replace('_', ' '));
-			ImguiTooltips.HoveredTooltip(UiString.ConfigWindow_About_Compatibility_Crash.GetDescription());
-		}
-		if (type.HasFlag(CompatibleType.Broken))
-		{
-			ImGui.TextColored(ImGuiColors.DalamudViolet, CompatibleType.Broken.GetDescription().Replace('_', ' '));
-			ImguiTooltips.HoveredTooltip(UiString.ConfigWindow_About_Compatibility_Crash.GetDescription());
-		}
-	}
+    // Helper method to display plugin type with appropriate colors and tooltips
+    private static void DisplayPluginType(CompatibleType type)
+    {
+        if (type.HasFlag(CompatibleType.Skill_Usage))
+        {
+            ImGui.TextColored(ImGuiColors.DalamudYellow, CompatibleType.Skill_Usage.GetDescription().Replace('_', ' '));
+            ImguiTooltips.HoveredTooltip(UiString.ConfigWindow_About_Compatibility_Mistake.GetDescription());
+        }
+        if (type.HasFlag(CompatibleType.Skill_Selection))
+        {
+            ImGui.TextColored(ImGuiColors.DalamudOrange, CompatibleType.Skill_Selection.GetDescription().Replace('_', ' '));
+            ImguiTooltips.HoveredTooltip(UiString.ConfigWindow_About_Compatibility_Mislead.GetDescription());
+        }
+        if (type.HasFlag(CompatibleType.Crash))
+        {
+            ImGui.TextColored(ImGuiColors.DalamudRed, CompatibleType.Crash.GetDescription().Replace('_', ' '));
+            ImguiTooltips.HoveredTooltip(UiString.ConfigWindow_About_Compatibility_Crash.GetDescription());
+        }
+        if (type.HasFlag(CompatibleType.Broken))
+        {
+            ImGui.TextColored(ImGuiColors.DalamudViolet, CompatibleType.Broken.GetDescription().Replace('_', ' '));
+            ImguiTooltips.HoveredTooltip(UiString.ConfigWindow_About_Compatibility_Crash.GetDescription());
+        }
+    }
 
-	private static void DrawAboutLinks()
-	{
-		float width = ImGui.GetWindowWidth();
+    private static void DrawAboutLinks()
+    {
+        float width = ImGui.GetWindowWidth();
 
-		ImGui.Spacing();
+        ImGui.Spacing();
 
-		// Display button to open the configuration folder
-		string text = UiString.ConfigWindow_About_OpenConfigFolder.GetDescription();
-		float textWidth = ImGuiHelpers.GetButtonSize(text).X;
-		ImGuiHelper.DrawItemMiddle(() =>
-		{
-			if (ImGui.Button(text))
-			{
-				try
-				{
-					_ = Process.Start("explorer.exe", Svc.PluginInterface.ConfigDirectory.FullName);
-				}
-				catch (Exception ex)
-				{
-					// Handle the exception (e.g., log it or display an error message)
-					ImGui.TextColored(ImGuiColors.DalamudRed, $"Failed to open config folder: {ex.Message}");
-				}
-			}
-		}, width, textWidth);
+        // Display button to open the configuration folder
+        string text = UiString.ConfigWindow_About_OpenConfigFolder.GetDescription();
+        float textWidth = ImGuiHelpers.GetButtonSize(text).X;
+        ImGuiHelper.DrawItemMiddle(() =>
+        {
+            if (ImGui.Button(text))
+            {
+                try
+                {
+                    _ = Process.Start("explorer.exe", Svc.PluginInterface.ConfigDirectory.FullName);
+                }
+                catch (Exception ex)
+                {
+                    // Handle the exception (e.g., log it or display an error message)
+                    ImGui.TextColored(ImGuiColors.DalamudRed, $"Failed to open config folder: {ex.Message}");
+                }
+            }
+        }, width, textWidth);
 
-		ImGui.Spacing();
-		// Display GitHub link button
-		if (IconSet.GetTexture("https://GitHub-readme-stats.vercel.app/api/pin/?username=FFXIV-CombatReborn&repo=RotationSolverReborn&show_icons=true&theme=dark", out Dalamud.Interface.Textures.TextureWraps.IDalamudTextureWrap? icon))
-		{
-			if (ImGuiHelper.TextureButton(icon, width, width))
-			{
-				Util.OpenLink($"https://GitHub.com/{Service.USERNAME}/{Service.REPO}");
-			}
-		}
-		else
-		{
-			// Handle the case where the texture is not found
-			ImGui.Text("Failed to load GitHub icon.");
-		}
-	}
-	#endregion
+        ImGui.Spacing();
+        // Display GitHub link button
+        if (IconSet.GetTexture("https://GitHub-readme-stats.vercel.app/api/pin/?username=FFXIV-CombatReborn&repo=RotationSolverReborn&show_icons=true&theme=dark", out Dalamud.Interface.Textures.TextureWraps.IDalamudTextureWrap? icon))
+        {
+            if (ImGuiHelper.TextureButton(icon, width, width))
+            {
+                Util.OpenLink($"https://GitHub.com/{Service.USERNAME}/{Service.REPO}");
+            }
+        }
+        else
+        {
+            // Handle the case where the texture is not found
+            ImGui.Text("Failed to load GitHub icon.");
+        }
+    }
+    #endregion
 
-	#region Autoduty
+    #region Autoduty
 
-	private void DrawAutoduty()
+    private void DrawAutoduty()
     {
         ImGui.TextWrapped("While the RSR Team has made effort to make RSR compatible with Autoduty, please keep in mind that RSR is not designed with botting in mind.");
         ImGui.Spacing();
@@ -3551,7 +3551,7 @@ public partial class RotationConfigWindow : Window
                 OtherConfiguration.BeneficialPositions[territoryId] = pts = [];
             }
 
-			if (ImGui.Button(UiString.ConfigWindow_List_AddPosition.GetDescription()) && Player.Object != null && Player.Available)
+            if (ImGui.Button(UiString.ConfigWindow_List_AddPosition.GetDescription()) && Player.Object != null && Player.Available)
             {
                 unsafe
                 {
@@ -3680,11 +3680,11 @@ public partial class RotationConfigWindow : Window
 
     private static unsafe void DrawStatus()
     {
-		if (Player.Object == null)
-		{
-			return;
-		}
-		ImGui.Text($"PlayerSyncedLevel: {DataCenter.PlayerSyncedLevel()}");
+        if (Player.Object == null)
+        {
+            return;
+        }
+        ImGui.Text($"PlayerSyncedLevel: {DataCenter.PlayerSyncedLevel()}");
         ImGui.Text($"PlayerUnsyncedLevel: {DataCenter.PlayerMaxLevel}");
         ImGui.Text($"Merged Status: {DataCenter.MergedStatus}");
         ImGui.Text($"PlayerHasLockActions: {ActionUpdater.PlayerHasLockActions()}");
@@ -3915,11 +3915,11 @@ public partial class RotationConfigWindow : Window
         ImGui.Text($"IsHostileCastingAOE: {DataCenter.IsHostileCastingAOE}");
         ImGui.Text($"IsHostileCastingToTank: {DataCenter.IsHostileCastingToTank}");
         ImGui.Text($"IsHostileCastingStop: {DataCenter.IsHostileCastingStop}");
-		ImGui.Spacing();
-		StatusID HellInACell = (StatusID)4734;
-		var HasHellInACell = StatusHelper.PlayerHasStatus(false, HellInACell);
-		ImGui.Text($"HasHellInACell: {HasHellInACell}");
-	}
+        ImGui.Spacing();
+        StatusID HellInACell = (StatusID)4734;
+        var HasHellInACell = StatusHelper.PlayerHasStatus(false, HellInACell);
+        ImGui.Text($"HasHellInACell: {HasHellInACell}");
+    }
 
     private static unsafe void DrawParty()
     {
@@ -4057,9 +4057,9 @@ public partial class RotationConfigWindow : Window
             ImGui.Text($"IsOCFreezeImmuneTarget: {battleChara.IsOCFreezeImmuneTarget()}");
             ImGui.Text($"IsOCBlindImmuneTarget: {battleChara.IsOCBlindImmuneTarget()}");
             ImGui.Text($"IsOCParalysisImmuneTarget: {battleChara.IsOCParalysisImmuneTarget()}");
-			ImGui.Spacing();
-			ImGui.Text($"IsM9SavageImmune: {battleChara.IsM9SavageImmune()}");
-			ImGui.Spacing();
+            ImGui.Spacing();
+            ImGui.Text($"IsM9SavageImmune: {battleChara.IsM9SavageImmune()}");
+            ImGui.Spacing();
             ImGui.Text($"Is Current Focus Target: {battleChara.IsFocusTarget()}");
             ImGui.Text($"TTK: {battleChara.GetTTK()}");
             ImGui.Text($"Is Boss TTK: {battleChara.IsBossFromTTK()}");
@@ -4089,12 +4089,12 @@ public partial class RotationConfigWindow : Window
             ImGui.Text($"Statuses:");
             foreach (Dalamud.Game.ClientState.Statuses.IStatus status in battleChara.StatusList)
             {
-				if (Player.Object != null)
-				{
-					string source = status.SourceId == Player.Object.GameObjectId ? "You" : Svc.Objects.SearchById(status.SourceId) == null ? "None" : "Others";
-					ImGui.Text($"{status.GameData.Value.Name}: {status.StatusId} From: {source}");
-				}
-			}
+                if (Player.Object != null)
+                {
+                    string source = status.SourceId == Player.Object.GameObjectId ? "You" : Svc.Objects.SearchById(status.SourceId) == null ? "None" : "Others";
+                    ImGui.Text($"{status.GameData.Value.Name}: {status.StatusId} From: {source}");
+                }
+            }
         }
     }
 

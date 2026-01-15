@@ -20,7 +20,7 @@ public sealed class DSRViper : ViperRotation
     [Range(1, 3, ConfigUnitType.None, 1)]
     [RotationConfig(CombatType.PvE, Name = "Max Rattling Coils before forced UF")]
     public int MaxCoilsBeforeUF { get; set; } = 2;
-    
+
     [RotationConfig(CombatType.PvE, Name = "Prioritize buff alternation over timers")]
     public bool AlternateBuffs { get; set; } = true;
     #endregion
@@ -44,11 +44,11 @@ public sealed class DSRViper : ViperRotation
     {
         return SwiftTime > MinBuffTimeForReawaken && HuntersTime > MinBuffTimeForReawaken;
     }
-    
+
     private bool CanUseReawaken()
     {
         // More intelligent Reawaken usage
-        return (HasReadyToReawaken || SerpentOffering >= 50) && 
+        return (HasReadyToReawaken || SerpentOffering >= 50) &&
                IsBuffTimeSafeForReawaken() &&
                RattlingCoilStacks <= 1 && // Don't waste coils
                !DreadActive && !PitActive && // Not mid-combo
@@ -56,30 +56,30 @@ public sealed class DSRViper : ViperRotation
                !HasHunterVenom && !HasSwiftVenom && // No Dread follow-ups pending
                !HasFellHuntersVenom && !HasFellSkinsVenom; // No AOE Dread follow-ups pending
     }
-    
+
     private bool ShouldAlternateToHunters()
     {
         if (!AlternateBuffs) return false;
-        
+
         // Force Hunter's if Swift was used last and we have both buffs
         if (LastUsedSwiftskins && HasHunterAndSwift) return true;
-        
+
         // Use Hunter's if we don't have it
         if (!IsHunter && IsSwift) return true;
-        
+
         return false;
     }
-    
+
     private bool ShouldAlternateToSwiftskins()
     {
         if (!AlternateBuffs) return false;
-        
+
         // Force Swiftskin's if Hunter's was used last and we have both buffs
         if (LastUsedHunters && HasHunterAndSwift) return true;
-        
+
         // Use Swiftskin's if we don't have it
         if (!IsSwift && IsHunter) return true;
-        
+
         return false;
     }
     #endregion
@@ -122,7 +122,7 @@ public sealed class DSRViper : ViperRotation
             return true;
 
         // Priority 6: Early Tincture timing
-        if (EarlyTincture && NoAbilityReady && SerpentsIrePvE.EnoughLevel && 
+        if (EarlyTincture && NoAbilityReady && SerpentsIrePvE.EnoughLevel &&
             SerpentsIrePvE.Cooldown.ElapsedAfter(115) && SerpentsIrePvE.Cooldown.RecastTimeRemain <= 5 &&
             UseBurstMedicine(out act))
         {
@@ -178,7 +178,7 @@ public sealed class DSRViper : ViperRotation
         }
 
         // Priority 4: Twinblade Combos (Vicewinder/Vicepit chains)
-        
+
         // AOE Dread Combos - Alternate buffs properly
         if (PitActive)
         {
@@ -197,7 +197,7 @@ public sealed class DSRViper : ViperRotation
                     LastUsedSwiftskins = false;
                     return true;
                 }
-                
+
                 // Alternation logic
                 if (ShouldAlternateToHunters() && HuntersDenPvE.CanUse(out act, skipStatusProvideCheck: true, skipComboCheck: true, skipAoeCheck: true))
                 {
@@ -248,7 +248,7 @@ public sealed class DSRViper : ViperRotation
                     LastUsedSwiftskins = false;
                     return true;
                 }
-                
+
                 // Alternation logic with positional awareness
                 if (ShouldAlternateToHunters())
                 {
@@ -292,7 +292,7 @@ public sealed class DSRViper : ViperRotation
         {
             // Use Vicewinder/Vicepit to maintain buffs or when buffs are low
             bool needBuffRefresh = SwiftTime <= 10 || HuntersTime <= 10 || (!IsSwift && !IsHunter);
-            
+
             if (needBuffRefresh || (VicewinderPvE.Cooldown.CurrentCharges >= 2) || (VicepitPvE.Cooldown.CurrentCharges >= 2))
             {
                 if (VicewinderPvE.CanUse(out act, usedUp: true))
@@ -303,7 +303,7 @@ public sealed class DSRViper : ViperRotation
         }
 
         // Priority 6: Dual Wield Combo Finishers
-        
+
         // AOE finishers - Use based on what venom we have
         if (HasGrimHunter && JaggedMawPvE.CanUse(out act, skipAoeCheck: true, skipStatusProvideCheck: true, skipComboCheck: true))
             return true;
@@ -359,7 +359,7 @@ public sealed class DSRViper : ViperRotation
                 return true;
             if (HasFlank && HuntersStingPvE.CanUse(out act, skipStatusProvideCheck: true, skipComboCheck: true))
                 return true;
-            
+
             // Fallback to buff maintenance
             if (!IsSwift && SwiftskinsStingPvE.CanUse(out act, skipStatusProvideCheck: true, skipComboCheck: true))
                 return true;
@@ -387,7 +387,7 @@ public sealed class DSRViper : ViperRotation
             if (ReavingMawPvE.CanUse(out act))
                 return true;
         }
-        
+
         // Start new combo chain
         if (ReavingFangsPvE.CanUse(out act))
             return true;

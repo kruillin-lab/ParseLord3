@@ -1,4 +1,4 @@
-﻿using Dalamud.Utility.Signatures;
+using Dalamud.Utility.Signatures;
 using ECommons.DalamudServices;
 using ECommons.EzHookManager;
 using ECommons.Logging;
@@ -14,16 +14,19 @@ using System.Text;
 namespace RotationSolver.Basic;
 
 /// <summary>
-/// Provides various services and utilities for the RotationSolver.
+/// Provides various services and utilities for ParseLord.
 /// </summary>
+
 internal class Service : IDisposable
 {
     public const string COMMAND = "/rotation";
-    public const string ALTCOMMAND = "/rsr";
+    public const string ALTCOMMAND = "/parselord";
+    public const string PLCOMMAND = "/pl";
     public const string AUTOCOMMAND = "/rotation Auto";
     public const string OFFCOMMAND = "/rotation Off";
-    public const string USERNAME = "FFXIV-CombatReborn";
-    public const string REPO = "RotationSolverReborn";
+    public const string USERNAME = "kruil";
+    public const string REPO = "ParseLord3";
+
 
     [EzHook("40 53 55 56 57 48 81 EC ?? ?? ?? ?? 0F 29 B4 24 ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 0F B6 AC 24 ?? ?? ?? ?? 0F 28 F3 49 8B F8", nameof(ActorVfxCreateDetour), true)]
     private readonly EzHook<ActorVfxCreateDelegate2> actorVfxCreateHook = null!;

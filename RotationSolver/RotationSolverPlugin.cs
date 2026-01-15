@@ -36,7 +36,8 @@ public sealed class RotationSolverPlugin : IDalamudPlugin, IDisposable
     private static EasterEggWindow? _easterEggWindow;
 
     private static readonly List<IDisposable> _dis = [];
-    public static string Name => "Rotation Solver Reborn";
+    public static string Name => "ParseLord3";
+
     internal static readonly List<DrawingHighlightHotbarBase> _drawingElements = [];
 
     public static DalamudLinkPayload OpenLinkPayload { get; private set; } = null!;
@@ -243,7 +244,8 @@ public sealed class RotationSolverPlugin : IDalamudPlugin, IDisposable
     internal static void ChangeUITranslation()
     {
         _rotationConfigWindow!.WindowName = UiString.ConfigWindowHeader.GetDescription()
-            + (typeof(RotationConfigWindow).Assembly.GetName().Version?.ToString() ?? "?.?.?") + "###rsrConfigWindow";
+            + (typeof(RotationConfigWindow).Assembly.GetName().Version?.ToString() ?? "?.?.?") + "###parseLordConfigWindow";
+
 
         RSCommands.Disable();
         RSCommands.Enable();
@@ -274,10 +276,10 @@ public sealed class RotationSolverPlugin : IDalamudPlugin, IDisposable
 
         _controlWindow!.IsOpen = isValid && Service.Config.ShowControlWindow;
         _cooldownWindow!.IsOpen = isValid && Service.Config.ShowCooldownWindow;
-		_nextActionWindow!.IsOpen = isValid && Service.Config.ShowNextActionWindow;
+        _nextActionWindow!.IsOpen = isValid && Service.Config.ShowNextActionWindow;
 
-		// ActionTimeline window with additional checks
-		bool showActionTimeline = isValid && Service.Config.ShowActionTimelineWindow;
+        // ActionTimeline window with additional checks
+        bool showActionTimeline = isValid && Service.Config.ShowActionTimelineWindow;
 
         if (Service.Config.ActionTimelineOnlyWhenActive)
         {

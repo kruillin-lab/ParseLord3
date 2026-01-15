@@ -35,9 +35,9 @@ public enum RaiseType : byte
     [Description("Raise All.")]
     AllOutOfDuty,
 
-	/// <summary>
-	/// Raise all.
-	/// </summary>
-	[Description("Raise only party healers.")]
-	PartyHealersOnly,
+    /// <summary>
+    /// Raise all.
+    /// </summary>
+    [Description("Raise only party healers.")]
+    PartyHealersOnly,
 }

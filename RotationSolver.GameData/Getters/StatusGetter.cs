@@ -72,10 +72,10 @@ internal class StatusGetter(Lumina.GameData gameData)
         }
 
         var desc = item.Description.ToString();
-        
+
         // Sanitize the description to remove invalid XML tags
         desc = Util.SanitizeXmlDescription(desc);
-        
+
         var jobs = item.ClassJobCategory.IsValid ? item.ClassJobCategory.Value.Name.ToString() : string.Empty;
         jobs = string.IsNullOrEmpty(jobs) ? string.Empty : $" ({jobs})";
 

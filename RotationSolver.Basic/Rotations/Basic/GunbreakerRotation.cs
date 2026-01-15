@@ -18,53 +18,53 @@ public partial class GunbreakerRotation
     /// </summary>
     public static byte AmmoComboStep => JobGauge.AmmoComboStep;
 
-	/// <summary>
-	/// Gets the maximum amount of ammo available.
-	/// </summary>
-	public static byte MaxAmmo()
-	{
-		if (HasBloodfest)
-		{
-			if (CartridgeChargeIiTrait.EnoughLevel)
-				return 6;
-			return 4;
-		}
-		if (CartridgeChargeIiTrait.EnoughLevel)
-			return 3;
-		if (CartridgeChargeTrait.EnoughLevel)
-			return 2;
-		return 0;
-	}
+    /// <summary>
+    /// Gets the maximum amount of ammo available.
+    /// </summary>
+    public static byte MaxAmmo()
+    {
+        if (HasBloodfest)
+        {
+            if (CartridgeChargeIiTrait.EnoughLevel)
+                return 6;
+            return 4;
+        }
+        if (CartridgeChargeIiTrait.EnoughLevel)
+            return 3;
+        if (CartridgeChargeTrait.EnoughLevel)
+            return 2;
+        return 0;
+    }
 
-	/// <summary>
-	/// Gets the maximum amount of ammo available not accounting for Bloodfest.
-	/// </summary>
-	public static byte NormalMaxAmmo()
-	{
-		if (CartridgeChargeIiTrait.EnoughLevel)
-			return 3;
-		if (CartridgeChargeTrait.EnoughLevel)
-			return 2;
-		return 0;
-	}
+    /// <summary>
+    /// Gets the maximum amount of ammo available not accounting for Bloodfest.
+    /// </summary>
+    public static byte NormalMaxAmmo()
+    {
+        if (CartridgeChargeIiTrait.EnoughLevel)
+            return 3;
+        if (CartridgeChargeTrait.EnoughLevel)
+            return 2;
+        return 0;
+    }
 
-	/// <summary>
-	/// 
-	/// </summary>
-	public static byte OvercappedAmmo()
-	{
-		return (byte)(Ammo - NormalMaxAmmo());
-	}
+    /// <summary>
+    /// 
+    /// </summary>
+    public static byte OvercappedAmmo()
+    {
+        return (byte)(Ammo - NormalMaxAmmo());
+    }
 
-	/// <summary>
-	/// Gets whether the current ammo is at the maximum allowed.
-	/// </summary>
-	public static bool IsAmmoCapped => Ammo == MaxAmmo();
+    /// <summary>
+    /// Gets whether the current ammo is at the maximum allowed.
+    /// </summary>
+    public static bool IsAmmoCapped => Ammo == MaxAmmo();
 
-	/// <summary>
-	/// Gets the max combo time of the Gnashing Fang combo.
-	/// </summary>
-	public static short MaxTimerDuration => JobGauge.MaxTimerDuration;
+    /// <summary>
+    /// Gets the max combo time of the Gnashing Fang combo.
+    /// </summary>
+    public static short MaxTimerDuration => JobGauge.MaxTimerDuration;
 
     /// <summary>
     /// Gets whether the player is in the Gnashing Fang combo.
@@ -81,15 +81,15 @@ public partial class GunbreakerRotation
     /// </summary>
     public static bool HasNoMercy => !StatusHelper.PlayerWillStatusEndGCD(0, 0, true, StatusID.NoMercy);
 
-	/// <summary>
-	/// Has No Mercy buff.
-	/// </summary>
-	public static bool HasBloodfest => !StatusHelper.PlayerWillStatusEndGCD(0, 0, true, StatusID.Bloodfest);
+    /// <summary>
+    /// Has No Mercy buff.
+    /// </summary>
+    public static bool HasBloodfest => !StatusHelper.PlayerWillStatusEndGCD(0, 0, true, StatusID.Bloodfest);
 
-	/// <summary>
-	/// Able to execute Sonic Break.
-	/// </summary>
-	public static bool HasReadyToBreak => !StatusHelper.PlayerWillStatusEndGCD(0, 0, true, StatusID.ReadyToBreak);
+    /// <summary>
+    /// Able to execute Sonic Break.
+    /// </summary>
+    public static bool HasReadyToBreak => !StatusHelper.PlayerWillStatusEndGCD(0, 0, true, StatusID.ReadyToBreak);
 
     /// <summary>
     /// Able to execute Reign of Beasts.
@@ -362,8 +362,8 @@ public partial class GunbreakerRotation
     static partial void ModifyHeartOfStonePvE(ref ActionSetting setting)
     {
         setting.StatusProvide = [StatusID.HeartOfStone];
-		setting.ActionCheck = () => ObjectHelper.IsPlayerInParty() || ObjectHelper.PlayerIsTargetOnSelf();
-		setting.IsFriendly = true;
+        setting.ActionCheck = () => ObjectHelper.IsPlayerInParty() || ObjectHelper.PlayerIsTargetOnSelf();
+        setting.IsFriendly = true;
     }
 
     static partial void ModifyContinuationPvE(ref ActionSetting setting)

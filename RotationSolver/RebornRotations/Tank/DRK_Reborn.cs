@@ -16,21 +16,21 @@ public sealed class DRK_Reborn : DarkKnightRotation
     [RotationConfig(CombatType.PvE, Name = "Target health threshold needed to use Blackest Night with above option", Parent = nameof(BlackLantern))]
     private float BlackLanternRatio { get; set; } = 0.5f;
 
-	[RotationConfig(CombatType.PvE, Name = "Use Oblation on lowest HP party member during AOE scenarios")]
-	public bool OblationLantern { get; set; } = false;
+    [RotationConfig(CombatType.PvE, Name = "Use Oblation on lowest HP party member during AOE scenarios")]
+    public bool OblationLantern { get; set; } = false;
 
-	[RotationConfig(CombatType.PvE, Name = "Use Oblation last stack of Oblation for party members", Parent = nameof(OblationLantern))]
-	public bool OblationLanternStack { get; set; } = false;
+    [RotationConfig(CombatType.PvE, Name = "Use Oblation last stack of Oblation for party members", Parent = nameof(OblationLantern))]
+    public bool OblationLanternStack { get; set; } = false;
 
-	[Range(0, 1, ConfigUnitType.Percent)]
-	[RotationConfig(CombatType.PvE, Name = "Target health threshold needed to use Oblation with above option", Parent = nameof(OblationLantern))]
-	private float OblationLanternRatio { get; set; } = 0.5f;
-	#endregion
+    [Range(0, 1, ConfigUnitType.Percent)]
+    [RotationConfig(CombatType.PvE, Name = "Target health threshold needed to use Oblation with above option", Parent = nameof(OblationLantern))]
+    private float OblationLanternRatio { get; set; } = 0.5f;
+    #endregion
 
-	#region Countdown Logic
-	// Countdown logic to prepare for combat.
-	// Includes logic for using Provoke, tank stances, and burst medicines.
-	protected override IAction? CountDownAction(float remainTime)
+    #region Countdown Logic
+    // Countdown logic to prepare for combat.
+    // Includes logic for using Provoke, tank stances, and burst medicines.
+    protected override IAction? CountDownAction(float remainTime)
     {
         //Provoke when has Shield.
         if (remainTime <= CountDownAhead)
@@ -94,12 +94,12 @@ public sealed class DRK_Reborn : DarkKnightRotation
             return true;
         }
 
-		if (!InTwoMIsBurst && OblationLantern && OblationPvE.CanUse(out act, usedUp: OblationLanternStack, targetOverride: TargetType.LowHP) && !OblationPvE.Target.Target.HasStatus(false, StatusID.Transcendent) && OblationPvE.Target.Target.GetHealthRatio() <= OblationLanternRatio)
-		{
-			return true;
-		}
+        if (!InTwoMIsBurst && OblationLantern && OblationPvE.CanUse(out act, usedUp: OblationLanternStack, targetOverride: TargetType.LowHP) && !OblationPvE.Target.Target.HasStatus(false, StatusID.Transcendent) && OblationPvE.Target.Target.GetHealthRatio() <= OblationLanternRatio)
+        {
+            return true;
+        }
 
-		if (!InTwoMIsBurst && DarkMissionaryPvE.CanUse(out act))
+        if (!InTwoMIsBurst && DarkMissionaryPvE.CanUse(out act))
         {
             return true;
         }
@@ -109,12 +109,12 @@ public sealed class DRK_Reborn : DarkKnightRotation
             return true;
         }
 
-		if (!InTwoMIsBurst && OblationPvE.CanUse(out act, skipStatusProvideCheck: false, targetOverride: TargetType.Self))
-		{
-			return true;
-		}
+        if (!InTwoMIsBurst && OblationPvE.CanUse(out act, skipStatusProvideCheck: false, targetOverride: TargetType.Self))
+        {
+            return true;
+        }
 
-		return base.DefenseAreaAbility(nextGCD, out act);
+        return base.DefenseAreaAbility(nextGCD, out act);
     }
 
     [RotationDesc(ActionID.OblationPvE, ActionID.TheBlackestNightPvE, ActionID.DarkMindPvE, ActionID.ShadowWallPvE, ActionID.ShadowedVigilPvE, ActionID.RampartPvE, ActionID.ReprisalPvE)]

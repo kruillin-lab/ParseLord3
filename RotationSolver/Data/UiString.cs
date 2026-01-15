@@ -429,7 +429,7 @@ namespace RotationSolver.Data
 
         [Description("Event")]
         ConfigWindow_EventItem,
-        
+
         [Description("Internal")]
         ConfigWindow_Internal,
 

@@ -53,10 +53,10 @@ internal class ItemGetter(Lumina.GameData gameData)
         }
 
         var desc = item.Description.ToString() ?? string.Empty;
-        
+
         // Sanitize the description to remove invalid XML tags
         desc = Util.SanitizeXmlDescription(desc);
-        
+
         desc = $"<para>{desc.Replace("\n", "</para>\n/// <para>")}</para>";
 
         var descName = $"<see href=\"https://garlandtools.org/db/#item/{item.RowId}\"><strong>{item.Name.ToString()}</strong></see> [{item.RowId}]";

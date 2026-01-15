@@ -106,7 +106,7 @@ internal class TraitRotationGetter : ExcelRowGetter<Trait>
     {
         var transient = _gameData.GetExcelSheet<TraitTransient>()?.GetRow(item.RowId);
         var desc = transient?.Description.ToString() ?? string.Empty;
-        
+
         // Sanitize the description to remove invalid XML tags
         desc = Util.SanitizeXmlDescription(desc);
 

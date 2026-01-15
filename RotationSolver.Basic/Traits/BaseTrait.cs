@@ -33,7 +33,7 @@ public class BaseTrait : IBaseTrait
     /// Gets the description of this trait.
     /// </summary>
     public string Description => Name;
-    
+
     /// <summary>
     /// Gets or sets a value indicating whether this trait is enabled.
     /// </summary>

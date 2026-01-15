@@ -1,6 +1,8 @@
-﻿<Project Sdk="Dalamud.NET.Sdk/14.0.1">
+<Project Sdk="Dalamud.NET.Sdk/14.0.1">
 	<PropertyGroup>
-		<Description>Based on the pve combat information in one frame, find the best action.</Description>
+		<AssemblyName>ParseLord3</AssemblyName>
+        <Description>ParseLord3 - Enhanced ParseLord rotation engine with manual target control.</Description>
+
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<Platforms>x64</Platforms>
 		<TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
@@ -8,6 +10,8 @@
 		<EnableWindowsTargeting>true</EnableWindowsTargeting>
 		<!-- Allow package runtime assets to be copied; we'll prune unwanted ones -->
 		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+		<!-- Disable DalamudPackager release zip generation for local dev -->
+		<DalamudPackagerEnabled>false</DalamudPackagerEnabled>
 	</PropertyGroup>
 
 	<PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
@@ -61,11 +65,25 @@
 	<Target Name="PruneOutputDlls" AfterTargets="ResolveReferences">
 		<ItemGroup>
 			<!-- Keep only these DLLs in the copy-local list -->
-			<_KeepDlls Include="@(ReferenceCopyLocalPaths)" Condition="&#xD;&#xA;					'%(Filename)' == 'RotationSolver' or&#xD;&#xA;					'%(Filename)' == 'RotationSolver.Basic' or&#xD;&#xA;					'%(Filename)' == 'ECommons'&#xD;&#xA;				" />
+			<_KeepDlls Include="@(ReferenceCopyLocalPaths)" Condition="&#xD;&#xA;					'%(Filename)' == 'ParseLord3' or&#xD;&#xA;					'%(Filename)' == 'RotationSolver.Basic' or&#xD;&#xA;					'%(Filename)' == 'ECommons'&#xD;&#xA;				" />
 			<!-- Remove everything else -->
-			<ReferenceCopyLocalPaths Remove="@(ReferenceCopyLocalPaths)" Condition="!('%(Filename)' == 'RotationSolver' or '%(Filename)' == 'RotationSolver.Basic' or '%(Filename)' == 'ECommons')" />
+			<ReferenceCopyLocalPaths Remove="@(ReferenceCopyLocalPaths)" Condition="!('%(Filename)' == 'ParseLord3' or '%(Filename)' == 'RotationSolver.Basic' or '%(Filename)' == 'ECommons')" />
 			<!-- Re-add only the kept set -->
 			<ReferenceCopyLocalPaths Include="@(_KeepDlls)" />
 		</ItemGroup>
+	</Target>
+
+	<!-- Copy to devPlugins after successful build -->
+	<Target Name="CopyToDevPlugins" AfterTargets="Build">
+		<PropertyGroup>
+			<DevPluginsPath>$(APPDATA)\XIVLauncher\devPlugins\ParseLord3\</DevPluginsPath>
+		</PropertyGroup>
+		<MakeDir Directories="$(DevPluginsPath)" Condition="!Exists('$(DevPluginsPath)')" />
+		<Copy SourceFiles="$(OutputPath)ParseLord3.dll" DestinationFiles="$(DevPluginsPath)ParseLord3.dll" />
+		<!-- Copy manifest from project root -->
+		<Copy SourceFiles="$(MSBuildProjectDirectory)\..\manifest.json" DestinationFiles="$(DevPluginsPath)ParseLord3.json" />
+		<Copy SourceFiles="$(OutputPath)RotationSolver.Basic.dll" DestinationFiles="$(DevPluginsPath)RotationSolver.Basic.dll" />
+		<Copy SourceFiles="$(OutputPath)ECommons.dll" DestinationFiles="$(DevPluginsPath)ECommons.dll" />
+		<Message Importance="high" Text="Copied ParseLord3 + dependencies to $(DevPluginsPath)" />
 	</Target>
 </Project>

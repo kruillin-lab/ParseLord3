@@ -26,19 +26,19 @@ public class ActionTimelineManager : IDisposable
     private DateTime? _combatStartTime = null;
     private bool _wasInCombat = false;
 
-	private delegate void OnActorControlDelegate(uint entityId, uint type, uint buffID, uint direct, uint actionId, uint sourceId, uint arg7, uint arg8, uint arg9, uint arg10, ulong targetId, byte arg12);
-	[Signature("E8 ?? ?? ?? ?? 0F B7 0B 83 E9 64", DetourName = nameof(OnActorControl))]
+    private delegate void OnActorControlDelegate(uint entityId, uint type, uint buffID, uint direct, uint actionId, uint sourceId, uint arg7, uint arg8, uint arg9, uint arg10, ulong targetId, byte arg12);
+    [Signature("E8 ?? ?? ?? ?? 0F B7 0B 83 E9 64", DetourName = nameof(OnActorControl))]
 #pragma warning disable CS0649
-	private readonly Hook<OnActorControlDelegate>? _onActorControlHook;
+    private readonly Hook<OnActorControlDelegate>? _onActorControlHook;
 #pragma warning restore CS0649
 
-	private delegate void OnCastDelegate(uint sourceId, IntPtr sourceCharacter);
-	[Signature("40 53 57 48 81 EC ?? ?? ?? ?? 48 8B FA 8B D1", DetourName = nameof(OnCast))]
+    private delegate void OnCastDelegate(uint sourceId, IntPtr sourceCharacter);
+    [Signature("40 53 57 48 81 EC ?? ?? ?? ?? 48 8B FA 8B D1", DetourName = nameof(OnCast))]
 #pragma warning disable CS0649
-	private readonly Hook<OnCastDelegate>? _onCastHook;
+    private readonly Hook<OnCastDelegate>? _onCastHook;
 #pragma warning restore CS0649
 
-	public DateTime EndTime { get; private set; } = DateTime.Now;
+    public DateTime EndTime { get; private set; } = DateTime.Now;
 
     private ActionTimelineManager()
     {
@@ -75,21 +75,21 @@ public class ActionTimelineManager : IDisposable
         }
     }
 
-	private static TimelineItemType GetActionType(uint actionId, ActionType type)
-	{
-		if (Svc.Data.GetExcelSheet<Action>()?.TryGetRow(actionId, out var action) != true)
-			return TimelineItemType.OGCD; // Default or fallback type
+    private static TimelineItemType GetActionType(uint actionId, ActionType type)
+    {
+        if (Svc.Data.GetExcelSheet<Action>()?.TryGetRow(actionId, out var action) != true)
+            return TimelineItemType.OGCD; // Default or fallback type
 
-		if (actionId == 3) return TimelineItemType.OGCD; // Sprint
+        if (actionId == 3) return TimelineItemType.OGCD; // Sprint
 
-		var isRealGcd = action.CooldownGroup == GCDCooldownGroup || action.AdditionalCooldownGroup == GCDCooldownGroup;
-		return action.ActionCategory.Value.RowId == 1 // AutoAttack
-			? TimelineItemType.AutoAttack
-			: !isRealGcd && action.ActionCategory.Value.RowId == 4 ? TimelineItemType.OGCD // Ability
-			: TimelineItemType.GCD;
-	}
+        var isRealGcd = action.CooldownGroup == GCDCooldownGroup || action.AdditionalCooldownGroup == GCDCooldownGroup;
+        return action.ActionCategory.Value.RowId == 1 // AutoAttack
+            ? TimelineItemType.AutoAttack
+            : !isRealGcd && action.ActionCategory.Value.RowId == 4 ? TimelineItemType.OGCD // Ability
+            : TimelineItemType.GCD;
+    }
 
-	private void AddItem(TimelineItem item)
+    private void AddItem(TimelineItem item)
     {
         if (item == null) return;
         if (_items.Count >= 2048)
@@ -174,11 +174,11 @@ public class ActionTimelineManager : IDisposable
         _lastItem.CastingTime = MathF.Min(maxTime, _lastItem.CastingTime);
     }
 
-	private void OnActorControl(uint entityId, uint type, uint buffID, uint direct, uint actionId, uint sourceId, uint arg7, uint arg8, uint arg9, uint arg10, ulong targetId, byte arg12)
-	{
-		_onActorControlHook?.Original(entityId, type, buffID, direct, actionId, sourceId, arg7, arg8, arg9, arg10, targetId, arg12);
+    private void OnActorControl(uint entityId, uint type, uint buffID, uint direct, uint actionId, uint sourceId, uint arg7, uint arg8, uint arg9, uint arg10, ulong targetId, byte arg12)
+    {
+        _onActorControlHook?.Original(entityId, type, buffID, direct, actionId, sourceId, arg7, arg8, arg9, arg10, targetId, arg12);
 
-		try
+        try
         {
             if (Player.Object == null || entityId != Player.Object.GameObjectId) return;
 
@@ -212,13 +212,13 @@ public class ActionTimelineManager : IDisposable
         {
             var session = CreateExportSession(combatStartTime);
             var json = JsonConvert.SerializeObject(session, Formatting.Indented);
-            
+
             var directory = Path.GetDirectoryName(filePath);
             if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
             {
                 Directory.CreateDirectory(directory);
             }
-            
+
             File.WriteAllText(filePath, json);
             return true;
         }
@@ -252,21 +252,21 @@ public class ActionTimelineManager : IDisposable
             if (items[i].EndTime > endTime) endTime = items[i].EndTime;
         }
 
-		// Fill session info
-		session.SessionInfo = new SessionInfo
-		{
-			StartTime = startTime,
-			EndTime = endTime,
-			DurationSeconds = (endTime - startTime).TotalSeconds,
-			PlayerName = Player.Available && Player.Object != null ? Player.Object.Name.TextValue : "Unknown",
-			PlayerJob = Player.Available ? Player.Job.ToString() : "Unknown",
-			Territory = DataCenter.Territory?.Name ?? "Unknown",
-			Duty = DataCenter.Territory?.ContentFinderName ?? "Unknown",
-			ExportedAt = DateTime.Now
-		};
+        // Fill session info
+        session.SessionInfo = new SessionInfo
+        {
+            StartTime = startTime,
+            EndTime = endTime,
+            DurationSeconds = (endTime - startTime).TotalSeconds,
+            PlayerName = Player.Available && Player.Object != null ? Player.Object.Name.TextValue : "Unknown",
+            PlayerJob = Player.Available ? Player.Job.ToString() : "Unknown",
+            Territory = DataCenter.Territory?.Name ?? "Unknown",
+            Duty = DataCenter.Territory?.ContentFinderName ?? "Unknown",
+            ExportedAt = DateTime.Now
+        };
 
-		// Convert timeline items to export format
-		Array.Sort(items, (a, b) => a.StartTime.CompareTo(b.StartTime));
+        // Convert timeline items to export format
+        Array.Sort(items, (a, b) => a.StartTime.CompareTo(b.StartTime));
         foreach (var item in items)
         {
             var exportedAction = new ExportedAction
@@ -298,10 +298,10 @@ public class ActionTimelineManager : IDisposable
         var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
         var jobName = Player.Available ? Player.Job.ToString() : "Unknown";
         var dutyName = DataCenter.Territory?.ContentFinderName ?? DataCenter.Territory?.Name ?? "Timeline";
-        
+
         // Sanitize filename
         dutyName = string.Join("_", dutyName.Split(Path.GetInvalidFileNameChars()));
-        
+
         return $"{timestamp}_{jobName}_{dutyName}.json";
     }
 
@@ -323,16 +323,16 @@ public class ActionTimelineManager : IDisposable
                 var timelineFolder = Path.Combine(Svc.PluginInterface.ConfigDirectory.FullName, "ActionTimeline");
                 var filename = GetSuggestedFilename();
                 var fullPath = Path.Combine(timelineFolder, filename);
-                
+
                 if (ExportToJson(fullPath, _combatStartTime))
                 {
                     Svc.Log.Info($"Action timeline exported to: {fullPath}");
                 }
             }
-            
+
             _combatStartTime = null;
         }
-        
+
         _wasInCombat = DataCenter.InCombat;
     }
 }

@@ -6,7 +6,7 @@ namespace RotationSolver.ExtraRotations.Ranged;
 [Rotation("Churin MCH", CombatType.PvE, GameVersion = "7.3", Description = "Kill it with kindness. And if that fails, kill it with sharp sticks or knives...or guns!")]
 [SourceCode(Path = "ArgentiRotations/Ranged/Machinist/ChurinMCH.cs")]
 [ExtraRotation]
-public sealed class ChurinMCH: MachinistRotation
+public sealed class ChurinMCH : MachinistRotation
 {
     #region Properties
     #region Boolean Properties
@@ -18,7 +18,7 @@ public sealed class ChurinMCH: MachinistRotation
     #endregion
     #region Status Booleans
 
-    private static bool IsMedicated => StatusHelper.PlayerHasStatus(true,StatusID.Medicated) ||
+    private static bool IsMedicated => StatusHelper.PlayerHasStatus(true, StatusID.Medicated) ||
                                        !StatusHelper.PlayerWillStatusEnd(0, true, StatusID.Medicated);
 
     #endregion
@@ -79,7 +79,7 @@ public sealed class ChurinMCH: MachinistRotation
     private PotionStrategy PotionUsagePresets
     { get => _churinPotions.Strategy; set => _churinPotions.Strategy = value; }
 
-    [Range(0,20, ConfigUnitType.Seconds, 0)]
+    [Range(0, 20, ConfigUnitType.Seconds, 0)]
     [RotationConfig(CombatType.PvE, Name = "Use Opener Potion at minus (value in seconds)", Parent = nameof(PotionUsageEnabled))]
     private float OpenerPotionTime { get => _churinPotions.OpenerPotionTime; set => _churinPotions.OpenerPotionTime = value; }
 
@@ -135,7 +135,8 @@ public sealed class ChurinMCH: MachinistRotation
             remainTime <= 0.1f && AirAnchorPvE.CanUse(out act))
         {
             return act;
-        }        return base.CountDownAction(remainTime);
+        }
+        return base.CountDownAction(remainTime);
     }
     #endregion
 
@@ -203,7 +204,7 @@ public sealed class ChurinMCH: MachinistRotation
             case true when !CombatElapsedLess(340) && DrillPvE.CanUse(out act, usedUp: false) && WildfirePvE.Cooldown.IsCoolingDown &&
                 AirAnchorPvE.Cooldown.WillHaveOneCharge(25):
             case true when !CombatElapsedLess(360) && WildfirePvE.Cooldown.IsCoolingDown && OverheatedStacks < 1 &&
-                           DrillPvE.CanUse(out act, usedUp:true):
+                           DrillPvE.CanUse(out act, usedUp: true):
             case true when drillHasMaxCharges && DrillPvE.CanUse(out act, usedUp: false):
             case true when drillAfterExcavator && DrillPvE.CanUse(out act, usedUp: true):
             case true when justUseDrill && DrillPvE.CanUse(out act, usedUp: true):
@@ -243,13 +244,13 @@ public sealed class ChurinMCH: MachinistRotation
 
         return nextTargetBattery switch
         {
-            90 when HasExcavatorReady && Battery <= 70 && ExcavatorPvE.CanUse(out act) =>true,
+            90 when HasExcavatorReady && Battery <= 70 && ExcavatorPvE.CanUse(out act) => true,
             90 when HasExcavatorReady && Battery >= 80 && ExcavatorPvE.CanUse(out act) => false,
-            80 when HasExcavatorReady && Battery >= 70 && ExcavatorPvE.CanUse(out act)=> false,
+            80 when HasExcavatorReady && Battery >= 70 && ExcavatorPvE.CanUse(out act) => false,
             80 when HasExcavatorReady && Battery <= 60 && ExcavatorPvE.CanUse(out act) => true,
-            60 when HasExcavatorReady && Battery >= 50 && ExcavatorPvE.CanUse(out act)=> false,
-            60 when HasExcavatorReady && Battery <= 40  && ExcavatorPvE.CanUse(out act)=> true,
-            _ => HasExcavatorReady && ExcavatorPvE.CanUse (out act)
+            60 when HasExcavatorReady && Battery >= 50 && ExcavatorPvE.CanUse(out act) => false,
+            60 when HasExcavatorReady && Battery <= 40 && ExcavatorPvE.CanUse(out act) => true,
+            _ => HasExcavatorReady && ExcavatorPvE.CanUse(out act)
         };
     }
 
@@ -288,7 +289,7 @@ public sealed class ChurinMCH: MachinistRotation
     }
     private bool TryUseOverheatedGCD(out IAction? act)
     {
-        if (!IsOverheated || OverheatedStacks < 1 ) return SetActToNull(out act);
+        if (!IsOverheated || OverheatedStacks < 1) return SetActToNull(out act);
 
         return AutoCrossbowPvE.CanUse(out act) ||
                HeatBlastPvE.CanUse(out act);
@@ -348,18 +349,18 @@ public sealed class ChurinMCH: MachinistRotation
             {
                 switch (to)
                 {
-                 case 60:
-                     _lastOddQueenBattery = 0;
-                     _nextOddQueenBattery = 70;
-                     break;
-                 case 70:
-                     _lastOddQueenBattery = 60;
-                     _nextOddQueenBattery = 80;
-                     break;
-                 case 80:
-                     _lastOddQueenBattery = 70;
-                     _nextOddQueenBattery = 60;
-                     break;
+                    case 60:
+                        _lastOddQueenBattery = 0;
+                        _nextOddQueenBattery = 70;
+                        break;
+                    case 70:
+                        _lastOddQueenBattery = 60;
+                        _nextOddQueenBattery = 80;
+                        break;
+                    case 80:
+                        _lastOddQueenBattery = 70;
+                        _nextOddQueenBattery = 60;
+                        break;
 
                 }
             }
@@ -405,19 +406,19 @@ public sealed class ChurinMCH: MachinistRotation
                 return true;
             // Fallback in case the step tracking fails
             case false when InCombat:
-            {
-                if (LastSummonBatteryPower == 50 && Battery > _nextOddQueenBattery && Battery > _lastOddQueenBattery ||
-                    Battery == 100 && LastSummonBatteryPower is 60 or 70 or 80 or 90 ||
-                    LastSummonBatteryPower == 100 && Battery == 50)
                 {
-                    if (RookAutoturretPvE.CanUse(out act, skipTTKCheck: true))
+                    if (LastSummonBatteryPower == 50 && Battery > _nextOddQueenBattery && Battery > _lastOddQueenBattery ||
+                        Battery == 100 && LastSummonBatteryPower is 60 or 70 or 80 or 90 ||
+                        LastSummonBatteryPower == 100 && Battery == 50)
                     {
-                        return true;
+                        if (RookAutoturretPvE.CanUse(out act, skipTTKCheck: true))
+                        {
+                            return true;
+                        }
                     }
-                }
 
-                break;
-            }
+                    break;
+                }
         }
 
         return SetActToNull(out act);
@@ -452,7 +453,7 @@ public sealed class ChurinMCH: MachinistRotation
         }
 
         if (Heat >= 85 && HasHypercharged && (IsLastGCD(ActionID.ExcavatorPvE) ||
-                                              !ChainSawPvE.Cooldown.HasOneCharge || ExcavatorPvE.Cooldown.JustUsedAfter(WeaponTotal/ 2) && !HasExcavatorReady) && CanLateWeave)
+                                              !ChainSawPvE.Cooldown.HasOneCharge || ExcavatorPvE.Cooldown.JustUsedAfter(WeaponTotal / 2) && !HasExcavatorReady) && CanLateWeave)
         {
             return true;
         }
@@ -462,7 +463,7 @@ public sealed class ChurinMCH: MachinistRotation
             return true;
         }
 
-        if (IsLastGCD(ActionID.BlazingShotPvE) && Heat >= 50 && WildfirePvE.Cooldown.IsCoolingDown && !WildfirePvE.Cooldown.ElapsedAfter(20) )
+        if (IsLastGCD(ActionID.BlazingShotPvE) && Heat >= 50 && WildfirePvE.Cooldown.IsCoolingDown && !WildfirePvE.Cooldown.ElapsedAfter(20))
         {
             return true;
         }
@@ -545,9 +546,9 @@ public sealed class ChurinMCH: MachinistRotation
         var isReassembleTarget =
                 ReassemblePvE.Cooldown.CurrentCharges > 0 && !HasReassembled &&
                 nextGCD.IsTheSameTo(true, ExcavatorPvE) && HasExcavatorReady ||
-                IsLastGCD(true,ChainSawPvE) && HasExcavatorReady ||
+                IsLastGCD(true, ChainSawPvE) && HasExcavatorReady ||
                 ChainSawPvE.Cooldown.IsCoolingDown && ReassemblePvE.Cooldown.CurrentCharges == 1 && ReassemblePvE.Cooldown.WillHaveXCharges(2, ChainSawPvE.Cooldown.RecastTimeElapsed) &&
-                !ChainSawPvE.Cooldown.HasOneCharge && nextGCD.IsTheSameTo(true, DrillPvE) && !CombatElapsedLessGCD(5)||
+                !ChainSawPvE.Cooldown.HasOneCharge && nextGCD.IsTheSameTo(true, DrillPvE) && !CombatElapsedLessGCD(5) ||
                 IsMedicated && IsLastGCD(ActionID.HeatBlastPvE) && OverheatedStacks < 1 && nextGCD.IsTheSameTo(true, DrillPvE) ||
                 !ChainSawPvE.EnoughLevel && nextGCD.IsTheSameTo(false, AirAnchorPvE);
 
@@ -631,7 +632,7 @@ public sealed class ChurinMCH: MachinistRotation
             {
                 return true;
             }
-        
+
             return false;
         }
 

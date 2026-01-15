@@ -89,16 +89,16 @@ public partial class SageRotation
     {
         setting.TargetType = TargetType.Kardia;
         setting.TargetStatusProvide = [StatusID.Kardion];
-		setting.ActionCheck = () =>
-		{
-			foreach (var m in DataCenter.PartyMembers)
-			{
-				if (m.HasStatus(true, StatusID.Kardion))
-					return false;
-			}
-			return true;
-		};
-		setting.CreateConfig = () => new ActionConfig()
+        setting.ActionCheck = () =>
+        {
+            foreach (var m in DataCenter.PartyMembers)
+            {
+                if (m.HasStatus(true, StatusID.Kardion))
+                    return false;
+            }
+            return true;
+        };
+        setting.CreateConfig = () => new ActionConfig()
         {
             TimeToKill = 0,
         };

@@ -288,12 +288,12 @@ public partial class DutyRotation : IDisposable
     /// </summary>
     public static bool InVariantDungeon => DataCenter.InVariantDungeon;
 
-	/// <summary>
-	/// This is the player.
-	/// </summary>
-	protected static IPlayerCharacter? Player => ECommons.GameHelpers.Player.Object;
+    /// <summary>
+    /// This is the player.
+    /// </summary>
+    protected static IPlayerCharacter? Player => ECommons.GameHelpers.Player.Object;
 
-	public static bool IsRDM => DataCenter.Job == Job.RDM;
+    public static bool IsRDM => DataCenter.Job == Job.RDM;
     public static bool IsPLD => DataCenter.Job == Job.PLD;
     public static bool IsBLM => DataCenter.Job == Job.BLM;
 
@@ -319,11 +319,11 @@ public partial class DutyRotation : IDisposable
         Chemist,
         Oracle,
         Thief,
-		MysticKnight,
-		Gladiator,
-		Dancer,
-		None
-	}
+        MysticKnight,
+        Gladiator,
+        Dancer,
+        None
+    }
 
     public static PhantomJob GetPhantomJob()
     {
@@ -341,9 +341,9 @@ public partial class DutyRotation : IDisposable
         if (SamuraiLevel > 0) return PhantomJob.Samurai;
         if (GeomancerLevel > 0) return PhantomJob.Geomancer;
 
-		if (GladiatorLevel > 0) return PhantomJob.Gladiator;
+        if (GladiatorLevel > 0) return PhantomJob.Gladiator;
         if (DancerLevel > 0) return PhantomJob.Dancer;
-		if (MysticKnightLevel > 0) return PhantomJob.MysticKnight;
+        if (MysticKnightLevel > 0) return PhantomJob.MysticKnight;
         return PhantomJob.None;
     }
 

@@ -1,6 +1,7 @@
 using Dalamud.Interface.Colors;
 
 namespace RotationSolver.Basic.Rotations.Basic;
+
 public partial class MonkRotation
 {
     /// <inheritdoc/>

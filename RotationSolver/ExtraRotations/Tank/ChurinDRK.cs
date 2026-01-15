@@ -38,7 +38,7 @@ public sealed class ChurinDRK : DarkKnightRotation
     }
 
     #endregion
-    
+
     #region Tracking Properties
     public override void DisplayRotationStatus()
     {
@@ -85,7 +85,7 @@ public sealed class ChurinDRK : DarkKnightRotation
     [Range(0, 20, ConfigUnitType.Seconds, 0)]
     [RotationConfig(CombatType.PvE, Name = "Use Opener Potion at minus time in seconds", Parent = nameof(PotionUsageEnabled))]
     private static float OpenerPotionTime { get => _churinPotions.OpenerPotionTime; set => _churinPotions.OpenerPotionTime = value; }
-    
+
     [Range(0, 1200, ConfigUnitType.Seconds, 0)]
     [RotationConfig(CombatType.PvE, Name = "Use 1st Potion at (value in seconds - leave at 0 if using in opener)", Parent = nameof(PotionUsagePresets), ParentValue = "Use custom potion timings")]
     private float FirstPotionTiming
@@ -239,9 +239,9 @@ public sealed class ChurinDRK : DarkKnightRotation
 
     protected override bool AttackAbility(IAction nextGCD, out IAction? act)
     {
-        return  TryUseSaltedEarth(out act) 
-        || TryUseShadowbringer(out act) 
-        || TryUseEdgeOfShadow(out act) 
+        return TryUseSaltedEarth(out act)
+        || TryUseShadowbringer(out act)
+        || TryUseEdgeOfShadow(out act)
         || base.AttackAbility(nextGCD, out act);
     }
     #endregion
@@ -258,7 +258,7 @@ public sealed class ChurinDRK : DarkKnightRotation
     #endregion
 
     #region Extra Methods
-    
+
     #region GCD Skills
     private bool TryUseDisesteem(out IAction? act)
     {
@@ -341,7 +341,7 @@ public sealed class ChurinDRK : DarkKnightRotation
     }
 
     #endregion
-    
+
     #region oGCD Skills
     private bool TryUseEdgeOfShadow(out IAction? act)
     {
@@ -435,12 +435,12 @@ public sealed class ChurinDRK : DarkKnightRotation
 
         return SaltedEarthPvE.CanUse(out act);
     }
-    private bool TryUseDelirium (out IAction? act)
+    private bool TryUseDelirium(out IAction? act)
     {
         act = null;
-        if (!BloodWeaponPvE.EnoughLevel && DeliriumPvE.EnoughLevel 
-        || !DeliriumPvE.IsEnabled 
-        || !BloodWeaponPvE.IsEnabled 
+        if (!BloodWeaponPvE.EnoughLevel && DeliriumPvE.EnoughLevel
+        || !DeliriumPvE.IsEnabled
+        || !BloodWeaponPvE.IsEnabled
         || !CanBurst
         || Blood > 70)
         {
@@ -468,7 +468,7 @@ public sealed class ChurinDRK : DarkKnightRotation
     }
 
     #endregion
-    
+
     #region Miscellaneous Methods
 
     #region Potions
@@ -505,7 +505,7 @@ public sealed class ChurinDRK : DarkKnightRotation
                 return 0;
             }
         }
-        
+
         public override bool IsConditionMet()
         {
             float[] timings = GetTimingsArray();
@@ -634,37 +634,37 @@ public sealed class ChurinDRK : DarkKnightRotation
 
     private List<IBattleChara> _currentParty = [];
 
-	public List<IBattleChara> CurrentParty
-	{
-		get => _currentParty;
-		set
-		{
-			_currentParty = value;
-			var newParty = PartyMembers ?? [Player!];
-			IEnumerable<IBattleChara> battleCharas = [.. newParty];
-			var hasChanged = !_currentParty.ToHashSet().SetEquals(battleCharas);
+    public List<IBattleChara> CurrentParty
+    {
+        get => _currentParty;
+        set
+        {
+            _currentParty = value;
+            var newParty = PartyMembers ?? [Player!];
+            IEnumerable<IBattleChara> battleCharas = [.. newParty];
+            var hasChanged = !_currentParty.ToHashSet().SetEquals(battleCharas);
 
-			if (hasChanged)
-			{
-				_currentParty.Clear();
-				foreach (var member in battleCharas)
-				{
-					if (member != null)
-					{
-						_currentParty.Add(member);
-					}
-				}
-			}
+            if (hasChanged)
+            {
+                _currentParty.Clear();
+                foreach (var member in battleCharas)
+                {
+                    if (member != null)
+                    {
+                        _currentParty.Add(member);
+                    }
+                }
+            }
 
-			if (_currentParty.Count == 0 && Player != null)
-			{
-				_currentParty.Add(Player);
-			}
-		}
-	}
+            if (_currentParty.Count == 0 && Player != null)
+            {
+                _currentParty.Add(Player);
+            }
+        }
+    }
 
 
-	#endregion
+    #endregion
 
-	#endregion
+    #endregion
 }

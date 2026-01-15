@@ -120,7 +120,7 @@ public partial class DarkKnightRotation
             byte stacks = StatusHelper.PlayerStatusStack(true, StatusID.Delirium_1972);
             return stacks == byte.MaxValue ? (byte)3 : stacks;
         }
-	}
+    }
 
     /// <summary>
     /// 
@@ -350,8 +350,8 @@ public partial class DarkKnightRotation
     static partial void ModifyDarkMissionaryPvE(ref ActionSetting setting)
     {
         setting.StatusProvide = [StatusID.DarkMissionary];
-		setting.ActionCheck = () => ObjectHelper.PlayerIsTargetOnSelf();
-		setting.CreateConfig = () => new ActionConfig()
+        setting.ActionCheck = () => ObjectHelper.PlayerIsTargetOnSelf();
+        setting.CreateConfig = () => new ActionConfig()
         {
             AoeCount = 1,
         };
@@ -366,13 +366,13 @@ public partial class DarkKnightRotation
     static partial void ModifyOblationPvE(ref ActionSetting setting)
     {
         setting.StatusProvide = [StatusID.Oblation];
-		setting.CreateConfig = () => new ActionConfig()
+        setting.CreateConfig = () => new ActionConfig()
         {
             AoeCount = 1,
         };
         setting.IsFriendly = true;
         setting.TargetType = TargetType.Self;
-	}
+    }
 
     static partial void ModifySaltAndDarknessPvE(ref ActionSetting setting)
     {

@@ -235,25 +235,25 @@ public readonly struct ActionBasicInfo
         Aspect = (Aspect)_action.Action.Aspect;
     }
 
-	/// <summary>
-	/// Performs a basic check to determine whether the action can be used.
-	/// </summary>
-	/// <param name="skipStatusProvideCheck">Whether to skip the status provide check.</param>
-	/// <param name="skipStatusNeed">Whether to skip the casting check.</param>
-	/// <param name="skipComboCheck">Whether to skip the combo check.</param>
-	/// <param name="skipCastingCheck">Whether to skip the casting check.</param>
-	/// <param name="checkActionManager">Whether to check the action manager directly for skills being usable.</param>
-	/// <param name="targetOverride">Overrides the default target type for the action.</param>
-	/// <returns>True if the action passes the basic check; otherwise, false.</returns>
-	internal readonly unsafe bool BasicCheck(bool skipStatusProvideCheck, bool skipStatusNeed,  bool skipComboCheck, bool skipCastingCheck, bool checkActionManager = false, TargetType targetOverride = default)
+    /// <summary>
+    /// Performs a basic check to determine whether the action can be used.
+    /// </summary>
+    /// <param name="skipStatusProvideCheck">Whether to skip the status provide check.</param>
+    /// <param name="skipStatusNeed">Whether to skip the casting check.</param>
+    /// <param name="skipComboCheck">Whether to skip the combo check.</param>
+    /// <param name="skipCastingCheck">Whether to skip the casting check.</param>
+    /// <param name="checkActionManager">Whether to check the action manager directly for skills being usable.</param>
+    /// <param name="targetOverride">Overrides the default target type for the action.</param>
+    /// <returns>True if the action passes the basic check; otherwise, false.</returns>
+    internal readonly unsafe bool BasicCheck(bool skipStatusProvideCheck, bool skipStatusNeed, bool skipComboCheck, bool skipCastingCheck, bool checkActionManager = false, TargetType targetOverride = default)
     {
-		if (Player.Object == null)
-		{
-			return false;
-		}
+        if (Player.Object == null)
+        {
+            return false;
+        }
 
-		// 1. Player and action slot checks
-		if (Player.Object.StatusList == null)
+        // 1. Player and action slot checks
+        if (Player.Object.StatusList == null)
         {
             return false;
         }
@@ -348,13 +348,13 @@ public readonly struct ActionBasicInfo
 
     private bool NeedsCasting(bool skipCastingCheck)
     {
-		if (Player.Object == null)
-		{
-			return false;
-		}
+        if (Player.Object == null)
+        {
+            return false;
+        }
 
-		// Must have a cast time
-		if (CastTime <= 0f)
+        // Must have a cast time
+        if (CastTime <= 0f)
             return false;
 
         // Must not have a instant cast status
@@ -389,12 +389,12 @@ public readonly struct ActionBasicInfo
     /// </summary>
     public bool HasEnoughMP()
     {
-		if (Player.Object == null)
-		{
-			return false;
-		}
+        if (Player.Object == null)
+        {
+            return false;
+        }
 
-		if (DataCenter.CurrentMp >= MPNeed)
+        if (DataCenter.CurrentMp >= MPNeed)
         {
             return true;
         }
@@ -419,22 +419,22 @@ public readonly struct ActionBasicInfo
 
     private bool IsStatusNeeded(bool skipStatusNeed)
     {
-		if (Player.Object == null)
-		{
-			return false;
-		}
+        if (Player.Object == null)
+        {
+            return false;
+        }
 
-		return Player.Object.StatusList != null && !skipStatusNeed && _action.Setting.StatusNeed != null && Player.Object.WillStatusEndGCD(_action.Config.StatusGcdCount, 0, _action.Setting.StatusFromSelf, _action.Setting.StatusNeed);
+        return Player.Object.StatusList != null && !skipStatusNeed && _action.Setting.StatusNeed != null && Player.Object.WillStatusEndGCD(_action.Config.StatusGcdCount, 0, _action.Setting.StatusFromSelf, _action.Setting.StatusNeed);
     }
 
     private bool IsStatusProvided(bool skipStatusProvideCheck)
     {
-		if (Player.Object == null)
-		{
-			return false;
-		}
+        if (Player.Object == null)
+        {
+            return false;
+        }
 
-		return Player.Object.StatusList != null && !skipStatusProvideCheck && _action.Setting.StatusProvide != null && !Player.Object.WillStatusEndGCD(_action.Config.StatusGcdCount, 0, _action.Setting.StatusFromSelf, _action.Setting.StatusProvide);
+        return Player.Object.StatusList != null && !skipStatusProvideCheck && _action.Setting.StatusProvide != null && !Player.Object.WillStatusEndGCD(_action.Config.StatusGcdCount, 0, _action.Setting.StatusFromSelf, _action.Setting.StatusProvide);
     }
 
     private bool IsComboValid(bool skipComboCheck)

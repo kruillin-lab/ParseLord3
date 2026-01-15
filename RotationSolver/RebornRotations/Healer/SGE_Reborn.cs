@@ -747,7 +747,7 @@ public sealed class SGE_Reborn : SageRotation
     protected override bool GeneralGCD(out IAction? act)
     {
         if ((HasSwift || IsLastAction(ActionID.SwiftcastPvE)) && SwiftLogic && MergedStatus.HasFlag(AutoStatus.Raise))
-		{
+        {
             return base.GeneralGCD(out act);
         }
 

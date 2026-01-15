@@ -18,34 +18,34 @@ public sealed class MCH_Reborn : MachinistRotation
     [RotationConfig(CombatType.PvE, Name = "Restrict mitigations to not overlap")]
     private bool MitOverlap { get; set; } = false;
 
-	[RotationConfig(CombatType.PvE, Name = "Use AirAnchor at 1 second remaining on countdown")]
-	private bool AirAnchorCountdown { get; set; } = false;
-	#endregion
+    [RotationConfig(CombatType.PvE, Name = "Use AirAnchor at 1 second remaining on countdown")]
+    private bool AirAnchorCountdown { get; set; } = false;
+    #endregion
 
-	#region Countdown logic
-	protected override IAction? CountDownAction(float remainTime)
+    #region Countdown logic
+    protected override IAction? CountDownAction(float remainTime)
     {
-		if (AirAnchorCountdown && remainTime < 1f && AirAnchorPvE.EnoughLevel && AirAnchorPvE.CanUse(out IAction? act))
-		{
-			return act;
-		}
-
-		if (remainTime < 4.75f && ReassemblePvE.CanUse(out act))
+        if (AirAnchorCountdown && remainTime < 1f && AirAnchorPvE.EnoughLevel && AirAnchorPvE.CanUse(out IAction? act))
         {
             return act;
         }
 
-		if (AirAnchorCountdown && IsBurst && OpenerBurstMeds && remainTime <= 1.5f && UseBurstMedicine(out act))
-		{
-			return act;
-		}
-
-		if (!AirAnchorCountdown && IsBurst && OpenerBurstMeds && remainTime <= 1f && UseBurstMedicine(out act))
+        if (remainTime < 4.75f && ReassemblePvE.CanUse(out act))
         {
             return act;
         }
 
-		return base.CountDownAction(remainTime);
+        if (AirAnchorCountdown && IsBurst && OpenerBurstMeds && remainTime <= 1.5f && UseBurstMedicine(out act))
+        {
+            return act;
+        }
+
+        if (!AirAnchorCountdown && IsBurst && OpenerBurstMeds && remainTime <= 1f && UseBurstMedicine(out act))
+        {
+            return act;
+        }
+
+        return base.CountDownAction(remainTime);
     }
     #endregion
 

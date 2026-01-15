@@ -1,6 +1,7 @@
 ﻿using Lumina.Excel.Sheets;
 
 namespace RotationSolver.Basic.Actions;
+
 internal class PhoenixDownItem : BaseItem
 {
     public PhoenixDownItem(Item item) : base(item)

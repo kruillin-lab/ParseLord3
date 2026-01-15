@@ -126,7 +126,7 @@ namespace RotationSolver.DocumentationGenerator
                 }
             }
 
-            if (!Directory.Exists("_doc")) 
+            if (!Directory.Exists("_doc"))
                 Directory.CreateDirectory("_doc");
 
             foreach (var (fileName, sections) in Files)

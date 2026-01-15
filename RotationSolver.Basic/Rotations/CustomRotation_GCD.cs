@@ -7,7 +7,7 @@ public partial class CustomRotation
     /// </summary>
     public static bool HealingWhileDoingNothing =>
         _nextTimeToHeal + TimeSpan.FromSeconds(DataCenter.DefaultGCDTotal) > DateTime.Now;
-    
+
     private static DateTime _nextTimeToHeal = DateTime.MinValue;
     private static readonly Random _random = new();
 
@@ -71,7 +71,7 @@ public partial class CustomRotation
             HardCastRaiseType hardcastraisetype = Service.Config.HardCastRaiseType;
 
             if (Service.Config.RaisePlayerFirst)
-            {                
+            {
                 if (RaiseSpell(out act, false))
                 {
                     return act;

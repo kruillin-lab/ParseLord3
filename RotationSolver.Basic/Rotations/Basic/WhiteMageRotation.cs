@@ -120,7 +120,7 @@ public partial class WhiteMageRotation
             StatusID.Aero,
             StatusID.AeroIi,
             StatusID.Dia,
-        ]; 
+        ];
         setting.CreateConfig = () => new ActionConfig()
         {
             IsRestrictedDOT = true,
