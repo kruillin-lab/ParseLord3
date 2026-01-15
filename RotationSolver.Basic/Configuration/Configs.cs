@@ -40,7 +40,17 @@ public enum ActionStackTargetType
     Owner,          // <owner>
     Pet,            // <pet>
     LastTarget,     // <lt>
-    LastEnemy       // <le>
+    LastEnemy,      // <le>
+    LastAttacker,   // <la>
+    SoftTarget,     // <soft>
+    Companion,      // <companion>
+    
+    // Jobs
+    PLD, WAR, DRK, GNB,
+    WHM, SCH, AST, SGE,
+    MNK, DRG, NIN, SAM, RPR, VPR,
+    BRD, MCH, DNC,
+    BLM, SMN, RDM, PCT, BLU
 }
 
 public class ActionStackItem

@@ -1,6 +1,7 @@
 using Dalamud.Hooking;
 using ECommons.DalamudServices;
 using ECommons.GameHelpers;
+using ECommons.ExcelServices;
 using ECommons.Logging;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using RotationSolver.Commands;
@@ -99,6 +100,19 @@ namespace RotationSolver.Updaters
             {
                 PluginLog.Error($"[ActionQueueManager] Failed to dispose action hooks: {ex}");
             }
+        }
+
+        private static IGameObject? GetFirstMemberByJob(Job job)
+        {
+            if (Svc.Party.Length > 0)
+            {
+                foreach (var member in Svc.Party)
+                {
+                    if (member.GameObject is IBattleChara bc && bc.ClassJob.RowId == (uint)job)
+                        return bc;
+                }
+            }
+            return null;
         }
 
         private static IGameObject? GetLowestHpMember(JobRole role)
@@ -283,6 +297,40 @@ namespace RotationSolver.Updaters
                                 // Placeholder
                                 target = Svc.Targets.Target;
                                 break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.LastAttacker:
+                                // Placeholder (Need memory or Dalamud API if available)
+                                target = Svc.Targets.Target; 
+                                break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.SoftTarget:
+                                target = Svc.Targets.SoftTarget;
+                                break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.Companion:
+                                target = Svc.Buddies.PetBuddy?.GameObject;
+                                break;
+                            
+                            // Jobs
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.PLD: target = GetFirstMemberByJob(Job.PLD); break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.WAR: target = GetFirstMemberByJob(Job.WAR); break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.DRK: target = GetFirstMemberByJob(Job.DRK); break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.GNB: target = GetFirstMemberByJob(Job.GNB); break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.WHM: target = GetFirstMemberByJob(Job.WHM); break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.SCH: target = GetFirstMemberByJob(Job.SCH); break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.AST: target = GetFirstMemberByJob(Job.AST); break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.SGE: target = GetFirstMemberByJob(Job.SGE); break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.MNK: target = GetFirstMemberByJob(Job.MNK); break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.DRG: target = GetFirstMemberByJob(Job.DRG); break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.NIN: target = GetFirstMemberByJob(Job.NIN); break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.SAM: target = GetFirstMemberByJob(Job.SAM); break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.RPR: target = GetFirstMemberByJob(Job.RPR); break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.VPR: target = GetFirstMemberByJob(Job.VPR); break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.BRD: target = GetFirstMemberByJob(Job.BRD); break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.MCH: target = GetFirstMemberByJob(Job.MCH); break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.DNC: target = GetFirstMemberByJob(Job.DNC); break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.BLM: target = GetFirstMemberByJob(Job.BLM); break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.SMN: target = GetFirstMemberByJob(Job.SMN); break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.RDM: target = GetFirstMemberByJob(Job.RDM); break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.PCT: target = GetFirstMemberByJob(Job.PCT); break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.BLU: target = GetFirstMemberByJob(Job.BLU); break;
                         }
 
                         if (target == null) continue;
