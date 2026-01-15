@@ -84,7 +84,7 @@ public class BLM_Default : BlackMageRotation
         //Using Manafont
         if (InAstralFire)
         {
-            if (CurrentMp == 0 && ManafontPvE.CanUse(out act))
+            if (CurrentMp < 800 && ManafontPvE.CanUse(out act))
             {
                 return true;
             }
