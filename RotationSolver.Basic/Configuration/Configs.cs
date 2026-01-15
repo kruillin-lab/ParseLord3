@@ -19,14 +19,28 @@ public class BeneficialTargetConfig
 
 public enum ActionStackTargetType
 {
-    Target,         // Original Target (from input)
+    Target,         // Original Target
     Self,           // <me>
     Focus,          // <f>
     Mouseover,      // <mo>
     TargetOfTarget, // <tt>
     UITarget,       // Hard Target
-    Tank,           // Party Tank
-    Party1, Party2, Party3, Party4, Party5, Party6, Party7, Party8
+    Tank,           // Party Tank (First)
+    Party1, Party2, Party3, Party4, Party5, Party6, Party7, Party8,
+    
+    // Advanced
+    LowestHpParty,  // <lowhp>
+    LowestHpTank,   // <lowtank>
+    LowestHpHealer, // <lowheal>
+    LowestHpDps,    // <lowdps>
+    NearestParty,   // <nearparty>
+    FurthestParty,  // <farparty>
+    NearestEnemy,   // <nearenemy>
+    FurthestEnemy,  // <farenemy>
+    Owner,          // <owner>
+    Pet,            // <pet>
+    LastTarget,     // <lt>
+    LastEnemy       // <le>
 }
 
 public class ActionStackItem

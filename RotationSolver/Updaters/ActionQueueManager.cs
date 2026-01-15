@@ -101,6 +101,89 @@ namespace RotationSolver.Updaters
             }
         }
 
+        private static IGameObject? GetLowestHpMember(JobRole role)
+        {
+            IGameObject? best = null;
+            float minHp = float.MaxValue;
+            
+            // Check Party
+            if (Svc.Party.Length > 0)
+            {
+                foreach (var member in Svc.Party)
+                {
+                    if (member.GameObject is IBattleChara bc)
+                    {
+                        if (role != JobRole.None)
+                        {
+                            if (role == (JobRole)100) // DPS placeholder
+                            {
+                                if (!bc.IsJobCategory(JobRole.Melee) && !bc.IsJobCategory(JobRole.RangedPhysical) && !bc.IsJobCategory(JobRole.RangedMagical)) continue;
+                            }
+                            else if (!bc.IsJobCategory(role)) 
+                            {
+                                continue;
+                            }
+                        }
+
+                        float hp = (float)bc.CurrentHp / bc.MaxHp;
+                        if (hp < minHp)
+                        {
+                            minHp = hp;
+                            best = bc;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // Solo check (Player)
+                if (Player.Object is IBattleChara p && (role == JobRole.None || p.IsJobCategory(role)))
+                    best = p;
+            }
+            return best;
+        }
+
+        private static IGameObject? GetNearestMember(bool party, bool furthest = false)
+        {
+            IGameObject? best = null;
+            float bestDist = furthest ? float.MinValue : float.MaxValue;
+            if (Player.Object == null) return null;
+            Vector2 pPos = new Vector2(Player.Object.Position.X, Player.Object.Position.Z);
+
+            if (party)
+            {
+                foreach (var member in Svc.Party)
+                {
+                    if (member.GameObject == null || member.GameObject == Player.Object) continue;
+                    float dist = Vector2.Distance(pPos, new Vector2(member.GameObject.Position.X, member.GameObject.Position.Z));
+                    bool update = furthest ? dist > bestDist : dist < bestDist;
+                    if (update)
+                    {
+                        bestDist = dist;
+                        best = member.GameObject;
+                    }
+                }
+            }
+            else // Enemy
+            {
+                // Use DataCenter.HostileTargets?
+                foreach (var obj in Svc.Objects)
+                {
+                    if (obj is IBattleChara bc && bc.IsEnemy() && !bc.IsDead)
+                    {
+                        float dist = Vector2.Distance(pPos, new Vector2(bc.Position.X, bc.Position.Z));
+                        bool update = furthest ? dist > bestDist : dist < bestDist;
+                        if (update)
+                        {
+                            bestDist = dist;
+                            best = bc;
+                        }
+                    }
+                }
+            }
+            return best;
+        }
+
         private static unsafe bool UseActionDetour(ActionManager* actionManager, uint actionType, uint actionID, ulong targetObjectID, uint param, uint useType, int pvp, bool* isGroundTarget)
         {
             // Action Stacks Logic (ReactionEx Style)
@@ -158,6 +241,48 @@ namespace RotationSolver.Updaters
                             case RotationSolver.Basic.Configuration.ActionStackTargetType.Party6: if (Svc.Party.Length > 5) target = Svc.Party[5]?.GameObject; break;
                             case RotationSolver.Basic.Configuration.ActionStackTargetType.Party7: if (Svc.Party.Length > 6) target = Svc.Party[6]?.GameObject; break;
                             case RotationSolver.Basic.Configuration.ActionStackTargetType.Party8: if (Svc.Party.Length > 7) target = Svc.Party[7]?.GameObject; break;
+
+                            // Advanced Types
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.LowestHpParty:
+                                target = GetLowestHpMember(JobRole.None);
+                                break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.LowestHpTank:
+                                target = GetLowestHpMember(JobRole.Tank);
+                                break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.LowestHpHealer:
+                                target = GetLowestHpMember(JobRole.Healer);
+                                break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.LowestHpDps:
+                                target = GetLowestHpMember((JobRole)100);
+                                break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.NearestParty:
+                                target = GetNearestMember(true); // True = Party
+                                break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.FurthestParty:
+                                target = GetNearestMember(true, true); // Party, Furthest
+                                break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.NearestEnemy:
+                                target = GetNearestMember(false); // False = Enemy
+                                break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.FurthestEnemy:
+                                target = GetNearestMember(false, true); // Enemy, Furthest
+                                break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.Owner:
+                                if (Player.Object is IBattleChara pChara) target = pChara.OwnerId != 3758096384UL ? Svc.Objects.SearchById(pChara.OwnerId) : null;
+                                break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.Pet:
+                                // Finding pet is tricky without PetManager, but basic BattleChara might have Minion/Pet ID?
+                                // Usually we search objects for BattleNpc owned by Player.
+                                target = Svc.Objects.FirstOrDefault(o => o is IBattleChara bc && bc.OwnerId == Player.Object.GameObjectId);
+                                break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.LastTarget:
+                                // Placeholder: Needs tracking logic. Using Target for now to avoid null.
+                                target = Svc.Targets.Target; 
+                                break;
+                            case RotationSolver.Basic.Configuration.ActionStackTargetType.LastEnemy:
+                                // Placeholder
+                                target = Svc.Targets.Target;
+                                break;
                         }
 
                         if (target == null) continue;
