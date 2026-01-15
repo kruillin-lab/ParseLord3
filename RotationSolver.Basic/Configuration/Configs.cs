@@ -19,31 +19,55 @@ public class BeneficialTargetConfig
 
 public enum ActionStackTargetType
 {
-    Target,         // Original Target
-    Self,           // <me>
-    Focus,          // <f>
-    Mouseover,      // <mo>
-    TargetOfTarget, // <tt>
-    UITarget,       // Hard Target
-    Tank,           // Party Tank (First)
+    [System.ComponentModel.Description("Target <t>")]
+    Target,
+    [System.ComponentModel.Description("Self <me>")]
+    Self,
+    [System.ComponentModel.Description("Focus Target <f>")]
+    Focus,
+    [System.ComponentModel.Description("Mouseover <mo>")]
+    Mouseover,
+    [System.ComponentModel.Description("Target of Target <tt>")]
+    TargetOfTarget,
+    [System.ComponentModel.Description("UI Target")]
+    UITarget,
+    [System.ComponentModel.Description("Tank (Party)")]
+    Tank,
     Party1, Party2, Party3, Party4, Party5, Party6, Party7, Party8,
     
-    // Advanced
-    LowestHpParty,  // <lowhp>
-    LowestHpTank,   // <lowtank>
-    LowestHpHealer, // <lowheal>
-    LowestHpDps,    // <lowdps>
-    NearestParty,   // <nearparty>
-    FurthestParty,  // <farparty>
-    NearestEnemy,   // <nearenemy>
-    FurthestEnemy,  // <farenemy>
-    Owner,          // <owner>
-    Pet,            // <pet>
-    LastTarget,     // <lt>
-    LastEnemy,      // <le>
-    LastAttacker,   // <la>
-    SoftTarget,     // <soft>
-    Companion,      // <companion>
+    [System.ComponentModel.Description("Lowest HP (Party)")]
+    LowestHpParty,
+    [System.ComponentModel.Description("Lowest HP (Tank)")]
+    LowestHpTank,
+    [System.ComponentModel.Description("Lowest HP (Healer)")]
+    LowestHpHealer,
+    [System.ComponentModel.Description("Lowest HP (DPS)")]
+    LowestHpDps,
+    
+    [System.ComponentModel.Description("Nearest (Party)")]
+    NearestParty,
+    [System.ComponentModel.Description("Furthest (Party)")]
+    FurthestParty,
+    [System.ComponentModel.Description("Nearest (Enemy)")]
+    NearestEnemy,
+    [System.ComponentModel.Description("Furthest (Enemy)")]
+    FurthestEnemy,
+    
+    [System.ComponentModel.Description("Owner")]
+    Owner,
+    [System.ComponentModel.Description("Pet")]
+    Pet,
+    
+    [System.ComponentModel.Description("Last Target <lt>")]
+    LastTarget,
+    [System.ComponentModel.Description("Last Enemy <le>")]
+    LastEnemy,
+    [System.ComponentModel.Description("Last Attacker <la>")]
+    LastAttacker,
+    [System.ComponentModel.Description("Soft Target")]
+    SoftTarget,
+    [System.ComponentModel.Description("Companion")]
+    Companion,
     
     // Jobs
     PLD, WAR, DRK, GNB,
