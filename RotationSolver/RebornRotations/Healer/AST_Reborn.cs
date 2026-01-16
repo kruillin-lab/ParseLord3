@@ -43,6 +43,13 @@ public sealed class AST_Reborn : AstrologianRotation
     [RotationConfig(CombatType.PvE, Name = "Minimum HP threshold party member needs to be to use Aspected Benefic")]
     public float AspectedBeneficHeal { get; set; } = 0.4f;
 
+    [RotationConfig(CombatType.PvE, Name = "Keep Aspected Benefic on Tank when HP drops below threshold")]
+    public bool KeepAspectedBeneficOnTank { get; set; } = true;
+
+    [Range(0, 1, ConfigUnitType.Percent)]
+    [RotationConfig(CombatType.PvE, Name = "Tank HP threshold to apply/maintain Aspected Benefic")]
+    public float AspectedBeneficTankThreshold { get; set; } = 0.9f;
+
     [Range(0, 1, ConfigUnitType.Percent)]
     [RotationConfig(CombatType.PvE, Name = "Minimum HP threshold party member needs to be to use Synastry")]
     public float SynastryHeal { get; set; } = 0.5f;
@@ -611,6 +618,29 @@ public sealed class AST_Reborn : AstrologianRotation
         if ((HasSwift || IsLastAction(ActionID.SwiftcastPvE)) && SwiftLogic && MergedStatus.HasFlag(AutoStatus.Raise))
         {
             return base.GeneralGCD(out act);
+        }
+
+        //Keep Aspected Benefic on Tank when HP drops below threshold
+        if (KeepAspectedBeneficOnTank && InCombat && AspectedBeneficPvE.EnoughLevel)
+        {
+            foreach (IBattleChara tank in PartyMembers.GetJobCategory(JobRole.Tank))
+            {
+                if (tank.IsDead) continue;
+                float tankHp = tank.GetHealthRatio();
+                bool hasAspectedBenefic = tank.HasStatus(true, StatusID.AspectedBenefic);
+                
+                if (tankHp < AspectedBeneficTankThreshold && !hasAspectedBenefic && tankHp > AspectedBeneficHeal)
+                {
+                    if (AspectedBeneficPvE.CanUse(out act, skipAoeCheck: true))
+                    {
+                        //Target this specific tank
+                        if (AspectedBeneficPvE.Target.Target == tank)
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
         }
 
         if (GravityIiPvE.EnoughLevel && GravityIiPvE.CanUse(out act))

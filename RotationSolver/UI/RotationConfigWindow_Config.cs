@@ -241,7 +241,30 @@ public partial class RotationConfigWindow
     private void DrawActionStacks()
     {
         float leftWidth = 200 * Scale;
-        if (_actionSheet == null) _actionSheet = Svc.Data.GetExcelSheet<Lumina.Excel.Sheets.Action>()?.Where(x => !string.IsNullOrEmpty(x.Name.ToString())).ToArray();
+        if (_actionSheet == null)
+        {
+            //Filter to only player-usable actions (not NPC spells)
+            _actionSheet = Svc.Data.GetExcelSheet<Lumina.Excel.Sheets.Action>()?
+                .Where(x => 
+                {
+                    //Must have a name
+                    if (string.IsNullOrEmpty(x.Name.ToString())) return false;
+                    //Must have a valid ClassJobCategory (NPC actions have 0)
+                    if (x.ClassJobCategory.RowId == 0) return false;
+                    //Must have a valid icon (not placeholder icons)
+                    if (x.Icon is 0 or 405 or 784) return false;
+                    //Filter out non-combat action categories (system, mount, fashion, etc.)
+                    //ActionCategory: 2=Spell, 3=Weaponskill, 4=Ability, 5=Item, 9=LimitBreak, 10=System, 11=ArtificeAction
+                    //Keep: 2 (Spell), 3 (Weaponskill), 4 (Ability), 9 (LimitBreak)
+                    if (x.ActionCategory.RowId is 0 or 1 or 5 or 6 or 7 or 8 or 10 or 11 or 12 or 13 or > 14) return false;
+                    //Must be usable by players (IsPvP check or ClassJobCategory valid)
+                    if (!x.ClassJobCategory.IsValid) return false;
+                    return true;
+                })
+                .OrderBy(x => x.ClassJobCategory.RowId)
+                .ThenBy(x => x.Name.ToString())
+                .ToArray();
+        }
         
         // Split View
         ImGui.BeginGroup();
