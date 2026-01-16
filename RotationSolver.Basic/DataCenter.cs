@@ -1267,7 +1267,9 @@ internal static class DataCenter
     // Cached, case-insensitive path sets modeled after WrathCombo VFX.cs
     private static readonly FrozenSet<string> TankbusterPaths = FrozenSet.ToFrozenSet(
     [
-        "vfx/lockon/eff/x6fe_fan100_50_0t1",     // Necron Blue Shockwave - Cone Tankbuster
+		"vfx/lockon/eff/tank_lockon",
+		"vfx/lockon/eff/tank_laser",
+		"vfx/lockon/eff/x6fe_fan100_50_0t1",     // Necron Blue Shockwave - Cone Tankbuster
 		//"vfx/common/eff/mon_eisyo03t",           // M10 Deep Impact AoE TB need different path for this, this is the generic target vfx part
 		"vfx/lockon/eff/m0676trg_tw_d0t1p",      // M10 Hot Impact shared TB
 		"vfx/lockon/eff/m0676trg_tw_s6_d0t1p",   // M11 Raw Steel
@@ -1488,29 +1490,24 @@ internal static class DataCenter
                 return false;
             }
 
-            bool isTank = TargetFilter.PlayerJobCategory(JobRole.Tank);
-            bool isPlayerTarget = s.ObjectId == Player.Object.GameObjectId;
-            bool isLockon = s.Path.StartsWith("vfx/lockon/eff/tank_lockon", PathCmp)
-                            || s.Path.StartsWith("vfx/lockon/eff/tank_laser", PathCmp);
+			bool isTank = TargetFilter.PlayerJobCategory(JobRole.Tank);
+			bool isPlayerTarget = s.ObjectId == Player.Object.GameObjectId;
 
-            foreach (var p in TankbusterPaths)
-            {
-                if (s.Path.StartsWith(p, PathCmp))
-                {
-                    PluginLog.Debug($"Tankbuster VFX triggered: {s.Path}");
-                    return !isTank || isPlayerTarget;
-                }
-            }
+			foreach (var p in TankbusterPaths)
+			{
+				if (s.Path.StartsWith(p, PathCmp))
+				{
+					if (!isTank || isPlayerTarget)
+					{
+						PluginLog.Debug($"Tank lock-on VFX triggered: {s.Path}, ObjectId: {s.ObjectId}");
+						return true;
+					}
+				}
+			}
 
-            if ((!isTank || isPlayerTarget) && isLockon)
-            {
-                PluginLog.Debug($"Tank lock-on VFX triggered: {s.Path}, ObjectId: {s.ObjectId}");
-                return true;
-            }
-
-            return false;
-        });
-    }
+			return false;
+		});
+	}
 
     // Improved shared AOE detection using cached sets, covers both regular and multi-hit stack markers
     public static bool IsCastingAreaVfx()
