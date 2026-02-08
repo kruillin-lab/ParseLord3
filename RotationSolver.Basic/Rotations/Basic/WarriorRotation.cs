@@ -247,7 +247,7 @@ public partial class WarriorRotation
 
     static partial void ModifyUpheavalPvE(ref ActionSetting setting)
     {
-        //TODO: Why is that status? Answer: This is Warrior's 10% damage buff. Don't want to cast Upheaval at the start of combat without the buff. 
+        // Warrior's 10% damage buff. Don't want to cast Upheaval at the start of combat without the buff.
         setting.StatusNeed = [StatusID.SurgingTempest];
     }
 

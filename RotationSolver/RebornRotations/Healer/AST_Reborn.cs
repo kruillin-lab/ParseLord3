@@ -39,16 +39,12 @@ public sealed class AST_Reborn : AstrologianRotation
     [RotationConfig(CombatType.PvE, Name = "Use Earthly Star during countdown timer.")]
     public float UseEarthlyStarTime { get; set; } = 4;
 
+    [RotationConfig(CombatType.PvE, Name = "Keep Aspected Benefic rolling on the Tank")]
+    public bool KeepAspectedRolling { get; set; } = false;
+
     [Range(0, 1, ConfigUnitType.Percent)]
     [RotationConfig(CombatType.PvE, Name = "Minimum HP threshold party member needs to be to use Aspected Benefic")]
     public float AspectedBeneficHeal { get; set; } = 0.4f;
-
-    [RotationConfig(CombatType.PvE, Name = "Keep Aspected Benefic on Tank when HP drops below threshold")]
-    public bool KeepAspectedBeneficOnTank { get; set; } = true;
-
-    [Range(0, 1, ConfigUnitType.Percent)]
-    [RotationConfig(CombatType.PvE, Name = "Tank HP threshold to apply/maintain Aspected Benefic")]
-    public float AspectedBeneficTankThreshold { get; set; } = 0.9f;
 
     [Range(0, 1, ConfigUnitType.Percent)]
     [RotationConfig(CombatType.PvE, Name = "Minimum HP threshold party member needs to be to use Synastry")]
@@ -423,12 +419,17 @@ public sealed class AST_Reborn : AstrologianRotation
             return base.AttackAbility(nextGCD, out act);
         }
 
+        if (OraclePvE.CanUse(out act))
+        {
+            return true;
+        }
+
         if (SimpleLord && InCombat && HasDivination && LordOfCrownsPvE.CanUse(out act))
         {
             return true;
         }
 
-        if (IsBurst && !IsMoving && InCombat && DivinationPvE.CanUse(out act))
+        if (InCombat && DivinationPvE.CanUse(out act))
         {
             return true;
         }
@@ -459,8 +460,7 @@ public sealed class AST_Reborn : AstrologianRotation
                 return true;
             }
 
-            if (!SimpleLord &&
-                (HasDivination
+            if ((HasDivination
                 || !DivinationPvE.Cooldown.WillHaveOneCharge(45)
                 || !DivinationPvE.EnoughLevel
                 || UmbralDrawPvE.Cooldown.WillHaveOneCharge(3)) && LordOfCrownsPvE.CanUse(out act))
@@ -620,27 +620,9 @@ public sealed class AST_Reborn : AstrologianRotation
             return base.GeneralGCD(out act);
         }
 
-        //Keep Aspected Benefic on Tank when HP drops below threshold
-        if (KeepAspectedBeneficOnTank && InCombat && AspectedBeneficPvE.EnoughLevel)
+        if (KeepAspectedRolling && AspectedBeneficPvE.CanUse(out act) && AspectedBeneficPvE.Target.Target.IsJobCategory(JobRole.Tank))
         {
-            foreach (IBattleChara tank in PartyMembers.GetJobCategory(JobRole.Tank))
-            {
-                if (tank.IsDead) continue;
-                float tankHp = tank.GetHealthRatio();
-                bool hasAspectedBenefic = tank.HasStatus(true, StatusID.AspectedBenefic);
-                
-                if (tankHp < AspectedBeneficTankThreshold && !hasAspectedBenefic && tankHp > AspectedBeneficHeal)
-                {
-                    if (AspectedBeneficPvE.CanUse(out act, skipAoeCheck: true))
-                    {
-                        //Target this specific tank
-                        if (AspectedBeneficPvE.Target.Target == tank)
-                        {
-                            return true;
-                        }
-                    }
-                }
-            }
+            return true;
         }
 
         if (GravityIiPvE.EnoughLevel && GravityIiPvE.CanUse(out act))

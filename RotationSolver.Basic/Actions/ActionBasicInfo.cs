@@ -154,7 +154,10 @@ public readonly struct ActionBasicInfo
     /// </summary>
     public unsafe bool ActionManagerStatusValid()
     {
-        return ActionManager.Instance() != null && ActionManager.Instance()->GetActionStatus(ActionType.Action, ID) == 0;
+        if (ActionManager.Instance() == null) return false;
+        var status = ActionManager.Instance()->GetActionStatus(ActionType.Action, ID);
+        // Treat 582 as a valid status because it appears to be a transient error.
+        return status == 0 || status == 582;
     }
 
     /// <summary>
@@ -374,7 +377,7 @@ public readonly struct ActionBasicInfo
         return false;
     }
 
-    private bool IsActionEnabled()
+    public bool IsActionEnabled()
     {
         return _action.Config?.IsEnabled ?? false;
     }

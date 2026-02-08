@@ -129,7 +129,7 @@ public sealed class BRD_Reborn : BardRotation
     {
         if (TheWanderersMinuetPvE.CanUse(out act) && InCombat && !IsLastAbility(ActionID.ArmysPaeonPvE) && !IsLastAbility(ActionID.MagesBalladPvE))
         {
-            if (SongEndAfter(ARMYRemainTime) && (Song != Song.None || StatusHelper.PlayerHasStatus(true, StatusID.ArmysEthos)))
+            if (SongEndAfter(12) && Song == Song.Army)
             {
                 return true;
             }
@@ -137,12 +137,7 @@ public sealed class BRD_Reborn : BardRotation
 
         if (MagesBalladPvE.CanUse(out act) && InCombat && !IsLastAbility(ActionID.ArmysPaeonPvE) && !IsLastAbility(ActionID.TheWanderersMinuetPvE))
         {
-            if (Song == Song.Wanderer && SongEndAfter(WANDRemainTime) && (Repertoire == 0 || !HasHostilesInMaxRange))
-            {
-                return true;
-            }
-
-            if (Song == Song.Army && SongEndAfterGCD(2) && TheWanderersMinuetPvE.Cooldown.IsCoolingDown)
+            if (Song == Song.Wanderer && SongEndAfter(2))
             {
                 return true;
             }
@@ -150,17 +145,7 @@ public sealed class BRD_Reborn : BardRotation
 
         if (ArmysPaeonPvE.CanUse(out act) && InCombat && !IsLastAbility(ActionID.MagesBalladPvE) && !IsLastAbility(ActionID.TheWanderersMinuetPvE))
         {
-            if (TheWanderersMinuetPvE.EnoughLevel && SongEndAfter(MAGERemainTime) && Song == Song.Mage)
-            {
-                return true;
-            }
-
-            if (TheWanderersMinuetPvE.EnoughLevel && SongEndAfter(2) && MagesBalladPvE.Cooldown.IsCoolingDown && Song == Song.Wanderer)
-            {
-                return true;
-            }
-
-            if (!TheWanderersMinuetPvE.EnoughLevel && SongEndAfter(2))
+            if (Song == Song.Mage && SongEndAfter(2))
             {
                 return true;
             }
@@ -215,44 +200,19 @@ public sealed class BRD_Reborn : BardRotation
 
     protected override bool AttackAbility(IAction nextGCD, out IAction? act)
     {
-        if (IsBurst && Song != Song.None && MagesBalladPvE.EnoughLevel)
+        if (IsBurst && Song != Song.None)
         {
-            if (((!RadiantFinalePvE.EnoughLevel && !RagingStrikesPvE.Cooldown.IsCoolingDown)
-                    || (RadiantFinalePvE.EnoughLevel && !RadiantFinalePvE.Cooldown.IsCoolingDown && RagingStrikesPvE.EnoughLevel && (!RagingStrikesPvE.Cooldown.IsCoolingDown || RagingStrikesPvE.Cooldown.WillHaveOneCharge(BuffAlignment))))
-                    && CurrentTarget?.HasStatus(true, StatusID.Windbite, StatusID.Stormbite) == true && CurrentTarget?.HasStatus(true, StatusID.VenomousBite, StatusID.CausticBite) == true && BattleVoicePvE.CanUse(out act))
-            {
-                return true;
-            }
+            // 1. Radiant Finale
+            if (RadiantFinalePvE.CanUse(out act)) return true;
 
-            if (StatusHelper.PlayerHasStatus(true, StatusID.BattleVoice) && RadiantFinalePvE.CanUse(out act))
-            {
-                return true;
-            }
+            // 2. Battle Voice
+            if (HasRadiantFinale && BattleVoicePvE.CanUse(out act)) return true;
 
-            if (((RadiantFinalePvE.EnoughLevel && HasRadiantFinale && HasBattleVoice)
-                || (!RadiantFinalePvE.EnoughLevel && BattleVoicePvE.EnoughLevel && HasBattleVoice)
-                || (!RadiantFinalePvE.EnoughLevel && !BattleVoicePvE.EnoughLevel))
-                && RagingStrikesPvE.CanUse(out act))
-            {
-                return true;
-            }
-        }
-        else if (!MagesBalladPvE.EnoughLevel)
-        {
-            if (!StraightShotPvE.EnoughLevel && RagingStrikesPvE.CanUse(out act))
-            {
-                return true;
-            }
+            // 3. Raging Strikes
+            if (HasBattleVoice && RagingStrikesPvE.CanUse(out act)) return true;
 
-            if (nextGCD.IsTheSameTo(true, StraightShotPvE) && RagingStrikesPvE.CanUse(out act))
-            {
-                return true;
-            }
-        }
-
-        if (RadiantFinalePvE.EnoughLevel && RadiantFinalePvE.Cooldown.IsCoolingDown && BattleVoicePvE.EnoughLevel && !BattleVoicePvE.Cooldown.IsCoolingDown)
-        {
-            return base.AttackAbility(nextGCD, out act);
+            // 4. Barrage
+            if (HasRagingStrikes && !HasHawksEye && BarragePvE.CanUse(out act)) return true;
         }
 
         if ((RagingStrikesPvE.Cooldown.IsCoolingDown || !RagingStrikesPvE.Cooldown.WillHaveOneCharge(15)) && Song != Song.None && EmpyrealArrowPvE.CanUse(out act))
@@ -291,42 +251,12 @@ public sealed class BRD_Reborn : BardRotation
             }
         }
 
-        // Bloodletter Overcap protection
-        if (BloodletterPvE.Cooldown.WillHaveXCharges(BloodletterMax, 3f))
+        // Bloodletter Aggression (2+ stacks)
+        if (BloodletterPvE.Cooldown.CurrentCharges >= 2)
         {
-            if (RainOfDeathPvE.CanUse(out act, usedUp: true))
-            {
-                return true;
-            }
-
-            if (HeartbreakShotPvE.CanUse(out act, usedUp: true))
-            {
-                return true;
-            }
-
-            if (BloodletterPvE.CanUse(out act, usedUp: true))
-            {
-                return true;
-            }
-        }
-
-        // Prevents Bloodletter bumpcapping when MAGE is the song due to Repetoire procs
-        if (BloodletterPvE.Cooldown.WillHaveXCharges(BloodletterMax, 7.5f) && Song == Song.Mage)
-        {
-            if (RainOfDeathPvE.CanUse(out act, usedUp: true))
-            {
-                return true;
-            }
-
-            if (HeartbreakShotPvE.CanUse(out act, usedUp: true))
-            {
-                return true;
-            }
-
-            if (BloodletterPvE.CanUse(out act, usedUp: true))
-            {
-                return true;
-            }
+            if (RainOfDeathPvE.CanUse(out act, usedUp: true)) return true;
+            if (HeartbreakShotPvE.CanUse(out act, usedUp: true)) return true;
+            if (BloodletterPvE.CanUse(out act, usedUp: true)) return true;
         }
 
         if (BetterBloodletterLogic(out act))

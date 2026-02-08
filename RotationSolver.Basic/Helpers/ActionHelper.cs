@@ -98,4 +98,22 @@ internal static class ActionHelper
     /// Gets a value indicating whether a GCD action can be used.
     /// </summary>
     internal static bool CanUseGCD => DataCenter.DefaultGCDRemain <= DataCenter.CalculatedActionAhead;
+
+    /// <summary>
+    /// Determines whether the specified action is a raise action.
+    /// </summary>
+    /// <param name="action">The action to check.</param>
+    /// <returns><c>true</c> if the action is a raise action; otherwise, <c>false</c>.</returns>
+    public static bool IsRaise(this Action action)
+    {
+        return action.RowId switch
+        {
+            125 or 173 or 3594 or 7523 or 24287 // WHM, SMN/SCH, AST, RDM, SGE
+            or 18317 // BLU
+            or 20703 or 20704 // Bozja
+            or 29734 or 29735 // Variant
+            => true,
+            _ => false,
+        };
+    }
 }

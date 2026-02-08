@@ -360,9 +360,6 @@ public sealed class SCH_Reborn : ScholarRotation
     [RotationDesc(ActionID.FeyIlluminationPvE, ActionID.ExpedientPvE, ActionID.SummonSeraphPvE, ActionID.ConsolationPvE, ActionID.SacredSoilPvE, ActionID.SeraphismPvE)]
     protected override bool DefenseAreaAbility(IAction nextGCD, out IAction? act)
     {
-        // Deployment Tactics is modified in the base rotation to only use if they have galvanize so can trust that targets are at least valid?
-        // The number of times that we adlo to heal a DPS and then would like to use this is actually reasonably high in dungeons
-        // TODO: This is typically skipping because the target it's trying to cast the area defense on isn't the galvanized target
         if (DeploymentTacticsPvE.EnoughLevel && InCombat && (!RecitationPvE.EnoughLevel || RecitationPvE.Cooldown.IsCoolingDown))
         {
             if (DeploymentTacticsUsage == DeploymentTacticsUsageStrategy.CatalyzeOnly)
@@ -370,7 +367,6 @@ public sealed class SCH_Reborn : ScholarRotation
                 if (DeploymentTacticsPvE.CanUse(out act))
                 {
                     var target = DeploymentTacticsPvE.Target.Target;
-                    // Avoid touching StatusList directly; HasStatus is safer but still guard it.
                     if (target != null)
                     {
                         try
@@ -476,44 +472,35 @@ public sealed class SCH_Reborn : ScholarRotation
     [RotationDesc(ActionID.ChainStratagemPvE, ActionID.EnergyDrainPvE, ActionID.BanefulImpactionPvE, ActionID.AetherflowPvE, ActionID.DissipationPvE)]
     protected override bool AttackAbility(IAction nextGCD, out IAction? act)
     {
-        // Count how many hostile targets are within 5 units
-        int closeTargetCount = NumberOfHostilesInRangeOf(5);
+        bool chainOnTarget = Target?.HasStatus(false, StatusID.ChainStratagem) ?? false;
+        bool aetherflowSoon = AetherflowPvE.Cooldown.IsCoolingDown && AetherflowPvE.Cooldown.WillHaveOneCharge(10);
 
-        if (BanefulImpactionPvE.CanUse(out act) &&
-            (closeTargetCount > 3 // Mobs are grouped up
-            || Target.IsBossFromTTK() // Or it's a boss
-            || Player != null && StatusHelper.PlayerWillStatusEndGCD(2, 0, true, StatusID.ImpactImminent))) // Or we'll lose the ability if we don't use it
+        // 1. Aetherflow - get stacks when empty
+        if (!HasAetherflow && AetherflowPvE.CanUse(out act))
         {
             return true;
         }
 
-        if (IsBurst)
+        // 2. Chain Stratagem - use on cooldown
+        if (ChainStratagemPvE.CanUse(out act))
         {
-            if (ChainStratagemPvE.CanUse(out act))
-            {
-                return true;
-            }
-
-            // We could likely make better decisions for both this and energy drain if JobGauge.Aetherflow was available
-            if (!HasAetherflow && AetherflowPvE.Cooldown.IsCoolingDown && // No Aether and aetherflow is on cooldown
-                ((SummonSeraphPvE.Cooldown.IsCoolingDown && SeraphTime <= 0 && WhisperingDawnPvE.Cooldown.IsCoolingDown && FeyBlessingPvE.Cooldown.IsCoolingDown) // And all our fairy abilities on are cooldown
-                || (Target.IsBossFromTTK() && Target.IsDying()) // Or the boss is dying and we can snag some aether to carry forward
-                || (ShouldDissipate && Target.HasStatus(true, StatusID.ChainStratagem))) // Or we've marked dissipation as part of our burst phase and we're in 2 minute cycle
-                && DissipationPvE.CanUse(out act))
-            {
-                return true;
-            }
+            return true;
         }
 
-        if ((ShouldDissipate && DissipationPvE.EnoughLevel && DissipationPvE.Cooldown.WillHaveOneChargeGCD(2) && DissipationPvE.IsEnabled) || AetherflowPvE.Cooldown.WillHaveOneChargeGCD(2))
+        // 3. Baneful Impaction - when ImpactImminent buff active
+        if (HasImpactImminent && BanefulImpactionPvE.CanUse(out act, skipAoeCheck: true, skipStatusProvideCheck: true, skipCastingCheck: true))
         {
-            if (EnergyDrainPvE.CanUse(out act, usedUp: true))
-            {
-                return true;
-            }
+            return true;
         }
 
-        if (!HasAetherflow && AetherflowPvE.CanUse(out act))
+        // 4. Energy Drain - when Chain on target OR Aetherflow CD <= 10s
+        if ((chainOnTarget || aetherflowSoon) && EnergyDrainPvE.CanUse(out act, usedUp: true))
+        {
+            return true;
+        }
+
+        // 5. Dissipation - ONLY when Chain on target
+        if (ShouldDissipate && chainOnTarget && !HasAetherflow && DissipationPvE.CanUse(out act))
         {
             return true;
         }

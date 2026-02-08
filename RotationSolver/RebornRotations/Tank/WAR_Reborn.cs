@@ -1,3 +1,5 @@
+using RotationSolver.Basic.Helpers;
+
 namespace RotationSolver.RebornRotations.Tank;
 
 [Rotation("Reborn", CombatType.PvE, GameVersion = "7.4")]
@@ -6,6 +8,9 @@ namespace RotationSolver.RebornRotations.Tank;
 public sealed class WAR_Reborn : WarriorRotation
 {
     #region Config Options
+    [RotationConfig(CombatType.PvE, Name = "Enable Smart Auto-Mitigation System")]
+    public bool UseSmartMitigation { get; set; } = true;
+
     [RotationConfig(CombatType.PvE, Name = "Only use Nascent Flash if Tank Stance is off")]
     public bool NeverscentFlash { get; set; } = false;
 
@@ -193,17 +198,135 @@ public sealed class WAR_Reborn : WarriorRotation
         return base.HealSingleAbility(nextGCD, out act);
     }
 
+    [RotationDesc(ActionID.HolmgangPvE)]
+    protected override bool EmergencyAbility(IAction nextGCD, out IAction? act)
+    {
+        // Use Holmgang for emergencies if Smart Mitigation is enabled
+        if (UseSmartMitigation && MitigationHelper.ShouldUseInvulnerability())
+        {
+            if (HolmgangPvE.CanUse(out act, skipAoeCheck: true))
+            {
+                return true;
+            }
+        }
+
+        // Legacy emergency logic
+        if (!UseSmartMitigation && Player?.GetHealthRatio() <= HealthForDyingTanks)
+        {
+            if (HolmgangPvE.CanUse(out act, skipAoeCheck: true))
+            {
+                return true;
+            }
+        }
+
+        return base.EmergencyAbility(nextGCD, out act);
+    }
+
     [RotationDesc(ActionID.RawIntuitionPvE, ActionID.VengeancePvE, ActionID.RampartPvE, ActionID.RawIntuitionPvE, ActionID.ReprisalPvE)]
     protected override bool DefenseSingleAbility(IAction nextGCD, out IAction? act)
     {
         bool RawSingleTargets = SoloIntuition;
         act = null;
 
+        // Don't use mitigation during Holmgang at low HP
         if (StatusHelper.PlayerHasStatus(true, StatusID.Holmgang_409) && Player?.GetHealthRatio() < 0.3f)
         {
             return false;
         }
 
+        // Smart Mitigation System
+        if (UseSmartMitigation)
+        {
+            var damageLevel = MitigationHelper.GetIncomingDamageLevel();
+            var damageType = MitigationHelper.GetIncomingDamageType();
+
+            // Skip if no damage or can't use mitigation yet
+            if (!MitigationHelper.ShouldUseMitigation(damageLevel,
+                VengeancePvE.Cooldown.IsCoolingDown || RampartPvE.Cooldown.IsCoolingDown))
+            {
+                act = null;
+                return false;
+            }
+
+            var useBigCooldown = MitigationHelper.ShouldUseBigCooldown(damageLevel);
+
+            // Priority 1: Bloodwhetting/Raw Intuition (short CD, strong)
+            if (BloodwhettingPvE.CanUse(out act))
+            {
+                MitigationHelper.RecordMitigationUsed(false);
+                return true;
+            }
+            if (!BloodwhettingPvE.EnoughLevel && RawIntuitionPvE.CanUse(out act) &&
+                (RawSingleTargets || NumberOfHostilesInRange > 2))
+            {
+                MitigationHelper.RecordMitigationUsed(false);
+                return true;
+            }
+
+            // Don't stack more mitigation if Bloodwhetting is active (unless emergency)
+            if (StatusHelper.PlayerHasStatus(true, StatusID.Bloodwhetting, StatusID.RawIntuition) &&
+                damageLevel < MitigationHelper.DamageLevel.Heavy)
+            {
+                act = null;
+                return false;
+            }
+
+            // Priority 2: Reprisal (10% enemy damage down)
+            if (MitigationHelper.ShouldUseReprisal() && ReprisalPvE.CanUse(out act, skipAoeCheck: true))
+            {
+                MitigationHelper.RecordMitigationUsed(false);
+                return true;
+            }
+
+            // Priority 3: Vengeance/Damnation (30% mit + damage reflect)
+            if (useBigCooldown && (!RampartPvE.Cooldown.IsCoolingDown || RampartPvE.Cooldown.ElapsedAfter(60)))
+            {
+                if (DamnationPvE.EnoughLevel && DamnationPvE.CanUse(out act))
+                {
+                    MitigationHelper.RecordMitigationUsed(true);
+                    return true;
+                }
+
+                if (!DamnationPvE.EnoughLevel && VengeancePvE.CanUse(out act))
+                {
+                    MitigationHelper.RecordMitigationUsed(true);
+                    return true;
+                }
+            }
+
+            // Priority 4: Rampart (20% mit, 90s CD)
+            if (((VengeancePvE.Cooldown.IsCoolingDown && VengeancePvE.Cooldown.ElapsedAfter(60)) ||
+                !VengeancePvE.EnoughLevel || damageLevel >= MitigationHelper.DamageLevel.Heavy) &&
+                RampartPvE.CanUse(out act))
+            {
+                MitigationHelper.RecordMitigationUsed(true);
+                return true;
+            }
+
+            // Priority 5: Thrill of Battle for emergency HP boost
+            if (damageLevel >= MitigationHelper.DamageLevel.Moderate &&
+                Player?.GetHealthRatio() < 0.7f && ThrillOfBattlePvE.CanUse(out act))
+            {
+                MitigationHelper.RecordMitigationUsed(false);
+                return true;
+            }
+
+            // Priority 6: Arms Length for trash pulls (NOT on bosses - they're immune to Slow)
+            if (!MitigationHelper.IsFightingBoss() &&
+                !DataCenter.IsHostileCastingToTank &&
+                !StatusHelper.PlayerHasStatus(true, StatusID.Vengeance) &&
+                !StatusHelper.PlayerHasStatus(true, StatusID.Damnation) &&
+                ArmsLengthPvE.CanUse(out act))
+            {
+                MitigationHelper.RecordMitigationUsed(false);
+                return true;
+            }
+
+            act = null;
+            return false;
+        }
+
+        // Legacy mitigation logic (if Smart Mitigation is disabled)
         if (RawIntuitionPvE.CanUse(out act) && (RawSingleTargets || NumberOfHostilesInRange > 2))
         {
             return true;
@@ -243,6 +366,29 @@ public sealed class WAR_Reborn : WarriorRotation
     [RotationDesc(ActionID.ShakeItOffPvE, ActionID.ReprisalPvE)]
     protected override bool DefenseAreaAbility(IAction nextGCD, out IAction? act)
     {
+        // Smart Mitigation for party-wide damage
+        if (UseSmartMitigation)
+        {
+            var damageLevel = MitigationHelper.GetIncomingDamageLevel();
+
+            // Use Shake It Off for moderate/heavy party damage
+            if (damageLevel >= MitigationHelper.DamageLevel.Moderate &&
+                ShakeItOffPvE.CanUse(out act, skipAoeCheck: true))
+            {
+                return true;
+            }
+
+            // Use Reprisal for enemy casts
+            if (MitigationHelper.ShouldUseReprisal() && ReprisalPvE.CanUse(out act, skipAoeCheck: true))
+            {
+                return true;
+            }
+
+            act = null;
+            return false;
+        }
+
+        // Legacy logic
         if (ShakeItOffPvE.CanUse(out act, skipAoeCheck: true))
         {
             return true;

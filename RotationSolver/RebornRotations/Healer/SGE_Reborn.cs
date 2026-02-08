@@ -167,6 +167,12 @@ public sealed class SGE_Reborn : SageRotation
         {
             return true;
         }
+
+        if (IsBurst && PneumaPvE.CanUse(out act) && PartyMembersAverHP > 0.8f)
+        {
+            return true;
+        }
+
         return base.AttackAbility(nextGCD, out act);
     }
 
@@ -387,7 +393,7 @@ public sealed class SGE_Reborn : SageRotation
             return true;
         }
 
-        if (InCombat && Addersgall <= 1 && RhizomataPvE.CanUse(out act))
+        if (InCombat && ((Addersgall <= 1) || (Addersgall == 2 && AddersgallEndAfter(5f))) && RhizomataPvE.CanUse(out act))
         {
             return true;
         }
@@ -766,7 +772,7 @@ public sealed class SGE_Reborn : SageRotation
             return true;
         }
 
-        if (PhlegmaPvE.CanUse(out act, usedUp: IsMoving || PhlegmaPvE.Cooldown.WillHaveXChargesGCD(2, 1)))
+        if (PhlegmaPvE.CanUse(out act, usedUp: IsBurst || IsMoving || PhlegmaPvE.Cooldown.WillHaveXChargesGCD(2, 1)))
         {
             return true;
         }

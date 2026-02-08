@@ -37,6 +37,7 @@ internal class TargetCondition : DelayCondition
         IBattleChara? tar = _action?.TargetInfo.FindTarget(true, false, false, default)?.Target ?? TargetType switch
         {
             TargetType.Target => Svc.Targets.Target as IBattleChara,
+            TargetType.PlayerTarget => Svc.Targets.Target is IBattleChara target && target.IsPlayer() ? target : null,
             TargetType.HostileTarget => DataCenter.HostileTarget,
             TargetType.Player => Player.Object,
             _ => null,
@@ -170,6 +171,9 @@ internal enum TargetType : byte
 
     [Description("Target")]
     Target,
+
+    [Description("Player Target")]
+    PlayerTarget,
 }
 
 internal enum TargetConditionType : byte

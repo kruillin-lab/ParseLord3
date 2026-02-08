@@ -153,7 +153,16 @@ namespace RotationSolver.Commands
                 MiscUpdater.PulseActionBar(nextAction.AdjustedID);
             }
 
-            if (nextAction.Use())
+            bool useResult;
+            try
+            {
+                useResult = nextAction.Use();
+            }
+            finally
+            {
+            }
+
+            if (useResult)
             {
                 if (Service.Config.EnableClickingCount)
                 {

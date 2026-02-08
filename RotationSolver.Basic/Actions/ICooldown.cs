@@ -5,6 +5,11 @@
 /// </summary>
 public interface ICooldown
 {
+    /// <summary>
+    /// The remaining time of one charge.
+    /// </summary>
+    float RecastTimeRemain { get; }
+
     internal float RecastTimeOneChargeRaw { get; }
     internal float RecastTimeElapsedRaw { get; }
 

@@ -1,3 +1,5 @@
+using RotationSolver.Basic.Helpers;
+
 namespace RotationSolver.RebornRotations.Tank;
 
 [Rotation("Reborn", CombatType.PvE, GameVersion = "7.4")]
@@ -6,6 +8,9 @@ namespace RotationSolver.RebornRotations.Tank;
 public sealed class DRK_Reborn : DarkKnightRotation
 {
     #region Config Options
+    [RotationConfig(CombatType.PvE, Name = "Enable Smart Auto-Mitigation System")]
+    public bool UseSmartMitigation { get; set; } = true;
+
     [RotationConfig(CombatType.PvE, Name = "Keep at least 3000 MP")]
     public bool TheBlackestNight { get; set; } = true;
 
@@ -64,8 +69,26 @@ public sealed class DRK_Reborn : DarkKnightRotation
 
     #region oGCD Logic
     // Decision-making for emergency abilities, focusing on Blood Weapon usage.
+    [RotationDesc(ActionID.LivingDeadPvE)]
     protected override bool EmergencyAbility(IAction nextGCD, out IAction? act)
     {
+        // Smart Mitigation emergency logic
+        if (UseSmartMitigation && MitigationHelper.ShouldUseInvulnerability())
+        {
+            if (LivingDeadPvE.CanUse(out act))
+            {
+                return true;
+            }
+        }
+
+        // Legacy emergency logic
+        if (!UseSmartMitigation && Player?.GetHealthRatio() <= HealthForDyingTanks)
+        {
+            if (LivingDeadPvE.CanUse(out act))
+            {
+                return true;
+            }
+        }
 
         return base.EmergencyAbility(nextGCD, out act);
     }
@@ -89,6 +112,51 @@ public sealed class DRK_Reborn : DarkKnightRotation
     [RotationDesc(ActionID.DarkMissionaryPvE, ActionID.ReprisalPvE)]
     protected override bool DefenseAreaAbility(IAction nextGCD, out IAction? act)
     {
+        // Smart Mitigation for party-wide damage
+        if (UseSmartMitigation)
+        {
+            var damageLevel = MitigationHelper.GetIncomingDamageLevel();
+
+            // Use TBN on low HP party member
+            if (!InTwoMIsBurst && OblationLantern && TheBlackestNightPvE.CanUse(out act, targetOverride: TargetType.LowHP) &&
+                !TheBlackestNightPvE.Target.Target.HasStatus(false, StatusID.Transcendent) &&
+                TheBlackestNightPvE.Target.Target.GetHealthRatio() <= BlackLanternRatio)
+            {
+                return true;
+            }
+
+            // Use Oblation on low HP party member
+            if (!InTwoMIsBurst && OblationLantern && OblationPvE.CanUse(out act, usedUp: OblationLanternStack, targetOverride: TargetType.LowHP) &&
+                !OblationPvE.Target.Target.HasStatus(false, StatusID.Transcendent) &&
+                OblationPvE.Target.Target.GetHealthRatio() <= OblationLanternRatio)
+            {
+                return true;
+            }
+
+            // Use Dark Missionary for moderate/heavy party damage
+            if (!InTwoMIsBurst && damageLevel >= MitigationHelper.DamageLevel.Moderate &&
+                DarkMissionaryPvE.CanUse(out act))
+            {
+                return true;
+            }
+
+            // Use Reprisal for enemy casts
+            if (!InTwoMIsBurst && MitigationHelper.ShouldUseReprisal() && ReprisalPvE.CanUse(out act, skipAoeCheck: true))
+            {
+                return true;
+            }
+
+            // Fallback Oblation for self
+            if (!InTwoMIsBurst && OblationPvE.CanUse(out act, skipStatusProvideCheck: false, targetOverride: TargetType.Self))
+            {
+                return true;
+            }
+
+            act = null;
+            return false;
+        }
+
+        // Legacy logic
         if (!InTwoMIsBurst && OblationLantern && TheBlackestNightPvE.CanUse(out act, targetOverride: TargetType.LowHP) && !TheBlackestNightPvE.Target.Target.HasStatus(false, StatusID.Transcendent) && TheBlackestNightPvE.Target.Target.GetHealthRatio() <= BlackLanternRatio)
         {
             return true;
@@ -120,7 +188,98 @@ public sealed class DRK_Reborn : DarkKnightRotation
     [RotationDesc(ActionID.OblationPvE, ActionID.TheBlackestNightPvE, ActionID.DarkMindPvE, ActionID.ShadowWallPvE, ActionID.ShadowedVigilPvE, ActionID.RampartPvE, ActionID.ReprisalPvE)]
     protected override bool DefenseSingleAbility(IAction nextGCD, out IAction? act)
     {
-        //10
+        act = null;
+
+        // Don't use mitigation during Living Dead
+        if (StatusHelper.PlayerHasStatus(true, StatusID.LivingDead, StatusID.WalkingDead))
+        {
+            return false;
+        }
+
+        // Smart Mitigation System
+        if (UseSmartMitigation)
+        {
+            var damageLevel = MitigationHelper.GetIncomingDamageLevel();
+            var damageType = MitigationHelper.GetIncomingDamageType();
+
+            // Skip if no damage or can't use mitigation yet
+            if (!MitigationHelper.ShouldUseMitigation(damageLevel,
+                ShadowWallPvE.Cooldown.IsCoolingDown || RampartPvE.Cooldown.IsCoolingDown))
+            {
+                act = null;
+                return false;
+            }
+
+            var useBigCooldown = MitigationHelper.ShouldUseBigCooldown(damageLevel);
+
+            // Priority 1: The Blackest Night (15s CD, 25% HP shield)
+            if (TheBlackestNightPvE.CanUse(out act, targetOverride: TargetType.Self))
+            {
+                MitigationHelper.RecordMitigationUsed(false);
+                return true;
+            }
+
+            // Priority 2: Oblation (60s CD, 10% mit)
+            if (OblationPvE.CanUse(out act, usedUp: true, skipStatusProvideCheck: false, targetOverride: TargetType.Self))
+            {
+                MitigationHelper.RecordMitigationUsed(false);
+                return true;
+            }
+
+            // Priority 3: Reprisal (10% enemy damage down)
+            if (MitigationHelper.ShouldUseReprisal() && ReprisalPvE.CanUse(out act, skipAoeCheck: true))
+            {
+                MitigationHelper.RecordMitigationUsed(false);
+                return true;
+            }
+
+            // Priority 4: Dark Mind (20% magical mit, 60s CD) - ONLY for magical damage
+            if (damageType == MitigationHelper.DamageType.Magical && DarkMindPvE.CanUse(out act))
+            {
+                MitigationHelper.RecordMitigationUsed(false);
+                return true;
+            }
+
+            // Priority 5: Shadow Wall/Shadowed Vigil (30% mit, 120s CD)
+            if (useBigCooldown && (!RampartPvE.Cooldown.IsCoolingDown || RampartPvE.Cooldown.ElapsedAfter(60)))
+            {
+                if (ShadowedVigilPvE.EnoughLevel && ShadowedVigilPvE.CanUse(out act))
+                {
+                    MitigationHelper.RecordMitigationUsed(true);
+                    return true;
+                }
+
+                if (!ShadowedVigilPvE.EnoughLevel && ShadowWallPvE.CanUse(out act))
+                {
+                    MitigationHelper.RecordMitigationUsed(true);
+                    return true;
+                }
+            }
+
+            // Priority 6: Rampart (20% mit, 90s CD)
+            if (((ShadowWallPvE.Cooldown.IsCoolingDown && ShadowWallPvE.Cooldown.ElapsedAfter(60)) ||
+                (ShadowedVigilPvE.Cooldown.IsCoolingDown && ShadowedVigilPvE.Cooldown.ElapsedAfter(60)) ||
+                !ShadowWallPvE.EnoughLevel || damageLevel >= MitigationHelper.DamageLevel.Heavy) &&
+                RampartPvE.CanUse(out act))
+            {
+                MitigationHelper.RecordMitigationUsed(true);
+                return true;
+            }
+
+            // Priority 7: Arms Length for trash pulls (NOT on bosses)
+            if (!MitigationHelper.IsFightingBoss() &&
+                !DataCenter.IsHostileCastingToTank &&
+                ArmsLengthPvE.CanUse(out act))
+            {
+                MitigationHelper.RecordMitigationUsed(false);
+                return true;
+            }
+
+            act = null;
+            return false;
+        }
+
+        // Legacy mitigation logic
         if (OblationPvE.CanUse(out act, usedUp: true, skipStatusProvideCheck: false, targetOverride: TargetType.Self))
         {
             return true;
@@ -130,13 +289,12 @@ public sealed class DRK_Reborn : DarkKnightRotation
         {
             return true;
         }
-        //20
+
         if (DarkMindPvE.CanUse(out act))
         {
             return true;
         }
 
-        //30
         if ((!RampartPvE.Cooldown.IsCoolingDown || RampartPvE.Cooldown.ElapsedAfter(60)) && ShadowWallPvE.CanUse(out act))
         {
             return true;
@@ -147,7 +305,6 @@ public sealed class DRK_Reborn : DarkKnightRotation
             return true;
         }
 
-        //20
         if (ShadowWallPvE.Cooldown.IsCoolingDown && ShadowWallPvE.Cooldown.ElapsedAfter(60) && RampartPvE.CanUse(out act))
         {
             return true;

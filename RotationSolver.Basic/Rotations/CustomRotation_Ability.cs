@@ -1,3 +1,5 @@
+using FFXIVClientStructs.FFXIV.Client.Game;
+
 namespace RotationSolver.Basic.Rotations;
 
 public partial class CustomRotation
@@ -17,12 +19,37 @@ public partial class CustomRotation
             return false;
         }
 
-        IBaseAction.ForceEnable = true;
-        if (act is IBaseAction a && a != null && !a.Info.IsRealGCD && a.CanUse(out _, usedUp: true, skipAoeCheck: true, skipStatusProvideCheck: true))
+        if (act is IBaseAction a && a != null && !a.Info.IsRealGCD)
         {
-            return true;
+            if (DataCenter.AnimationLock > Service.Config.AnimationLockBuffer) return false;
+
+            IBaseAction.ForceEnable = true;
+            try
+            {
+                // For intercepted actions, be more lenient with checks
+                // The user explicitly pressed this button, so we should try to execute it
+                // Skip as many checks as possible - the game will do final validation
+                if (a.CanUse(out _,
+                    skipStatusProvideCheck: true,
+                    skipStatusNeed: true,
+                    skipTargetStatusNeedCheck: true,
+                    skipComboCheck: true,
+                    skipCastingCheck: true,
+                    usedUp: true,
+                    skipAoeCheck: true,
+                    skipTTKCheck: true,
+                    checkActionManager: true))
+                {
+                    PluginLog.Debug($"[ParseLord3] Ability() using intercepted CommandNextAction: {a.Name}");
+                    return true;
+                }
+                // No 'else' block here. If it fails, let it be tried again on the next tick until it expires.
+            }
+            finally
+            {
+                IBaseAction.ForceEnable = false;
+            }
         }
-        IBaseAction.ForceEnable = false;
 
         if (StatusHelper.PlayerHasStatus(true, StatusID.Mudra))
         {
@@ -268,7 +295,7 @@ public partial class CustomRotation
                 return true;
             }
             if (DefenseSingleAbility(nextGCD, out act)
-                || (!DataCenter.IsHostileCastingToTank && !StatusHelper.PlayerHasStatus(true, StatusID.Vengeance) && !StatusHelper.PlayerHasStatus(true, StatusID.Damnation) && ArmsLengthPvE.CanUse(out act)))
+                || (!DataCenter.IsHostileCastingToTank && !StatusHelper.PlayerHasStatus(true, StatusID.Vengeance) && !StatusHelper.PlayerHasStatus(true, StatusID.Damnation) && !MitigationHelper.IsFightingBoss() && ArmsLengthPvE.CanUse(out act)))
             {
                 return true;
             }
@@ -422,14 +449,14 @@ public partial class CustomRotation
         switch (role)
         {
             case JobRole.Tank:
-                if (ArmsLengthPvE.CanUse(out act) && !StatusHelper.PlayerHasStatus(true, StatusID.InnerStrength))
+                if (ArmsLengthPvE.CanUse(out act) && !StatusHelper.PlayerHasStatus(true, StatusID.InnerStrength) && !MitigationHelper.IsFightingBoss())
                 {
                     return true;
                 }
 
                 break;
             case JobRole.Melee:
-                if (ArmsLengthPvE.CanUse(out act) && !StatusHelper.PlayerHasStatus(true, StatusID.Mudra))
+                if (ArmsLengthPvE.CanUse(out act) && !StatusHelper.PlayerHasStatus(true, StatusID.Mudra) && !MitigationHelper.IsFightingBoss())
                 {
                     return true;
                 }
@@ -444,7 +471,7 @@ public partial class CustomRotation
 
                 break;
             case JobRole.RangedPhysical:
-                if (ArmsLengthPvE.CanUse(out act))
+                if (ArmsLengthPvE.CanUse(out act) && !MitigationHelper.IsFightingBoss())
                 {
                     return true;
                 }

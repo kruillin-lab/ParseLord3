@@ -160,6 +160,19 @@ internal static class MajorUpdater
     {
         ActionSequencerUpdater.Enable(Svc.PluginInterface.ConfigDirectory.FullName + "\\Conditions");
 
+        // Initialize manual target tracking with current target state
+        try
+        {
+            _lastKnownTargetId = Svc.Targets?.Target?.GameObjectId ?? 0;
+        }
+        catch
+        {
+            _lastKnownTargetId = 0;
+        }
+        DataCenter.ManualTargetOverride = false;
+        DataCenter.ManualTargetId = 0;
+        DataCenter.ManualTargetTime = DateTime.MinValue;
+
         Svc.Framework.Update += ParseLordGateUpdate;
         Svc.Framework.Update += ParseLordTeachingClearUpdate;
         Svc.Framework.Update += ParseLordInvalidUpdate;
@@ -252,6 +265,10 @@ internal static class MajorUpdater
     {
         if (!_shouldRunThisCycle)
             return;
+
+        // Update manual target override detection FIRST, before any targeting or action logic
+        // This ensures we detect player manual target changes before RSR tries to override them
+        UpdateManualTargetOverride();
 
         var autoOnEnabled = (Service.Config.StartOnAllianceIsInCombat2
             || Service.Config.StartOnAttackedBySomeone2
@@ -452,8 +469,8 @@ internal static class MajorUpdater
         {
             MiscUpdater.UpdateMisc();
 
-            // Update manual target override detection
-            UpdateManualTargetOverride();
+            // Note: Manual target override is now updated in ParseLordActivatedCoreUpdate
+            // to ensure it runs before any auto-targeting logic
 
             if (Service.Config.TargetFreely && !DataCenter.IsPvP && DataCenter.State)
             {

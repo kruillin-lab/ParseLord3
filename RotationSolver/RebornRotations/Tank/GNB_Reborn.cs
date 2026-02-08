@@ -1,3 +1,5 @@
+using RotationSolver.Basic.Helpers;
+
 namespace RotationSolver.RebornRotations.Tank;
 
 [Rotation("Reborn", CombatType.PvE, GameVersion = "7.4")]
@@ -6,7 +8,8 @@ namespace RotationSolver.RebornRotations.Tank;
 public sealed class GNB_Reborn : GunbreakerRotation
 {
     #region Config Options
-
+    [RotationConfig(CombatType.PvE, Name = "Enable Smart Auto-Mitigation System")]
+    public bool UseSmartMitigation { get; set; } = true;
     #endregion
 
     #region Countdown Logic
@@ -27,8 +30,27 @@ public sealed class GNB_Reborn : GunbreakerRotation
     #endregion
 
     #region oGCD Logic
+    [RotationDesc(ActionID.SuperbolidePvE)]
     protected override bool EmergencyAbility(IAction nextGCD, out IAction? act)
     {
+        // Smart Mitigation emergency logic
+        if (UseSmartMitigation && MitigationHelper.ShouldUseInvulnerability())
+        {
+            if (SuperbolidePvE.CanUse(out act, skipAoeCheck: true))
+            {
+                return true;
+            }
+        }
+
+        // Legacy emergency logic
+        if (!UseSmartMitigation && Player?.GetHealthRatio() <= HealthForDyingTanks)
+        {
+            if (SuperbolidePvE.CanUse(out act, skipAoeCheck: true))
+            {
+                return true;
+            }
+        }
+
         if (JugularRipPvE.CanUse(out act))
         {
             return true;
@@ -65,6 +87,29 @@ public sealed class GNB_Reborn : GunbreakerRotation
             return base.DefenseAreaAbility(nextGCD, out act);
         }
 
+        // Smart Mitigation for party-wide damage
+        if (UseSmartMitigation)
+        {
+            var damageLevel = MitigationHelper.GetIncomingDamageLevel();
+
+            // Use Heart of Light for moderate/heavy party damage
+            if (!HasNoMercy && damageLevel >= MitigationHelper.DamageLevel.Moderate &&
+                HeartOfLightPvE.CanUse(out act, skipAoeCheck: true))
+            {
+                return true;
+            }
+
+            // Use Reprisal for enemy casts
+            if (!HasNoMercy && MitigationHelper.ShouldUseReprisal() && ReprisalPvE.CanUse(out act, skipAoeCheck: true))
+            {
+                return true;
+            }
+
+            act = null;
+            return false;
+        }
+
+        // Legacy logic
         if (!HasNoMercy && HeartOfLightPvE.CanUse(out act, skipAoeCheck: true))
         {
             return true;
@@ -81,17 +126,100 @@ public sealed class GNB_Reborn : GunbreakerRotation
     [RotationDesc(ActionID.HeartOfStonePvE, ActionID.NebulaPvE, ActionID.RampartPvE, ActionID.CamouflagePvE, ActionID.ReprisalPvE)]
     protected override bool DefenseSingleAbility(IAction nextGCD, out IAction? act)
     {
+        act = null;
+
+        // Don't interrupt burst window
         if (nextGCD.IsTheSameTo(false, (ActionID)GnashingFangPvE.ID) && !NoMercyPvE.Cooldown.IsCoolingDown)
         {
             return base.DefenseSingleAbility(nextGCD, out act);
         }
 
-        //10
+        // Don't use mitigation during Superbolide
+        if (StatusHelper.PlayerHasStatus(true, StatusID.Superbolide))
+        {
+            return false;
+        }
+
+        // Smart Mitigation System
+        if (UseSmartMitigation)
+        {
+            var damageLevel = MitigationHelper.GetIncomingDamageLevel();
+            var damageType = MitigationHelper.GetIncomingDamageType();
+
+            // Skip if no damage or can't use mitigation yet
+            if (!MitigationHelper.ShouldUseMitigation(damageLevel,
+                NebulaPvE.Cooldown.IsCoolingDown || RampartPvE.Cooldown.IsCoolingDown))
+            {
+                act = null;
+                return false;
+            }
+
+            var useBigCooldown = MitigationHelper.ShouldUseBigCooldown(damageLevel);
+
+            // Priority 1: Heart of Corundum/Heart of Stone (25s CD, shield + mit + regen)
+            if (HeartOfCorundumPvE.CanUse(out act))
+            {
+                MitigationHelper.RecordMitigationUsed(false);
+                return true;
+            }
+
+            if (!HeartOfCorundumPvE.EnoughLevel && HeartOfStonePvE.CanUse(out act))
+            {
+                MitigationHelper.RecordMitigationUsed(false);
+                return true;
+            }
+
+            // Priority 2: Camouflage (90s CD, parry rate + -10% damage)
+            if (CamouflagePvE.CanUse(out act))
+            {
+                MitigationHelper.RecordMitigationUsed(false);
+                return true;
+            }
+
+            // Priority 3: Reprisal (10% enemy damage down)
+            if (MitigationHelper.ShouldUseReprisal() && ReprisalPvE.CanUse(out act, skipAoeCheck: true))
+            {
+                MitigationHelper.RecordMitigationUsed(false);
+                return true;
+            }
+
+            // Priority 4: Nebula (30% mit, 120s CD)
+            if (useBigCooldown && (!RampartPvE.Cooldown.IsCoolingDown || RampartPvE.Cooldown.ElapsedAfter(60)) &&
+                NebulaPvE.CanUse(out act))
+            {
+                MitigationHelper.RecordMitigationUsed(true);
+                return true;
+            }
+
+            // Priority 5: Rampart (20% mit, 90s CD)
+            if (((NebulaPvE.Cooldown.IsCoolingDown && NebulaPvE.Cooldown.ElapsedAfter(60)) ||
+                !NebulaPvE.EnoughLevel || damageLevel >= MitigationHelper.DamageLevel.Heavy) &&
+                RampartPvE.CanUse(out act))
+            {
+                MitigationHelper.RecordMitigationUsed(true);
+                return true;
+            }
+
+            // Priority 6: Arms Length for trash pulls (NOT on bosses)
+            if (!MitigationHelper.IsFightingBoss() &&
+                !DataCenter.IsHostileCastingToTank &&
+                !HasNoMercy &&
+                ArmsLengthPvE.CanUse(out act))
+            {
+                MitigationHelper.RecordMitigationUsed(false);
+                return true;
+            }
+
+            act = null;
+            return false;
+        }
+
+        // Legacy mitigation logic
         if (CamouflagePvE.CanUse(out act))
         {
             return true;
         }
-        //15
+
         if (HeartOfCorundumPvE.CanUse(out act))
         {
             return true;
@@ -102,12 +230,11 @@ public sealed class GNB_Reborn : GunbreakerRotation
             return true;
         }
 
-        //30
         if ((!RampartPvE.Cooldown.IsCoolingDown || RampartPvE.Cooldown.ElapsedAfter(60)) && NebulaPvE.CanUse(out act))
         {
             return true;
         }
-        //20
+
         if (NebulaPvE.Cooldown.IsCoolingDown && NebulaPvE.Cooldown.ElapsedAfter(60) && RampartPvE.CanUse(out act))
         {
             return true;
@@ -124,14 +251,32 @@ public sealed class GNB_Reborn : GunbreakerRotation
     [RotationDesc(ActionID.AuroraPvE)]
     protected override bool HealSingleAbility(IAction nextGCD, out IAction? act)
     {
+        act = null;
+
+        // Skip healing during Gnashing Fang burst setup (but not during actual burst)
         if (nextGCD.IsTheSameTo(false, (ActionID)GnashingFangPvE.ID) && !NoMercyPvE.Cooldown.IsCoolingDown)
         {
             return base.HealSingleAbility(nextGCD, out act);
         }
 
+        // Aurora self-heal logic
         if (!IsLastAbility(ActionID.AuroraPvE))
         {
-            if (AuroraPvE.CanUse(out act))
+            // Check if player needs healing (below 70% HP)
+            float hpPercent = Player?.GetHealthRatio() ?? 1f;
+            bool needsHealing = hpPercent < 0.70f;
+
+            // If HP is low, force Aurora on self even if we already have the buff
+            if (needsHealing)
+            {
+                // Use skipStatusProvideCheck to allow reapplying if needed, targetOverride to force self
+                if (AuroraPvE.CanUse(out act, skipStatusProvideCheck: true, targetOverride: TargetType.Self))
+                {
+                    return true;
+                }
+            }
+            // Otherwise use normally (for healing others during tank swaps etc.)
+            else if (AuroraPvE.CanUse(out act))
             {
                 return true;
             }

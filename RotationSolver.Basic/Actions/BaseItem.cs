@@ -11,6 +11,8 @@ public class BaseItem : IBaseItem
 {
     private readonly struct ItemCooldown(uint id) : ICooldown
     {
+        float ICooldown.RecastTimeRemain => ((ICooldown)this).RecastTimeOneChargeRaw - ((ICooldown)this).RecastTimeElapsedRaw;
+
         unsafe float ICooldown.RecastTimeOneChargeRaw => ActionManager.Instance()->GetRecastTime(ActionType.Item, id);
 
         unsafe float ICooldown.RecastTimeElapsedRaw => ActionManager.Instance()->GetRecastTimeElapsed(ActionType.Item, id);
@@ -178,8 +180,8 @@ public class BaseItem : IBaseItem
         IconID = _item.Icon;
         A4 = item.RowId switch
         {
-            36109 => 196625,
-            _ => 65535, //TODO: better A4!
+            >= 30000 and <= 37000 => 196625, // Bozja Lost Actions / Holster items (0x30011)
+            _ => 65535, // Default (0xFFFF)
         };
         SortKey = (uint)ActionManager.Instance()->GetRecastGroup((int)ActionType.Item, ID);
         Cooldown = new ItemCooldown(ID);

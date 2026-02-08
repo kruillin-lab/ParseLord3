@@ -36,6 +36,9 @@ public sealed class WHM_Reborn : WhiteMageRotation
     [RotationConfig(CombatType.PvE, Name = "Regen on Tank at 5 seconds remaining on Prepull Countdown.")]
     public bool UsePreRegen { get; set; } = true;
 
+    [RotationConfig(CombatType.PvE, Name = "Keep Regen rolling on the Tank")]
+    public bool KeepRegenRolling { get; set; } = false;
+
     [RotationConfig(CombatType.PvE, Name = "Use Divine Caress as soon as its available")]
     public bool UseDivine { get; set; } = false;
 
@@ -49,13 +52,6 @@ public sealed class WHM_Reborn : WhiteMageRotation
     [Range(0, 1, ConfigUnitType.Percent)]
     [RotationConfig(CombatType.PvE, Name = "If a party member's health drops below this percentage, the Regen healing ability will not be used on them")]
     public float RegenHeal { get; set; } = 0.3f;
-
-    [RotationConfig(CombatType.PvE, Name = "Keep Regen on Tank when HP drops below threshold")]
-    public bool KeepRegenOnTank { get; set; } = true;
-
-    [Range(0, 1, ConfigUnitType.Percent)]
-    [RotationConfig(CombatType.PvE, Name = "Tank HP threshold to apply/maintain Regen")]
-    public float RegenTankThreshold { get; set; } = 0.9f;
 
     [Range(0, 10000, ConfigUnitType.None, 100)]
     [RotationConfig(CombatType.PvE, Name = "Casting cost requirement for Thin Air to be used")]
@@ -255,7 +251,7 @@ public sealed class WHM_Reborn : WhiteMageRotation
     {
         if (InCombat)
         {
-            if (PresenceOfMindPvE.CanUse(out act, skipTTKCheck: IsInHighEndDuty))
+            if (PresenceOfMindPvE.CanUse(out act, skipTTKCheck: IsInHighEndDuty || IsBurst))
             {
                 return true;
             }
@@ -367,32 +363,17 @@ public sealed class WHM_Reborn : WhiteMageRotation
             return base.GeneralGCD(out act);
         }
 
-        //Keep Regen on Tank when HP drops below threshold
-        if (KeepRegenOnTank && InCombat && RegenPvE.EnoughLevel)
+        if (GlareIvPvE.CanUse(out act))
         {
-            foreach (IBattleChara tank in PartyMembers.GetJobCategory(JobRole.Tank))
-            {
-                if (tank.IsDead) continue;
-                float tankHp = tank.GetHealthRatio();
-                bool hasRegen = tank.HasStatus(true, StatusID.Regen, StatusID.Regen_897, StatusID.Regen_1330);
-                
-                if (tankHp < RegenTankThreshold && !hasRegen && tankHp > RegenHeal)
-                {
-                    if (RegenPvE.CanUse(out act, skipAoeCheck: true))
-                    {
-                        //Target this specific tank
-                        if (RegenPvE.Target.Target == tank)
-                        {
-                            return true;
-                        }
-                    }
-                }
-            }
+            return true;
         }
 
-        //if (NotInCombatDelay && RegenDefense.CanUse(out act)) return true;
-
         if (AfflatusMiseryPvE.CanUse(out act, skipAoeCheck: true))
+        {
+            return true;
+        }
+
+        if (KeepRegenRolling && RegenPvE.CanUse(out act) && RegenPvE.Target.Target.IsJobCategory(JobRole.Tank))
         {
             return true;
         }
@@ -412,18 +393,13 @@ public sealed class WHM_Reborn : WhiteMageRotation
             }
         }
 
-        if (GlareIvPvE.CanUse(out act))
+        if (HolyPvE.EnoughLevel && NumberOfHostilesInRange >= 3)
         {
-            return true;
-        }
-
-        if (HolyPvE.EnoughLevel)
-        {
-            if (HolyIiiPvE.EnoughLevel && HolyIiiPvE.CanUse(out act))
+            if (HolyIiiPvE.EnoughLevel && HolyIiiPvE.CanUse(out act, skipAoeCheck: true))
             {
                 return true;
             }
-            if (HolyPvE.EnoughLevel && !HolyIiiPvE.EnoughLevel && HolyPvE.CanUse(out act))
+            if (HolyPvE.EnoughLevel && !HolyIiiPvE.EnoughLevel && HolyPvE.CanUse(out act, skipAoeCheck: true))
             {
                 return true;
             }

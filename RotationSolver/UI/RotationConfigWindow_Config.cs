@@ -204,215 +204,18 @@ public partial class RotationConfigWindow
     }
     #endregion
 
-    private int _selectedStackIndex = -1;
-
     #region Stacks
     private void DrawStacks()
     {
-        // ... (Keep Beneficial/Priority Stacks UI logic here or separate it?)
-        // The user wants the ReactionEx style UI for "Action Stacks".
-        // I should probably separate "Action Stacks" from the other "Priority Targets" UI to avoid clutter.
-        // Or keep them in tabs/headers?
-        
         if (ImGui.BeginTabBar("StacksTabBar"))
         {
-            if (ImGui.BeginTabItem("Action Stacks"))
-            {
-                DrawActionStacks();
-                ImGui.EndTabItem();
-            }
             if (ImGui.BeginTabItem("Hostile Priority"))
             {
                 DrawHostilePriority();
                 ImGui.EndTabItem();
             }
-            if (ImGui.BeginTabItem("Beneficial Priority"))
-            {
-                DrawBeneficialPriority();
-                ImGui.EndTabItem();
-            }
             ImGui.EndTabBar();
         }
-    }
-
-    private static Lumina.Excel.Sheets.Action[]? _actionSheet;
-    private string _actionSearch = string.Empty;
-
-    private void DrawActionStacks()
-    {
-        float leftWidth = 200 * Scale;
-        if (_actionSheet == null)
-        {
-            //Filter to only player-usable actions (not NPC spells)
-            _actionSheet = Svc.Data.GetExcelSheet<Lumina.Excel.Sheets.Action>()?
-                .Where(x => 
-                {
-                    //Must have a name
-                    if (string.IsNullOrEmpty(x.Name.ToString())) return false;
-                    //Must have a valid ClassJobCategory (NPC actions have 0)
-                    if (x.ClassJobCategory.RowId == 0) return false;
-                    //Must have a valid icon (not placeholder icons)
-                    if (x.Icon is 0 or 405 or 784) return false;
-                    //Filter out non-combat action categories (system, mount, fashion, etc.)
-                    //ActionCategory: 2=Spell, 3=Weaponskill, 4=Ability, 5=Item, 9=LimitBreak, 10=System, 11=ArtificeAction
-                    //Keep: 2 (Spell), 3 (Weaponskill), 4 (Ability), 9 (LimitBreak)
-                    if (x.ActionCategory.RowId is 0 or 1 or 5 or 6 or 7 or 8 or 10 or 11 or 12 or 13 or > 14) return false;
-                    //Must be usable by players (IsPvP check or ClassJobCategory valid)
-                    if (!x.ClassJobCategory.IsValid) return false;
-                    return true;
-                })
-                .OrderBy(x => x.ClassJobCategory.RowId)
-                .ThenBy(x => x.Name.ToString())
-                .ToArray();
-        }
-        
-        // Split View
-        ImGui.BeginGroup();
-        
-        // Left Pane: List
-        ImGui.BeginChild("StackList", new Vector2(leftWidth, -1), true);
-        
-        if (ImGuiEx.IconButton(FontAwesomeIcon.Plus, "Add Stack"))
-        {
-            Service.Config.ActionStacks.Add(new ActionStackConfig());
-            _selectedStackIndex = Service.Config.ActionStacks.Count - 1;
-        }
-        
-        ImGui.Separator();
-        
-        for (int i = 0; i < Service.Config.ActionStacks.Count; i++)
-        {
-            var stack = Service.Config.ActionStacks[i];
-            string name = string.IsNullOrEmpty(stack.Name) ? $"Stack #{i+1}" : stack.Name;
-            
-            if (ImGui.Selectable($"{name}##Stack{i}", _selectedStackIndex == i))
-            {
-                _selectedStackIndex = i;
-            }
-        }
-        
-        ImGui.EndChild();
-        ImGui.EndGroup();
-        
-        ImGui.SameLine();
-        
-        // Right Pane: Details
-        ImGui.BeginGroup();
-        ImGui.BeginChild("StackDetails", new Vector2(0, -1), true);
-        
-        if (_selectedStackIndex >= 0 && _selectedStackIndex < Service.Config.ActionStacks.Count)
-        {
-            var stack = Service.Config.ActionStacks[_selectedStackIndex];
-            
-            // Header: Name & Trigger
-            string stackName = stack.Name;
-            ImGui.Text("Name:");
-            ImGui.SameLine();
-            ImGui.SetNextItemWidth(200 * Scale);
-            if (ImGui.InputText("##StackName", ref stackName, 64)) stack.Name = stackName;
-            
-            ImGui.SameLine();
-            if (ImGuiEx.IconButton(FontAwesomeIcon.Trash, "Delete Stack"))
-            {
-                Service.Config.ActionStacks.RemoveAt(_selectedStackIndex);
-                _selectedStackIndex = -1;
-                ImGui.EndChild();
-                ImGui.EndGroup();
-                return;
-            }
-
-            ImGui.Separator();
-            
-            // Trigger Action Selector
-            string triggerName = "None";
-            if (stack.TriggerActionId != 0)
-            {
-                var row = Svc.Data.GetExcelSheet<Lumina.Excel.Sheets.Action>()?.GetRow(stack.TriggerActionId);
-                if (row.HasValue) triggerName = row.Value.Name.ToString();
-            }
-            ImGui.Text("Trigger Action:");
-            ImGui.SameLine();
-            ImGui.SetNextItemWidth(200 * Scale);
-            ImGuiHelper.SearchCombo($"TrigSel{_selectedStackIndex}", $"[{stack.TriggerActionId}] {triggerName}", ref _actionSearch, _actionSheet ?? [], a => $"{a.Name} ({a.RowId})", a => stack.TriggerActionId = a.RowId, "Search Trigger...");
-            
-            // Toggles
-            bool block = stack.BlockOriginalOnFail;
-            if (ImGui.Checkbox("Block Original on Fail", ref block)) stack.BlockOriginalOnFail = block;
-            ImGui.SameLine();
-            bool range = stack.CheckRange;
-            if (ImGui.Checkbox("Check Range", ref range)) stack.CheckRange = range;
-            ImGui.SameLine();
-            bool cd = stack.CheckCooldown;
-            if (ImGui.Checkbox("Check Cooldown", ref cd)) stack.CheckCooldown = cd;
-
-            ImGui.Separator();
-            ImGui.Text("Stack Items (Drag to Reorder)");
-            if (ImGuiEx.IconButton(FontAwesomeIcon.Plus, "Add Item"))
-            {
-                stack.Items.Add(new ActionStackItem());
-            }
-
-            // Items List (Reorderable)
-            for (int j = 0; j < stack.Items.Count; j++)
-            {
-                var item = stack.Items[j];
-                ImGui.PushID($"StItm_{j}");
-                
-                // Drag Handle
-                ImGui.Button("::");
-                if (ImGui.IsItemActive() && !ImGui.IsItemHovered())
-                {
-                    int n_next = j + (ImGui.GetMouseDragDelta(ImGuiMouseButton.Left).Y < 0f ? -1 : 1);
-                    if (n_next >= 0 && n_next < stack.Items.Count)
-                    {
-                        stack.Items[j] = stack.Items[n_next];
-                        stack.Items[n_next] = item;
-                        ImGui.ResetMouseDragDelta(ImGuiMouseButton.Left);
-                    }
-                }
-                ImGui.SameLine();
-
-                // Target
-                var tgt = item.Target;
-                ImGui.SetNextItemWidth(100 * Scale);
-                if (ImGuiEx.EnumCombo("##Tgt", ref tgt)) item.Target = tgt;
-                ImGui.SameLine();
-
-                // Action Selector
-                string actName = "None";
-                if (item.ActionId != 0)
-                {
-                    var row = Svc.Data.GetExcelSheet<Lumina.Excel.Sheets.Action>()?.GetRow(item.ActionId);
-                    if (row.HasValue) actName = row.Value.Name.ToString();
-                }
-                
-                ImGui.SetNextItemWidth(150 * Scale);
-                ImGuiHelper.SearchCombo($"ActSel{j}", $"[{item.ActionId}] {actName}", ref _actionSearch, _actionSheet ?? [], a => $"{a.Name} ({a.RowId})", a => item.ActionId = a.RowId, "Search Action...");
-                ImGui.SameLine();
-
-                // Conditions
-                float hp = item.HpRatio * 100f;
-                ImGui.SetNextItemWidth(60 * Scale);
-                if (ImGui.SliderFloat("HP%", ref hp, 0, 100, "%.0f")) item.HpRatio = hp / 100f;
-                
-                // Delete
-                ImGui.SameLine();
-                if (ImGuiEx.IconButton(FontAwesomeIcon.Trash, ""))
-                {
-                    stack.Items.RemoveAt(j);
-                    j--;
-                }
-
-                ImGui.PopID();
-            }
-        }
-        else
-        {
-            ImGui.Text("Select a stack from the left list.");
-        }
-        
-        ImGui.EndChild();
-        ImGui.EndGroup();
     }
 
     private void DrawHostilePriority()
@@ -425,15 +228,9 @@ public partial class RotationConfigWindow
         ImGui.TextWrapped("Add targets to prioritize.");
 
         ImGui.Separator();
-        // ... (Existing Hostile Logic)
         DrawHostileList();
     }
 
-    private void DrawBeneficialPriority()
-    {
-        // ... (Existing Beneficial Logic)
-        DrawBeneficialList();
-    }
     private void DrawHostileList()
     {
         // Header
@@ -455,6 +252,18 @@ public partial class RotationConfigWindow
             if (ImGui.Checkbox("##Enabled", ref enabled))
             {
                 item.Enabled = enabled;
+            }
+            ImGui.SameLine();
+
+            // Move Up/Down Buttons
+            if (ImGuiEx.IconButton(FontAwesomeIcon.ArrowUp, "Up") && i > 0)
+            {
+                (Service.Config.PriorityTargets[i], Service.Config.PriorityTargets[i - 1]) = (Service.Config.PriorityTargets[i - 1], Service.Config.PriorityTargets[i]);
+            }
+            ImGui.SameLine();
+            if (ImGuiEx.IconButton(FontAwesomeIcon.ArrowDown, "Down") && i < Service.Config.PriorityTargets.Count - 1)
+            {
+                (Service.Config.PriorityTargets[i], Service.Config.PriorityTargets[i + 1]) = (Service.Config.PriorityTargets[i + 1], Service.Config.PriorityTargets[i]);
             }
             ImGui.SameLine();
 
@@ -502,73 +311,6 @@ public partial class RotationConfigWindow
             if (ImGuiEx.IconButton(FontAwesomeIcon.Trash, "Delete"))
             {
                 Service.Config.PriorityTargets.RemoveAt(i);
-                i--;
-            }
-
-            ImGui.PopID();
-        }
-    }
-
-    private void DrawBeneficialList()
-    {
-        ImGui.Separator();
-        ImGui.Text("On");
-        ImGui.SameLine();
-        ImGui.Text("Prio");
-        ImGui.SameLine();
-        ImGui.Text("Role");
-        ImGui.SameLine();
-        ImGui.Text("HP < %");
-        ImGui.SameLine();
-        ImGui.Text("Status ID (0=Ignore)");
-
-        for (int i = 0; i < Service.Config.BeneficialPriorityTargets.Count; i++)
-        {
-            var item = Service.Config.BeneficialPriorityTargets[i];
-            string key = $"BenTarget_{i}";
-            ImGui.PushID(key);
-
-            // Enabled
-            bool enabled = item.Enabled;
-            if (ImGui.Checkbox("##Enabled", ref enabled)) item.Enabled = enabled;
-            ImGui.SameLine();
-
-            // Priority
-            int priority = item.Priority;
-            ImGui.SetNextItemWidth(40 * Scale);
-            if (ImGui.InputInt("##Prio", ref priority, 0)) item.Priority = priority;
-            ImGui.SameLine();
-
-            // Role
-            var role = item.Role;
-            ImGui.SetNextItemWidth(80 * Scale);
-            if (ImGuiEx.EnumCombo("##Role", ref role)) item.Role = role;
-            ImGui.SameLine();
-
-            // HP Ratio
-            float hp = item.HpRatio * 100f;
-            ImGui.SetNextItemWidth(80 * Scale);
-            if (ImGui.SliderFloat("##HP", ref hp, 0, 100, "%.0f%%")) item.HpRatio = hp / 100f;
-            ImGui.SameLine();
-
-            // Status ID
-            int status = (int)item.StatusId;
-            ImGui.SetNextItemWidth(60 * Scale);
-            if (ImGui.InputInt("##Status", ref status, 0)) item.StatusId = (uint)status;
-            
-            // Missing Status toggle (if StatusID > 0)
-            if (status > 0)
-            {
-                ImGui.SameLine();
-                bool missing = item.MissingStatus;
-                if (ImGui.Checkbox("Missing", ref missing)) item.MissingStatus = missing;
-                ImguiTooltips.HoveredTooltip("Target if Status is MISSING");
-            }
-
-            ImGui.SameLine();
-            if (ImGuiEx.IconButton(FontAwesomeIcon.Trash, "Delete"))
-            {
-                Service.Config.BeneficialPriorityTargets.RemoveAt(i);
                 i--;
             }
 

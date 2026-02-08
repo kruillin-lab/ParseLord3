@@ -81,10 +81,10 @@ public class BLM_Default : BlackMageRotation
             }
         }
 
-        //Using Manafont - Only under Ley Lines for burst extension
+        //Using Manafont
         if (InAstralFire)
         {
-            if (HasLeyLines && CurrentMp < 800 && ManafontPvE.CanUse(out act))
+            if (CurrentMp < 800 && ManafontPvE.CanUse(out act))
             {
                 return true;
             }
@@ -154,19 +154,9 @@ public class BLM_Default : BlackMageRotation
             return true;
         }
 
-        if (LeylineMadness && InCombat && HasHostilesInRange)
+        if (LeylineMadness && InCombat && HasHostilesInRange && LeyLinesPvE.CanUse(out act, usedUp: Leyline2Madness))
         {
-            //Hold a charge of Ley Lines if Manafont is coming off CD soon (< 60s)
-            bool holdForManafont = ManafontPvE.Cooldown.IsCoolingDown 
-                && ManafontPvE.Cooldown.RecastTimeRemainOneCharge < 60f;
-            
-            //Only use both charges if Leyline2Madness enabled AND not holding for Manafont
-            bool canUseBothCharges = Leyline2Madness && !holdForManafont;
-            
-            if (LeyLinesPvE.CanUse(out act, usedUp: canUseBothCharges))
-            {
-                return true;
-            }
+            return true;
         }
 
         if (!IsLastAbility(ActionID.LeyLinesPvE) && UseRetrace && InCombat && HasHostilesInRange && RetracePvE.CanUse(out act))
@@ -312,18 +302,6 @@ public class BLM_Default : BlackMageRotation
     private bool GoIce(out IAction? act)
     {
         act = null;
-
-        //When Manafont is available under Ley Lines, use instant spell as filler while weaving Manafont
-        if (HasLeyLines && !ManafontPvE.Cooldown.IsCoolingDown && CurrentMp < 800 && InAstralFire)
-        {
-            //Use Xenoglossy/Foul as filler GCD while Manafont weaves
-            if (UseInstanceSpell(out act))
-            {
-                return true;
-            }
-            //If no instant spell available, don't go to Ice - let Manafont fire in oGCD
-            return false;
-        }
 
         if (!NeedToGoIce)
         {
@@ -704,13 +682,6 @@ public class BLM_Default : BlackMageRotation
         }
         else
         {
-            //Don't go Ice if Manafont is available under Ley Lines - wait for oGCD weave
-            if (InAstralFire && HasLeyLines && !ManafontPvE.Cooldown.IsCoolingDown && CurrentMp < 800)
-            {
-                act = null;
-                return false;
-            }
-
             if (BlizzardIiPvE.CanUse(out act))
             {
                 return true;
@@ -780,12 +751,6 @@ public class BLM_Default : BlackMageRotation
     {
         get
         {
-            //Don't go Ice if Manafont is available under Ley Lines - extend Fire phase instead
-            if (HasLeyLines && !ManafontPvE.Cooldown.IsCoolingDown && CurrentMp < 800)
-            {
-                return false;
-            }
-
             //Can use Despair.
             if (DespairPvE.EnoughLevel && CurrentMp >= DespairPvE.Info.MPNeed)
             {

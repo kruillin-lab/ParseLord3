@@ -168,13 +168,6 @@ public static class Watcher
                 return;
             }
 
-            // TODO: Review if we need this check
-            //if (set.Header.ActionType is not ActionType.Action and not ActionType.Item)
-            //{
-            //	PluginLog.Debug($"ActionFromSelf: ActionType is {set.Header.ActionType}, not Action or Item. Exiting.");
-            //	return;
-            //}
-
             if (set.Action == null)
             {
                 PluginLog.Debug("ActionFromSelf: set.Action is null. Exiting.");

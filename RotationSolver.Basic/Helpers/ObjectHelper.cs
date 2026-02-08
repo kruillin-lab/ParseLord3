@@ -2991,8 +2991,16 @@ public static class ObjectHelper
             return float.MaxValue;
         }
 
-        float distance = Vector3.Distance(Player.Object.Position, battleChara.Position) - (Player.Object.HitboxRadius + battleChara.HitboxRadius);
-        return distance;
+        return battleChara.DistanceTo(Player.Object);
+    }
+
+    /// <summary>
+    /// The distance between two objects, considering hitboxes.
+    /// </summary>
+    public static float DistanceTo(this IGameObject obj1, IGameObject obj2)
+    {
+        if (obj1 == null || obj2 == null) return float.MaxValue;
+        return Vector3.Distance(obj1.Position, obj2.Position) - (obj1.HitboxRadius + obj2.HitboxRadius);
     }
 
 }

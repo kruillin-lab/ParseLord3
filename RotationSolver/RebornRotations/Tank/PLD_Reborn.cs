@@ -1,4 +1,6 @@
-﻿namespace RotationSolver.RebornRotations.Tank;
+﻿using RotationSolver.Basic.Helpers;
+
+namespace RotationSolver.RebornRotations.Tank;
 
 [Rotation("Reborn", CombatType.PvE, GameVersion = "7.4")]
 [SourceCode(Path = "main/RebornRotations/Tank/PLD_Reborn.cs")]
@@ -6,6 +8,8 @@
 public sealed class PLD_Reborn : PaladinRotation
 {
     #region Config Options
+    [RotationConfig(CombatType.PvE, Name = "Enable Smart Auto-Mitigation System")]
+    public bool UseSmartMitigation { get; set; } = true;
 
     [RotationConfig(CombatType.PvE, Name = "Use GCDs to heal. (Ignored if there are no healers alive in party)")]
     public bool GCDHeal { get; set; } = false;
@@ -98,12 +102,21 @@ public sealed class PLD_Reborn : PaladinRotation
             return false;
         }
 
+        // Smart Mitigation emergency logic
+        if (UseSmartMitigation && MitigationHelper.ShouldUseInvulnerability())
+        {
+            if (HallowedGroundPvE.CanUse(out act))
+            {
+                return true;
+            }
+        }
+
         if (StatusHelper.PlayerHasStatus(true, StatusID.Cover) && HallowedWithCover && HallowedGroundPvE.CanUse(out act))
         {
             return true;
         }
 
-        if (HallowedGroundPvE.CanUse(out act)
+        if (!UseSmartMitigation && HallowedGroundPvE.CanUse(out act)
         && Player?.GetHealthRatio() <= HealthForDyingTanks)
         {
             return true;
@@ -210,6 +223,36 @@ public sealed class PLD_Reborn : PaladinRotation
             return false;
         }
 
+        // Smart Mitigation for party-wide damage
+        if (UseSmartMitigation)
+        {
+            var damageLevel = MitigationHelper.GetIncomingDamageLevel();
+
+            // Use Divine Veil for moderate/heavy party damage
+            if (damageLevel >= MitigationHelper.DamageLevel.Moderate &&
+                DivineVeilPvE.CanUse(out act))
+            {
+                return true;
+            }
+
+            // Use Passage of Arms for heavy raidwide damage
+            if (damageLevel >= MitigationHelper.DamageLevel.Heavy &&
+                PassageOfArmsPvE.CanUse(out act))
+            {
+                return true;
+            }
+
+            // Use Reprisal for enemy casts
+            if (MitigationHelper.ShouldUseReprisal() && ReprisalPvE.CanUse(out act, skipAoeCheck: true))
+            {
+                return true;
+            }
+
+            act = null;
+            return false;
+        }
+
+        // Legacy logic
         if (DivineVeilPvE.CanUse(out act))
         {
             return true;
@@ -237,44 +280,119 @@ public sealed class PLD_Reborn : PaladinRotation
             return true;
         }
 
-        // If the player has the Hallowed Ground status, don't use any abilities.
-        if (!StatusHelper.PlayerHasStatus(true, StatusID.HallowedGround))
+        // Don't use mitigation during Hallowed Ground
+        if (StatusHelper.PlayerHasStatus(true, StatusID.HallowedGround))
         {
-            // If Bulwark can be used, use it and return true.
+            return false;
+        }
+
+        // Smart Mitigation System
+        if (UseSmartMitigation)
+        {
+            var damageLevel = MitigationHelper.GetIncomingDamageLevel();
+            var damageType = MitigationHelper.GetIncomingDamageType();
+
+            // Skip if no damage or can't use mitigation yet
+            if (!MitigationHelper.ShouldUseMitigation(damageLevel,
+                SentinelPvE.Cooldown.IsCoolingDown || RampartPvE.Cooldown.IsCoolingDown))
+            {
+                act = null;
+                return false;
+            }
+
+            var useBigCooldown = MitigationHelper.ShouldUseBigCooldown(damageLevel);
+
+            // Priority 1: Bulwark (90s CD, block rate up)
             if (BulwarkPvE.CanUse(out act, skipAoeCheck: true))
             {
+                MitigationHelper.RecordMitigationUsed(false);
                 return true;
             }
 
-            // If Oath can be used, use it and return true.
+            // Priority 2: Sheltron/Holy Sheltron (5s CD, Oath consumer)
             if (UseOath(out act))
             {
+                MitigationHelper.RecordMitigationUsed(false);
                 return true;
             }
 
-            // If Rampart is not cooling down or has been cooling down for more than 60 seconds, and Sentinel can be used, use Sentinel and return true.
-            if ((!RampartPvE.Cooldown.IsCoolingDown || RampartPvE.Cooldown.ElapsedAfter(60)) && GuardianPvE.CanUse(out act) && GuardianPvE.EnoughLevel)
+            // Priority 3: Reprisal (10% enemy damage down)
+            if (MitigationHelper.ShouldUseReprisal() && ReprisalPvE.CanUse(out act, skipAoeCheck: true))
             {
+                MitigationHelper.RecordMitigationUsed(false);
                 return true;
             }
 
-            if ((!RampartPvE.Cooldown.IsCoolingDown || RampartPvE.Cooldown.ElapsedAfter(60)) && SentinelPvE.CanUse(out act) && !GuardianPvE.EnoughLevel)
+            // Priority 4: Sentinel/Guardian (30% mit, 120s CD)
+            if (useBigCooldown && (!RampartPvE.Cooldown.IsCoolingDown || RampartPvE.Cooldown.ElapsedAfter(60)))
             {
+                if (GuardianPvE.EnoughLevel && GuardianPvE.CanUse(out act))
+                {
+                    MitigationHelper.RecordMitigationUsed(true);
+                    return true;
+                }
+
+                if (!GuardianPvE.EnoughLevel && SentinelPvE.CanUse(out act))
+                {
+                    MitigationHelper.RecordMitigationUsed(true);
+                    return true;
+                }
+            }
+
+            // Priority 5: Rampart (20% mit, 90s CD)
+            if (((GuardianPvE.Cooldown.IsCoolingDown && GuardianPvE.Cooldown.ElapsedAfter(60)) ||
+                (SentinelPvE.Cooldown.IsCoolingDown && SentinelPvE.Cooldown.ElapsedAfter(60)) ||
+                !SentinelPvE.EnoughLevel || damageLevel >= MitigationHelper.DamageLevel.Heavy) &&
+                RampartPvE.CanUse(out act))
+            {
+                MitigationHelper.RecordMitigationUsed(true);
                 return true;
             }
 
-            // If Sentinel is at an enough level and is cooling down for more than 60 seconds, or if Sentinel is not at an enough level, and Rampart can be used, use Rampart and return true.
-            if (((GuardianPvE.EnoughLevel && GuardianPvE.Cooldown.IsCoolingDown && GuardianPvE.Cooldown.ElapsedAfter(60)) || (!GuardianPvE.EnoughLevel && SentinelPvE.EnoughLevel && SentinelPvE.Cooldown.IsCoolingDown && SentinelPvE.Cooldown.ElapsedAfter(60)) || !SentinelPvE.EnoughLevel) && RampartPvE.CanUse(out act))
+            // Priority 6: Arms Length for trash pulls (NOT on bosses)
+            if (!MitigationHelper.IsFightingBoss() &&
+                !DataCenter.IsHostileCastingToTank &&
+                ArmsLengthPvE.CanUse(out act))
             {
+                MitigationHelper.RecordMitigationUsed(false);
                 return true;
             }
 
-            // If Reprisal can be used, use it and return true.
-            if (ReprisalPvE.CanUse(out act, skipAoeCheck: true))
-            {
-                return true;
-            }
+            act = null;
+            return false;
         }
+
+        // Legacy mitigation logic
+        if (BulwarkPvE.CanUse(out act, skipAoeCheck: true))
+        {
+            return true;
+        }
+
+        if (UseOath(out act))
+        {
+            return true;
+        }
+
+        if ((!RampartPvE.Cooldown.IsCoolingDown || RampartPvE.Cooldown.ElapsedAfter(60)) && GuardianPvE.CanUse(out act) && GuardianPvE.EnoughLevel)
+        {
+            return true;
+        }
+
+        if ((!RampartPvE.Cooldown.IsCoolingDown || RampartPvE.Cooldown.ElapsedAfter(60)) && SentinelPvE.CanUse(out act) && !GuardianPvE.EnoughLevel)
+        {
+            return true;
+        }
+
+        if (((GuardianPvE.EnoughLevel && GuardianPvE.Cooldown.IsCoolingDown && GuardianPvE.Cooldown.ElapsedAfter(60)) || (!GuardianPvE.EnoughLevel && SentinelPvE.EnoughLevel && SentinelPvE.Cooldown.IsCoolingDown && SentinelPvE.Cooldown.ElapsedAfter(60)) || !SentinelPvE.EnoughLevel) && RampartPvE.CanUse(out act))
+        {
+            return true;
+        }
+
+        if (ReprisalPvE.CanUse(out act, skipAoeCheck: true))
+        {
+            return true;
+        }
+
         return base.DefenseSingleAbility(nextGCD, out act);
     }
     #endregion

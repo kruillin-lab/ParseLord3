@@ -7,96 +7,6 @@ using static RotationSolver.Basic.Configuration.ConfigTypes;
 
 namespace RotationSolver.Basic.Configuration;
 
-public class BeneficialTargetConfig
-{
-    public int Priority { get; set; } = 1;
-    public bool Enabled { get; set; } = true;
-    public JobRole Role { get; set; } = JobRole.None;
-    public float HpRatio { get; set; } = 1.0f;
-    public uint StatusId { get; set; } = 0;
-    public bool MissingStatus { get; set; } = false;
-}
-
-public enum ActionStackTargetType
-{
-    [System.ComponentModel.Description("Target <t>")]
-    Target,
-    [System.ComponentModel.Description("Self <me>")]
-    Self,
-    [System.ComponentModel.Description("Focus Target <f>")]
-    Focus,
-    [System.ComponentModel.Description("Mouseover <mo>")]
-    Mouseover,
-    [System.ComponentModel.Description("Target of Target <tt>")]
-    TargetOfTarget,
-    [System.ComponentModel.Description("UI Target")]
-    UITarget,
-    [System.ComponentModel.Description("Tank (Party)")]
-    Tank,
-    Party1, Party2, Party3, Party4, Party5, Party6, Party7, Party8,
-    
-    [System.ComponentModel.Description("Lowest HP (Party)")]
-    LowestHpParty,
-    [System.ComponentModel.Description("Lowest HP (Tank)")]
-    LowestHpTank,
-    [System.ComponentModel.Description("Lowest HP (Healer)")]
-    LowestHpHealer,
-    [System.ComponentModel.Description("Lowest HP (DPS)")]
-    LowestHpDps,
-    
-    [System.ComponentModel.Description("Nearest (Party)")]
-    NearestParty,
-    [System.ComponentModel.Description("Furthest (Party)")]
-    FurthestParty,
-    [System.ComponentModel.Description("Nearest (Enemy)")]
-    NearestEnemy,
-    [System.ComponentModel.Description("Furthest (Enemy)")]
-    FurthestEnemy,
-    
-    [System.ComponentModel.Description("Owner")]
-    Owner,
-    [System.ComponentModel.Description("Pet")]
-    Pet,
-    
-    [System.ComponentModel.Description("Last Target <lt>")]
-    LastTarget,
-    [System.ComponentModel.Description("Last Enemy <le>")]
-    LastEnemy,
-    [System.ComponentModel.Description("Last Attacker <la>")]
-    LastAttacker,
-    [System.ComponentModel.Description("Soft Target")]
-    SoftTarget,
-    [System.ComponentModel.Description("Companion")]
-    Companion,
-    
-    // Jobs
-    PLD, WAR, DRK, GNB,
-    WHM, SCH, AST, SGE,
-    MNK, DRG, NIN, SAM, RPR, VPR,
-    BRD, MCH, DNC,
-    BLM, SMN, RDM, PCT, BLU
-}
-
-public class ActionStackItem
-{
-    public uint ActionId { get; set; } = 0;
-    public ActionStackTargetType Target { get; set; } = ActionStackTargetType.Target;
-    public bool Enabled { get; set; } = true;
-    public float HpRatio { get; set; } = 1.0f;
-    public uint StatusId { get; set; } = 0;
-    public bool MissingStatus { get; set; } = false;
-}
-
-public class ActionStackConfig
-{
-    public string Name { get; set; } = "New Stack";
-    public uint TriggerActionId { get; set; }
-    public bool BlockOriginalOnFail { get; set; } = false;
-    public bool CheckRange { get; set; } = true;
-    public bool CheckCooldown { get; set; } = true;
-    public List<ActionStackItem> Items { get; set; } = [];
-}
-
 public class PriorityTargetConfig
 {
     public string Name { get; set; } = string.Empty;
@@ -140,8 +50,6 @@ internal partial class Configs : IPluginConfiguration
     public string[] RotationLibs { get; set; } = [];
     public List<TargetingType> TargetingTypes { get; set; } = [];
     public List<PriorityTargetConfig> PriorityTargets { get; set; } = [];
-    public List<BeneficialTargetConfig> BeneficialPriorityTargets { get; set; } = [];
-    public List<ActionStackConfig> ActionStacks { get; set; } = [];
 
     public MacroInfo DutyStart { get; set; } = new MacroInfo();
     public MacroInfo DutyEnd { get; set; } = new MacroInfo();
@@ -803,7 +711,11 @@ internal partial class Configs : IPluginConfiguration
     [JobConfig, Range(0.05f, 0.25f, ConfigUnitType.Percent)]
     [UI("Action Ahead (Percent of your GCD time remaining on a GCD cycle before RSR will try to queue the next GCD)", Filter = BasicTimer,
     Description = "This setting controls how many oGCDs RSR will try to fit in a single GCD window\nLower numbers mean more oGCDs, but potentially more GCD clipping")]
-    private readonly float _action6head = 0.25f;
+    private readonly float _action6head = 0.05f;
+
+    [Range(0, 0.2f, ConfigUnitType.Seconds, 0.01f)]
+    [UI("Animation Lock Buffer", Filter = BasicTimer, Description = "Additional time to wait after the animation lock ends before using an oGCD. Helps with 'hit or miss' issues.")]
+    public float AnimationLockBuffer { get; set; } = 0.06f;
 
     /// <summary>
     /// Remove extra lag-induced animation lock delay from instant casts (read tooltip!)

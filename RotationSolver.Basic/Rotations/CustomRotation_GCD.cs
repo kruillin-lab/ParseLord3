@@ -1,4 +1,6 @@
-﻿namespace RotationSolver.Basic.Rotations;
+using FFXIVClientStructs.FFXIV.Client.Game;
+
+namespace RotationSolver.Basic.Rotations;
 
 public partial class CustomRotation
 {
@@ -15,14 +17,35 @@ public partial class CustomRotation
     {
         IAction? act = DataCenter.CommandNextAction;
 
-        IBaseAction.ForceEnable = true;
-        if (act is IBaseAction a && a.Info.IsRealGCD
-            && a.CanUse(out _, usedUp: true, skipAoeCheck: true, skipStatusProvideCheck: true))
+        if (act is IBaseAction a && a.Info.IsRealGCD)
         {
-            return act;
+            IBaseAction.ForceEnable = true;
+            try
+            {
+                // For intercepted actions, be more lenient with checks
+                // The user explicitly pressed this button, so we should try to execute it
+                // Skip as many checks as possible - the game will do final validation
+                if (a.CanUse(out _,
+                    skipStatusProvideCheck: true,
+                    skipStatusNeed: true,
+                    skipTargetStatusNeedCheck: true,
+                    skipComboCheck: true,
+                    skipCastingCheck: true,
+                    usedUp: true,
+                    skipAoeCheck: true,
+                    skipTTKCheck: true,
+                    checkActionManager: true))
+                {
+                    PluginLog.Debug($"[ParseLord3] GCD() using intercepted CommandNextAction: {a.Name}");
+                    return act;
+                }
+                // No 'else' block here. If it fails, let it be tried again on the next tick until it expires.
+            }
+            finally
+            {
+                IBaseAction.ForceEnable = false;
+            }
         }
-
-        IBaseAction.ForceEnable = false;
 
         if (StatusHelper.PlayerHasStatus(true, StatusID.Mudra) && DataCenter.DefaultGCDRemain >= 0.625f)
         {

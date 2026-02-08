@@ -7,6 +7,7 @@ using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using RotationSolver.Basic.Configuration;
+using RotationSolver.Basic.Helpers;
 using RotationSolver.Basic.Rotations.Duties;
 using static RotationSolver.Basic.Configuration.ConfigTypes;
 using AttackType = RotationSolver.Basic.Data.AttackType;
@@ -461,8 +462,8 @@ public struct ActionTargetInfo(IBaseAction action)
         List<IBattleChara> targetsList = [.. GetMostCanTargetObjects(canTargets, canAffects, skipAoeCheck ? 0 : action.Config.AoeCount)];
 
         IBattleChara? target = targetsList.Count > 0
-            ? FindTargetByType(targetsList, type, action.Config.AutoHealRatio, action.Setting.SpecialType, targetOverride, action.Setting.IsFriendly)
-            : FindTargetByType([], type, action.Config.AutoHealRatio, action.Setting.SpecialType, targetOverride, action.Setting.IsFriendly);
+            ? FindTargetByType(targetsList, type, action.Config.AutoHealRatio, action.Setting.SpecialType, targetOverride, action.Setting.IsFriendly, action)
+            : FindTargetByType([], type, action.Config.AutoHealRatio, action.Setting.SpecialType, targetOverride, action.Setting.IsFriendly, action);
 
         IBattleChara[] affectedTargets;
         if (target != null)
@@ -643,7 +644,7 @@ public struct ActionTargetInfo(IBaseAction action)
             }
 
             IEnumerable<IBattleChara> targetList = TargetFilter.GetObjectInRadius(availableCharas, range);
-            IBattleChara? target = FindTargetByType(targetList, TargetType.Move, action.Config.AutoHealRatio, action.Setting.SpecialType, targetOverride, true);
+            IBattleChara? target = FindTargetByType(targetList, TargetType.Move, action.Config.AutoHealRatio, action.Setting.SpecialType, targetOverride, true, action);
             return target == null ? null : new TargetResult(target, Array.Empty<IBattleChara>(), target.Position);
         }
     }
@@ -787,7 +788,7 @@ public struct ActionTargetInfo(IBaseAction action)
                 }
             }
             IBattleChara? attackT = FindTargetByType(partyMembersInRadius,
-                TargetType.BeAttacked, action.Config.AutoHealRatio, action.Setting.SpecialType, targetOverride, true);
+                TargetType.BeAttacked, action.Config.AutoHealRatio, action.Setting.SpecialType, targetOverride, true, action);
 
             if (attackT == null)
             {
@@ -1231,7 +1232,7 @@ public struct ActionTargetInfo(IBaseAction action)
     /// <param name="targetOverride">Overrides the default target type for the action.</param>
     /// <param name="isFriendly">Indicates whether the target is friendly.</param>
     /// <returns></returns>
-    public static IBattleChara? FindTargetByType(IEnumerable<IBattleChara> battleChara, TargetType type, float healRatio, SpecialActionType actionType, TargetType targetOverride, bool isFriendly)
+    public static IBattleChara? FindTargetByType(IEnumerable<IBattleChara> battleChara, TargetType type, float healRatio, SpecialActionType actionType, TargetType targetOverride, bool isFriendly, IBaseAction? action = null)
     {
         if (battleChara == null)
         {
@@ -1279,219 +1280,120 @@ public struct ActionTargetInfo(IBaseAction action)
                             return IsHostiletarg;
                         }
                     }
-                    if (DataCenter.MergedStatus.HasFlag(AutoStatus.Intercepting))
+                }
+                break;
+            case SpecialActionType.FriendlyMovingForward:
+            case SpecialActionType.HostileFriendlyMovingForward:
+                if (Service.Config != null)
+                {
+                    if (DataCenter.MergedStatus.HasFlag(AutoStatus.MoveForward) || Service.CountDownTime > 0)
                     {
-                        if (Svc.Targets.Target is IBattleChara IsHostiletarg && IsHostiletarg.IsHostile())
+                        if (Svc.Targets.Target is IBattleChara IsHostiletarg)
                         {
                             return IsHostiletarg;
                         }
                     }
-                    else
+                }
+                break;
+
+            case SpecialActionType.MovingBackward:
+                if (Service.Config != null)
+                {
+                    if (DataCenter.MergedStatus.HasFlag(AutoStatus.MoveBack) || Service.CountDownTime > 0)
                     {
-                        var filtered = new List<IBattleChara>();
-                        foreach (var t in battleChara)
+                        if (Svc.Targets.Target is IBattleChara IsHostiletarg)
                         {
-                            if (t.DistanceToPlayer() < Service.Config.DistanceForMoving2)
-                            {
-                                filtered.Add(t);
-                            }
+                            return IsHostiletarg;
                         }
-                        battleChara = filtered;
-                    }
-                }
-                break;
-
-            case SpecialActionType.FriendlyMovingForward:
-                if (Svc.Targets.FocusTarget != null)
-                {
-                    if (Svc.Targets.FocusTarget is IBattleChara focus && focus.IsParty())
-                    {
-                        return focus;
-                    }
-                }
-                else if (Svc.Targets.FocusTarget == null && Svc.Targets.Target != null)
-                {
-                    if (Svc.Targets.Target is IBattleChara IsPartytarg && IsPartytarg.IsParty())
-                    {
-                        return IsPartytarg;
-                    }
-                }
-                break;
-
-            case SpecialActionType.HostileFriendlyMovingForward:
-                if (Svc.Targets.FocusTarget != null)
-                {
-                    if (Svc.Targets.FocusTarget is IBattleChara focus && focus.IsParty())
-                    {
-                        return focus;
-                    }
-                }
-                else if (Svc.Targets.FocusTarget == null && Svc.Targets.Target != null)
-                {
-                    if (Svc.Targets.Target is IBattleChara IsPartytarg && IsPartytarg.IsParty())
-                    {
-                        return IsPartytarg;
-                    }
-                    if (Svc.Targets.Target is IBattleChara IsHostiletarg && IsHostiletarg.IsHostile())
-                    {
-                        return IsHostiletarg;
                     }
                 }
                 break;
         }
 
-        if (targetOverride == default)
+
+
+
+
+
+
+        IBattleChara? FindHealTarget(float healRatio)
         {
-            switch (type)
+            if (battleChara == null)
             {
-                case TargetType.Death:
-                    {
-                        if (DataCenter.DeathTarget != null)
-                        {
-                            return DataCenter.DeathTarget;
-                        }
-                    }
-                    break;
-
-                case TargetType.Move:
-                    break;
-
-                case TargetType.FriendMove:
-                    {
-                        if (Svc.Targets.FocusTarget != null)
-                        {
-                            if (Svc.Targets.FocusTarget is IBattleChara focus && focus.IsParty())
-                            {
-                                return focus;
-                            }
-                        }
-                        else if (Svc.Targets.Target != null)
-                        {
-                            if (Svc.Targets.Target is IBattleChara targ && targ.IsParty())
-                            {
-                                return targ;
-                            }
-                        }
-                    }
-                    break;
-
-                default:
-                    {
-                        var filtered = new List<IBattleChara>();
-                        foreach (var t in battleChara)
-                        {
-                            if (ObjectHelper.IsAlive(t))
-                            {
-                                filtered.Add(t);
-                            }
-                        }
-                        battleChara = filtered;
-                    }
-                    break;
+                return null;
             }
 
-            return type switch
+            bool hasAny = false;
+            foreach (var _ in battleChara)
             {
-                TargetType.BeAttacked => FindBeAttackedTarget(),
-                TargetType.Provoke => FindProvokeTarget(),
-                TargetType.Dispel => FindDispelTarget(),
-                TargetType.Move => FindTargetForMoving(),
-                TargetType.Heal => FindHealTarget(healRatio),
-                TargetType.Interrupt => FindInterruptTarget(),
-                TargetType.Tank => FindTankTarget(),
-                TargetType.Melee => battleChara != null ? RandomMeleeTarget(battleChara) : null,
-                TargetType.Range => battleChara != null ? RandomRangeTarget(battleChara) : null,
-                TargetType.Magical => battleChara != null ? RandomMagicalTarget(battleChara) : null,
-                TargetType.Physical => battleChara != null ? RandomPhysicalTarget(battleChara) : null,
-                TargetType.DarkCannon => FindDarkCannonTarget(),
-                TargetType.ShockCannon => FindShockCannonTarget(),
-                TargetType.PhantomBell => FindPhantomBell(),
-                TargetType.PhantomRespite => FindPhantomRespite(),
-                TargetType.DancePartner => FindDancePartner(),
-                TargetType.MimicryTarget => FindMimicryTarget(),
-                TargetType.TheSpear => FindTheSpear(),
-                TargetType.TheBalance => FindTheBalance(),
-                TargetType.Kardia => FindKardia(),
-                TargetType.Deployment => FindDeploymentTacticsTarget(),
-                _ => isFriendly ? FindFriendly() : FindHostile(),
-            };
-        }
-
-        if (targetOverride != default)
-        {
-            switch (targetOverride)
+                hasAny = true;
+                break;
+            }
+            if (!hasAny || Service.Config == null)
             {
-                case TargetType.Death:
-                    {
-                        if (DataCenter.DeathTarget != null)
-                        {
-                            return DataCenter.DeathTarget;
-                        }
-                    }
-                    break;
-
-                case TargetType.Move:
-                    break;
-
-                case TargetType.FriendMove:
-                    {
-                        if (Svc.Targets.FocusTarget != null)
-                        {
-                            if (Svc.Targets.FocusTarget is IBattleChara focus && focus.IsParty())
-                            {
-                                return focus;
-                            }
-                        }
-                        else if (Svc.Targets.Target != null)
-                        {
-                            if (Svc.Targets.Target is IBattleChara targ && targ.IsParty())
-                            {
-                                return targ;
-                            }
-                        }
-                    }
-                    break;
-
-                default:
-                    {
-                        var filtered = new List<IBattleChara>();
-                        foreach (var t in battleChara)
-                        {
-                            if (ObjectHelper.IsAlive(t))
-                            {
-                                filtered.Add(t);
-                            }
-                        }
-                        battleChara = filtered;
-                    }
-                    break;
+                return null;
             }
 
-            return targetOverride switch
+            List<IBattleChara> filteredGameObjects = [];
+            foreach (var o in battleChara)
             {
-                TargetType.BeAttacked => FindBeAttackedTarget(),
-                TargetType.Provoke => FindProvokeTarget(),
-                TargetType.Dispel => FindDispelTarget(),
-                TargetType.Move => FindTargetForMoving(),
-                TargetType.Heal => FindHealTarget(healRatio),
-                TargetType.Interrupt => FindInterruptTarget(),
-                TargetType.Tank => FindTankTarget(),
-                TargetType.Melee => battleChara != null ? RandomMeleeTarget(battleChara) : null,
-                TargetType.Range => battleChara != null ? RandomRangeTarget(battleChara) : null,
-                TargetType.Magical => battleChara != null ? RandomMagicalTarget(battleChara) : null,
-                TargetType.Physical => battleChara != null ? RandomPhysicalTarget(battleChara) : null,
-                TargetType.DarkCannon => FindDarkCannonTarget(),
-                TargetType.ShockCannon => FindShockCannonTarget(),
-                TargetType.PhantomBell => FindPhantomBell(),
-                TargetType.PhantomRespite => FindPhantomRespite(),
-                TargetType.DancePartner => FindDancePartner(),
-                TargetType.MimicryTarget => FindMimicryTarget(),
-                TargetType.TheSpear => FindTheSpear(),
-                TargetType.TheBalance => FindTheBalance(),
-                TargetType.Kardia => FindKardia(),
-                TargetType.Deployment => FindDeploymentTacticsTarget(),
-                _ => isFriendly ? FindFriendly() : FindHostile(),
-            };
+                if (!IBaseAction.AutoHealCheck || o.GetHealthRatio() < healRatio)
+                {
+                    filteredGameObjects.Add(o);
+                }
+            }
+
+            List<IBattleChara> partyMembers = [];
+            foreach (var o in filteredGameObjects)
+            {
+                if (ObjectHelper.IsParty(o))
+                {
+                    partyMembers.Add(o);
+                }
+            }
+
+            IBattleChara? result = GeneralHealTarget(partyMembers, action);
+            if (result != null) return result;
+
+            result = GeneralHealTarget(filteredGameObjects, action);
+            if (result != null) return result;
+
+            foreach (var t in partyMembers)
+            {
+                if (t.HasStatus(false, StatusHelper.TankStanceStatus))
+                {
+                    return t;
+                }
+            }
+
+            if (partyMembers.Count > 0)
+            {
+                return partyMembers[0];
+            }
+
+            foreach (var t in filteredGameObjects)
+            {
+                if (t.HasStatus(false, StatusHelper.TankStanceStatus))
+                {
+                    return t;
+                }
+            }
+
+            if (filteredGameObjects.Count > 0)
+            {
+                return filteredGameObjects[0];
+            }
+
+            return null;
+
+            static IBattleChara? GeneralHealTarget(List<IBattleChara> objs, IBaseAction? act)
+            {
+                if (objs.Count == 0) return null;
+
+                // Sort by HP ascending to heal the lowest first
+                var lowestHp = objs.OrderBy(o => o.GetHealthRatio()).FirstOrDefault();
+                return lowestHp;
+            }
         }
 
         IBattleChara? FindFriendly()
@@ -1501,9 +1403,7 @@ public struct ActionTargetInfo(IBaseAction action)
                 return null;
             }
 
-            // Prepare a list to sort manually
             List<IBattleChara> objects = [.. battleChara];
-
             List<IBattleChara> filtered = [.. objects];
 
             if (targetOverride != default)
@@ -1513,7 +1413,6 @@ public struct ActionTargetInfo(IBaseAction action)
                     case TargetType.Small:
                         if (Service.Config.SmallHp)
                         {
-                            // Order by HitboxRadius ascending, then by CurrentHp ascending
                             filtered = [.. objects];
                             filtered.Sort((a, b) =>
                             {
@@ -1526,7 +1425,6 @@ public struct ActionTargetInfo(IBaseAction action)
                         }
                         else
                         {
-                            // Order by HitboxRadius ascending, then by CurrentHp descending
                             filtered = [.. objects];
                             filtered.Sort((a, b) =>
                             {
@@ -1602,191 +1500,6 @@ public struct ActionTargetInfo(IBaseAction action)
                         break;
                     case TargetType.PvPHealers:
                         {
-                            // Filter for healers
-                            List<IBattleChara> healers = [];
-                            foreach (var p in objects)
-                            {
-                                if (p.IsJobs(JobRole.Healer.ToJobs()))
-                                    healers.Add(p);
-                            }
-                            if (healers.Count > 0)
-                            {
-                                healers.Sort((a, b) => a.DistanceToPlayer().CompareTo(b.DistanceToPlayer()));
-                                filtered = healers;
-                            }
-                            else
-                            {
-                                filtered = [.. objects];
-                                filtered.Sort((a, b) => a.DistanceToPlayer().CompareTo(b.DistanceToPlayer()));
-                            }
-                            break;
-                        }
-                    case TargetType.PvPTanks:
-                        {
-                            List<IBattleChara> tanks = [];
-                            foreach (var p in objects)
-                            {
-                                if (p.IsJobs(JobRole.Tank.ToJobs()))
-                                    tanks.Add(p);
-                            }
-                            if (tanks.Count > 0)
-                            {
-                                tanks.Sort((a, b) => a.DistanceToPlayer().CompareTo(b.DistanceToPlayer()));
-                                filtered = tanks;
-                            }
-                            else
-                            {
-                                filtered = [.. objects];
-                                filtered.Sort((a, b) => a.DistanceToPlayer().CompareTo(b.DistanceToPlayer()));
-                            }
-                            break;
-                        }
-                    case TargetType.PvPDPS:
-                        {
-                            List<IBattleChara> dps = [];
-                            foreach (var p in objects)
-                            {
-                                if (p.IsJobs(JobRole.AllDPS.ToJobs()))
-                                    dps.Add(p);
-                            }
-                            if (dps.Count > 0)
-                            {
-                                dps.Sort((a, b) => a.DistanceToPlayer().CompareTo(b.DistanceToPlayer()));
-                                filtered = dps;
-                            }
-                            else
-                            {
-                                filtered = [.. objects];
-                                filtered.Sort((a, b) => a.DistanceToPlayer().CompareTo(b.DistanceToPlayer()));
-                            }
-                            break;
-                        }
-                    default:
-                        if (Service.Config.SmallHp)
-                        {
-                            filtered = [.. objects];
-                            filtered.Sort((a, b) =>
-                            {
-                                int cmp = b.HitboxRadius.CompareTo(a.HitboxRadius);
-                                if (cmp != 0) return cmp;
-                                float aHp = a is IBattleChara ba ? ba.CurrentHp : float.MaxValue;
-                                float bHp = b is IBattleChara bb ? bb.CurrentHp : float.MaxValue;
-                                return aHp.CompareTo(bHp);
-                            });
-                        }
-                        else
-                        {
-                            filtered = [.. objects];
-                            filtered.Sort((a, b) =>
-                            {
-                                int cmp = b.HitboxRadius.CompareTo(a.HitboxRadius);
-                                if (cmp != 0) return cmp;
-                                float aHp = a is IBattleChara ba ? ba.CurrentHp : 0;
-                                float bHp = b is IBattleChara bb ? bb.CurrentHp : 0;
-                                return bHp.CompareTo(aHp);
-                            });
-                        }
-                        break;
-                }
-            }
-
-            if (targetOverride == default)
-            {
-                switch (type)
-                {
-                    case TargetType.Small:
-                        if (Service.Config.SmallHp)
-                        {
-                            // Order by HitboxRadius ascending, then by CurrentHp ascending
-                            filtered = [.. objects];
-                            filtered.Sort((a, b) =>
-                            {
-                                int cmp = a.HitboxRadius.CompareTo(b.HitboxRadius);
-                                if (cmp != 0) return cmp;
-                                float aHp = a is IBattleChara ba ? ba.CurrentHp : float.MaxValue;
-                                float bHp = b is IBattleChara bb ? bb.CurrentHp : float.MaxValue;
-                                return aHp.CompareTo(bHp);
-                            });
-                        }
-                        else
-                        {
-                            // Order by HitboxRadius ascending, then by CurrentHp descending
-                            filtered = [.. objects];
-                            filtered.Sort((a, b) =>
-                            {
-                                int cmp = a.HitboxRadius.CompareTo(b.HitboxRadius);
-                                if (cmp != 0) return cmp;
-                                float aHp = a is IBattleChara ba ? ba.CurrentHp : 0;
-                                float bHp = b is IBattleChara bb ? bb.CurrentHp : 0;
-                                return bHp.CompareTo(aHp);
-                            });
-                        }
-                        break;
-                    case TargetType.HighHP:
-                        filtered = [.. objects];
-                        filtered.Sort((a, b) =>
-                        {
-                            uint aHp = a is IBattleChara ba ? ba.CurrentHp : 0;
-                            uint bHp = b is IBattleChara bb ? bb.CurrentHp : 0;
-                            return bHp.CompareTo(aHp);
-                        });
-                        break;
-                    case TargetType.LowHP:
-                        filtered = [.. objects];
-                        filtered.Sort((a, b) =>
-                        {
-                            uint aHp = a is IBattleChara ba ? ba.CurrentHp : 0;
-                            uint bHp = b is IBattleChara bb ? bb.CurrentHp : 0;
-                            return aHp.CompareTo(bHp);
-                        });
-                        break;
-                    case TargetType.HighHPPercent:
-                        filtered = [.. objects];
-                        filtered.Sort((a, b) =>
-                        {
-                            float aPct = a is IBattleChara ba && ba.MaxHp != 0 ? (float)ba.CurrentHp / ba.MaxHp : 0;
-                            float bPct = b is IBattleChara bb && bb.MaxHp != 0 ? (float)bb.CurrentHp / bb.MaxHp : 0;
-                            return bPct.CompareTo(aPct);
-                        });
-                        break;
-                    case TargetType.LowHPPercent:
-                        filtered = [.. objects];
-                        filtered.Sort((a, b) =>
-                        {
-                            float aPct = a is IBattleChara ba && ba.MaxHp != 0 ? (float)ba.CurrentHp / ba.MaxHp : 0;
-                            float bPct = b is IBattleChara bb && bb.MaxHp != 0 ? (float)bb.CurrentHp / bb.MaxHp : 0;
-                            return aPct.CompareTo(bPct);
-                        });
-                        break;
-                    case TargetType.HighMaxHP:
-                        filtered = [.. objects];
-                        filtered.Sort((a, b) =>
-                        {
-                            uint aHp = a is IBattleChara ba ? ba.MaxHp : 0;
-                            uint bHp = b is IBattleChara bb ? bb.MaxHp : 0;
-                            return bHp.CompareTo(aHp);
-                        });
-                        break;
-                    case TargetType.LowMaxHP:
-                        filtered = [.. objects];
-                        filtered.Sort((a, b) =>
-                        {
-                            uint aHp = a is IBattleChara ba ? ba.MaxHp : 0;
-                            uint bHp = b is IBattleChara bb ? bb.MaxHp : 0;
-                            return aHp.CompareTo(bHp);
-                        });
-                        break;
-                    case TargetType.Nearest:
-                        filtered = [.. objects];
-                        filtered.Sort((a, b) => a.DistanceToPlayer().CompareTo(b.DistanceToPlayer()));
-                        break;
-                    case TargetType.Farthest:
-                        filtered = [.. objects];
-                        filtered.Sort((a, b) => b.DistanceToPlayer().CompareTo(a.DistanceToPlayer()));
-                        break;
-                    case TargetType.PvPHealers:
-                        {
-                            // Filter for healers
                             List<IBattleChara> healers = [];
                             foreach (var p in objects)
                             {
@@ -1883,6 +1596,33 @@ public struct ActionTargetInfo(IBaseAction action)
             return null;
         }
 
+        return targetOverride switch
+        {
+            TargetType.BeAttacked => FindBeAttackedTarget(),
+            TargetType.Provoke => FindProvokeTarget(),
+            TargetType.Dispel => FindDispelTarget(),
+            TargetType.PlayerTarget => FindPlayerTarget(),
+            TargetType.Move => FindTargetForMoving(),
+            TargetType.Heal => FindHealTarget(healRatio),
+            TargetType.Interrupt => FindInterruptTarget(),
+            TargetType.Tank => FindTankTarget(),
+            TargetType.Melee => battleChara != null ? RandomMeleeTarget(battleChara) : null,
+            TargetType.Range => battleChara != null ? RandomRangeTarget(battleChara) : null,
+            TargetType.Magical => battleChara != null ? RandomMagicalTarget(battleChara) : null,
+            TargetType.Physical => battleChara != null ? RandomPhysicalTarget(battleChara) : null,
+            TargetType.DarkCannon => FindDarkCannonTarget(),
+            TargetType.ShockCannon => FindShockCannonTarget(),
+            TargetType.PhantomBell => FindPhantomBell(),
+            TargetType.PhantomRespite => FindPhantomRespite(),
+            TargetType.DancePartner => FindDancePartner(),
+            TargetType.MimicryTarget => FindMimicryTarget(),
+            TargetType.TheSpear => FindTheSpear(),
+            TargetType.TheBalance => FindTheBalance(),
+            TargetType.Kardia => FindKardia(),
+            TargetType.Deployment => FindDeploymentTacticsTarget(),
+            _ => isFriendly ? FindFriendly() : FindHostile(),
+        };
+
         IBattleChara? FindDarkCannonTarget()
         {
             if (battleChara != null)
@@ -1936,8 +1676,8 @@ public struct ActionTargetInfo(IBaseAction action)
             }
             if (partyMembers != null && partyMembers.Count > 0)
             {
-                var bePartyAttackedTarget = FindTargetByType(partyMembers, TargetType.BeAttacked, 0, SpecialActionType.None, targetOverride, isFriendly);
-                var beAllAttackedTarget = FindTargetByType(allMembers, TargetType.BeAttacked, 0, SpecialActionType.None, targetOverride, isFriendly);
+                var bePartyAttackedTarget = FindTargetByType(partyMembers, TargetType.BeAttacked, 0, SpecialActionType.None, targetOverride, isFriendly, action);
+                var beAllAttackedTarget = FindTargetByType(allMembers, TargetType.BeAttacked, 0, SpecialActionType.None, targetOverride, isFriendly, action);
                 // Compare by reference or GameObjectId (safer for IBattleChara)
                 if (bePartyAttackedTarget != null && beAllAttackedTarget != null &&
                     bePartyAttackedTarget.GameObjectId == beAllAttackedTarget.GameObjectId)
@@ -1984,8 +1724,8 @@ public struct ActionTargetInfo(IBaseAction action)
             if (partyMembers != null && partyMembers.Count > 0)
             {
                 // Use FindTargetByType to get the BeAttacked target from party members
-                var bePartyAttackedTarget = FindTargetByType(partyMembers, TargetType.BeAttacked, 0, SpecialActionType.None, targetOverride, isFriendly);
-                var beAllAttackedTarget = FindTargetByType(allMembers, TargetType.BeAttacked, 0, SpecialActionType.None, targetOverride, isFriendly);
+                var bePartyAttackedTarget = FindTargetByType(partyMembers, TargetType.BeAttacked, 0, SpecialActionType.None, targetOverride, isFriendly, action);
+                var beAllAttackedTarget = FindTargetByType(allMembers, TargetType.BeAttacked, 0, SpecialActionType.None, targetOverride, isFriendly, action);
                 // Compare by reference or GameObjectId (safer for IBattleChara)
                 if (bePartyAttackedTarget != null && beAllAttackedTarget != null &&
                     bePartyAttackedTarget.GameObjectId == beAllAttackedTarget.GameObjectId)
@@ -2400,7 +2140,7 @@ public struct ActionTargetInfo(IBaseAction action)
             IBattleChara? bestGalvanize = null;
             uint bestGalvanizeShield = 0;
 
-            //const float spreadRadius = 30f; // Deployment Tactics spreads within 30y of the target
+            const float spreadRadius = 30f; // Deployment Tactics spreads within 30y of the target
 
             foreach (IBattleChara battleChara in DataCenter.PartyMembers)
             {
@@ -2417,24 +2157,25 @@ public struct ActionTargetInfo(IBaseAction action)
                 }
 
                 // Require at least one other party member in spread radius
-                //int neighbors = 0;
-                //foreach (IBattleChara member in DataCenter.PartyMembers)
-                //{
-                //    if (member == null || member.IsDead || member.GameObjectId == battleChara.GameObjectId)
-                //    {
-                //        continue;
-                //    }
-                //    if (Vector3.Distance(member.Position, battleChara.Position) <= spreadRadius)
-                //    {
-                //        neighbors++;
-                //        if (neighbors >= 1) break;
-                //    }
-                //}
-                //if (neighbors == 0)
-                //{
-                //    // Nothing to spread to
-                //    continue;
-                //}
+                int neighbors = 0;
+                foreach (IBattleChara member in DataCenter.PartyMembers)
+                {
+                    if (member == null || member.IsDead || member.GameObjectId == battleChara.GameObjectId)
+                    {
+                        continue;
+                    }
+
+                    if (battleChara.DistanceTo(member) <= spreadRadius)
+                    {
+                        neighbors++;
+                        if (neighbors >= 1) break;
+                    }
+                }
+                if (neighbors == 0)
+                {
+                    // Nothing to spread to
+                    continue;
+                }
 
                 if (battleChara.HasStatus(true, StatusID.Catalyze))
                 {
@@ -2557,182 +2298,7 @@ public struct ActionTargetInfo(IBaseAction action)
             }
         }
 
-        IBattleChara? FindHealTarget(float healRatio)
-        {
-            if (battleChara == null)
-            {
-                return null;
-            }
 
-            bool hasAny = false;
-            foreach (var _ in battleChara)
-            {
-                hasAny = true;
-                break;
-            }
-            if (!hasAny || Service.Config == null)
-            {
-                return null;
-            }
-
-            List<IBattleChara> filteredGameObjects = [];
-            foreach (var o in battleChara)
-            {
-                if (!IBaseAction.AutoHealCheck || o.GetHealthRatio() < healRatio)
-                {
-                    filteredGameObjects.Add(o);
-                }
-            }
-
-            List<IBattleChara> partyMembers = [];
-            foreach (var o in filteredGameObjects)
-            {
-                if (ObjectHelper.IsParty(o))
-                {
-                    partyMembers.Add(o);
-                }
-            }
-
-            IBattleChara? result = GeneralHealTarget(partyMembers);
-            if (result != null) return result;
-
-            result = GeneralHealTarget(filteredGameObjects);
-            if (result != null) return result;
-
-            foreach (var t in partyMembers)
-            {
-                if (t.HasStatus(false, StatusHelper.TankStanceStatus))
-                {
-                    return t;
-                }
-            }
-
-            if (partyMembers.Count > 0)
-            {
-                return partyMembers[0];
-            }
-
-            foreach (var t in filteredGameObjects)
-            {
-                if (t.HasStatus(false, StatusHelper.TankStanceStatus))
-                {
-                    return t;
-                }
-            }
-
-            if (filteredGameObjects.Count > 0)
-            {
-                return filteredGameObjects[0];
-            }
-
-            return null;
-
-            static IBattleChara? GeneralHealTarget(List<IBattleChara> objs)
-            {
-                // Priority Stack Check
-                if (Service.Config.BeneficialPriorityTargets.Count > 0)
-                {
-                    IBattleChara? bestPriority = null;
-                    int maxPrio = int.MinValue;
-
-                    // Sort stacks by priority desc
-                    var sortedStacks = Service.Config.BeneficialPriorityTargets
-                        .Where(s => s.Enabled)
-                        .OrderByDescending(s => s.Priority);
-
-                    foreach (var stack in sortedStacks)
-                    {
-                        // Optimization: if we found a match in a higher priority bracket, stop checking lower ones?
-                        // Actually, we iterate stacks (high to low). First stack that finds a valid target wins.
-                        // Inside a stack rule, if multiple targets match, pick lowest HP.
-
-                        IBattleChara? bestInStack = null;
-                        float minHp = float.MaxValue;
-
-                        foreach (var o in objs)
-                        {
-                            // Criteria Check
-                            if (stack.Role != JobRole.None && !o.IsJobCategory(stack.Role)) continue;
-                            if (o.GetHealthRatio() > stack.HpRatio) continue;
-                            
-                            if (stack.StatusId != 0)
-                            {
-                                bool hasStatus = o.HasStatus(true, (StatusID)stack.StatusId) || o.HasStatus(false, (StatusID)stack.StatusId);
-                                if (stack.MissingStatus && hasStatus) continue;
-                                if (!stack.MissingStatus && !hasStatus) continue;
-                            }
-
-                            // Match found. Pick lowest HP if multiple match this rule.
-                            float hp = o.GetHealthRatio();
-                            if (hp < minHp)
-                            {
-                                minHp = hp;
-                                bestInStack = o;
-                            }
-                        }
-
-                        if (bestInStack != null)
-                        {
-                            return bestInStack;
-                        }
-                    }
-                }
-
-                List<IBattleChara> healingNeededObjs = [];
-                foreach (var o in objs)
-                {
-                    if (!o.NoNeedHealingInvuln())
-                    {
-                        healingNeededObjs.Add(o);
-                    }
-                }
-                healingNeededObjs.Sort((a, b) => ObjectHelper.GetHealthRatio(a).CompareTo(ObjectHelper.GetHealthRatio(b)));
-
-                List<IBattleChara> healerTars = [];
-                foreach (var o in healingNeededObjs)
-                {
-                    var enumHealer = TargetFilter.GetJobCategory([o], JobRole.Healer).GetEnumerator();
-                    bool isHealer = enumHealer.MoveNext();
-                    enumHealer.Dispose();
-                    if (isHealer)
-                    {
-                        healerTars.Add(o);
-                    }
-                }
-
-                List<IBattleChara> tankTars = [];
-                foreach (var o in healingNeededObjs)
-                {
-                    var enumTank = TargetFilter.GetJobCategory([o], JobRole.Tank).GetEnumerator();
-                    bool isTank = enumTank.MoveNext();
-                    enumTank.Dispose();
-                    if (isTank)
-                    {
-                        tankTars.Add(o);
-                    }
-                }
-
-                if (ObjectHelper.GetPlayerHealthRatio() <= Service.Config.HealthSelfRatio)
-                {
-                    return Player.Object;
-                }
-
-                IBattleChara? healerTar = healerTars.Count > 0 ? healerTars[0] : null;
-                if (healerTar != null && healerTar.GetHealthRatio() <= Service.Config.HealthHealerRatio)
-                {
-                    return healerTar;
-                }
-
-                IBattleChara? tankTar = tankTars.Count > 0 ? tankTars[0] : null;
-                if (tankTar != null && tankTar.GetHealthRatio() <= Service.Config.HealthTankRatio)
-                {
-                    return tankTar;
-                }
-
-                IBattleChara? tar = healingNeededObjs.Count > 0 ? healingNeededObjs[0] : null;
-                return tar != null && tar.GetHealthRatio() < 1 ? tar : null;
-            }
-        }
 
         IBattleChara? FindInterruptTarget()
         {
@@ -3007,6 +2573,19 @@ public struct ActionTargetInfo(IBaseAction action)
             return null;
         }
 
+        IBattleChara? FindPlayerTarget()
+        {
+            if (battleChara == null) return null;
+            if (Svc.Targets.Target is IBattleChara target && target.IsPlayer())
+            {
+                foreach (var t in battleChara)
+                {
+                    if (t.GameObjectId == target.GameObjectId) return t;
+                }
+            }
+            return null;
+        }
+
         IBattleChara? FindBeAttackedTarget()
         {
             if (battleChara == null)
@@ -3163,8 +2742,6 @@ public struct ActionTargetInfo(IBaseAction action)
 
             return battleChara == null ? null : RandomPickByJobs(battleChara, JobRole.Tank);
         }
-
-        return null;
     }
 
     private static IBattleChara? FindMimicryTarget()
@@ -3313,6 +2890,7 @@ public enum TargetType : byte
     Physical,
     Magical,
     Self,
+    PlayerTarget,
     DancePartner,
     MimicryTarget,
     TheBalance,

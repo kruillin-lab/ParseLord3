@@ -78,6 +78,7 @@
         <Using Include="Dalamud.Game.ClientState.JobGauge.Enums" />
         <Using Include="Dalamud.Interface" />
         <Using Include="Dalamud.Bindings.ImGui" />
+        <Using Include="ECommons.Logging" />
         <Using Include="Newtonsoft.Json" />
 
         <PackageReference Include="ECommons" Version="3.1.0.13" />

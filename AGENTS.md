@@ -1,157 +1,152 @@
-AGENTS.md
+# AGENTS.md
 
-Purpose
--------
-This file provides concise guidance for agentic coding agents operating in the ParseLord3 repository. It documents the canonical build/test commands, developer verification steps, and the code-style and runtime conventions agents must follow when making changes.
+> **AI AGENT INSTRUCTIONS**
+> This file contains the operational parameters for AI agents working on ParseLord3.
+> For historical context and work logs, see `AGENTS_HISTORY.md`.
 
-Quick repo facts
-----------------
-- Language: C# (.NET 10 / net10.0-windows)
-- Solution: RotationSolver.sln
-- Main plugin project: RotationSolver/RotationSolver.csproj (assembly: ParseLord3)
-- Core library: RotationSolver.Basic
-- Nullable reference types enabled (Directory.Build.props)
-- Target platform: x64, Dalamud API 14
+## 1. Project Overview
 
-1) Build / Run / Test commands
-------------------------------
-General build (whole solution):
+**ParseLord3** is a Dalamud plugin (FFXIV) for automated combat rotations.
+- **Language**: C# (.NET 10 / `net10.0-windows10.0.26100.0`)
+- **Core Library**: `RotationSolver.Basic` (Base classes, Action logic)
+- **Plugin UI**: `RotationSolver` (ImGui, Entry point, Rotations)
+- **Rotations**: `RotationSolver/RebornRotations/{Role}/{Job}_Reborn.cs`
+- **Output**: `%APPDATA%\XIVLauncher\devPlugins\ParseLord3\`
 
-  dotnet build RotationSolver.sln -c Release
+## 2. Build & Test Commands
 
-Build single project (plugin):
+**Build (Release)** - Run this after **ANY** change to verify syntax:
+```bash
+dotnet build RotationSolver/RotationSolver.csproj -c Release
+```
 
-  dotnet build RotationSolver/RotationSolver.csproj -c Release
+**Build Core Only** (Faster for logic-only changes):
+```bash
+dotnet build RotationSolver.Basic/RotationSolver.Basic.csproj -c Release
+```
 
-Build single core library (useful for iterating on rotations):
+**Run All Tests**:
+```bash
+dotnet test -c Release
+```
 
-  dotnet build RotationSolver.Basic/RotationSolver.Basic.csproj -c Release
+**Run Single Test**:
+```bash
+dotnet test --filter "FullyQualifiedName~TestMethodName" -c Release
+```
 
-Run unit tests (if/when tests are added):
+**Build Solution**:
+```bash
+dotnet build RotationSolver.sln -c Release
+```
 
-  dotnet test --no-build -c Release
+## 3. Code Style & Conventions
 
-Run a single test (by fully-qualified name or display name):
+**Formatting**:
+- **Namespace**: File-scoped (`namespace RotationSolver.UI;`)
+- **Braces**: Allman style (opening brace on new line)
+- **Indentation**: 4 Spaces (No tabs)
+- **Line Length**: Keep under 120 characters when possible
+- **Regions**: Use `#region Name` / `#endregion` for grouping large blocks
 
-  dotnet test --filter "FullyQualifiedName~Namespace.ClassName.MethodName" -c Release
-  dotnet test --filter "DisplayName=MyTestName" -c Release
+**Naming**:
+- **Classes/Methods**: `PascalCase` (e.g., `ActionQueueManager`)
+- **Private Fields**: `_camelCase` with underscore prefix (e.g., `_useActionHook`)
+- **Locals/Params**: `camelCase` (e.g., `actionManager`)
+- **Constants**: `PascalCase` (e.g., `BlackListedInterceptActions`)
+- **Interfaces**: `I` prefix (e.g., `IGameObject`)
 
-Notes on single-test selection:
-- Use --filter with FullyQualifiedName or DisplayName. Regex-like matches are supported (use ~ for contains).
-- If using an xUnit/NUnit/MSTest runner specific adapter, specify the test project path instead of the solution.
+**Imports (Usings)**:
+- Sort order: System -> Microsoft -> ThirdParty (Dalamud, ECommons) -> Project
+- Global usings are enabled (see `Directory.Build.props`)
+- Common global usings: `System.Numerics`, `System.Reflection`
+- Project global usings in `.csproj` files
 
-Formatting and static checks
----------------------------
-- Run formatter (recommended before committing):
+**Types & Nullability**:
+- Nullable reference types enabled globally (`<Nullable>enable</Nullable>`)
+- Use `?` for nullable types (e.g., `string?`, `ActionID?`)
+- **Avoid** `!` (null-forgiving) unless absolutely necessary
+- Prefer `var` when type is obvious from right-hand side
 
-  dotnet tool install -g dotnet-format   # if not installed
-  dotnet format RotationSolver.sln
+**Error Handling**:
+- **Never** use empty `catch {}`
+- Always log errors via `PluginLog`:
+  ```csharp
+  try { ... } 
+  catch (Exception ex) 
+  { 
+      PluginLog.Error(ex, "Failed to initialize action hooks"); 
+  }
+  ```
+- Use `PluginLog.Debug/Info/Warning/Error` from `ECommons.Logging`
 
-- Run analyzers and restore:
+## 4. Agent Operational Rules
 
-  dotnet restore
-  dotnet build -c Release    # analyzers run during build if configured
+1. **Verify Before Commit**: ALWAYS run `dotnet build` before finishing a task
+2. **No Hallucinations**: Do not import libraries not already in `.csproj`
+3. **Scoped Changes**: If fixing a bug, do not refactor unrelated code
+4. **UI Changes**:
+   - Keep `Draw()` methods fast (no heavy logic/allocations)
+   - Use `ImGuiEx` helpers where possible
+5. **Rotation Logic**:
+   - Modifying `CanUse(out act)` is the primary way to queue actions
+   - Status checks: `HasStatus(true, StatusID.X)` (Self) vs `HasStatus(false)` (Any)
 
-- CI note: Directory.Build.props sets <EnforceCodeStyleInBuild>False. Still run dotnet format and any repository linters locally.
+## 5. Key File Locations
 
-2) Developer workflow checklist (agents)
-----------------------------------------
-For any code change, follow this checklist before proposing a PR or committing:
+| Component | Path Pattern |
+|-----------|--------------|
+| **Rotations** | `RotationSolver/RebornRotations/{Role}/{Job}_Reborn.cs` |
+| **Action Logic** | `RotationSolver.Basic/Actions/` |
+| **Config UI** | `RotationSolver/UI/RotationConfigWindow*.cs` |
+| **Action Queue** | `RotationSolver/Updaters/ActionQueueManager.cs` |
+| **Global Config** | `RotationSolver.Basic/Configuration/Configs.cs` |
+| **Action IDs** | `RotationSolver.Basic/Data/ActionID.cs` |
+| **Status IDs** | `RotationSolver.Basic/Data/StatusID.cs` |
+| **Tests** | `RotationSolver.Tests/` (xUnit framework) |
 
-1. Ensure a focused, single purpose change per PR.
-2. Run `dotnet build` for any touched projects.
-3. Run `dotnet format` and fix any formatting issues.
-4. Run unit tests (or add tests) and verify they pass.
-5. Run `dotnet build` Release and verify the post-build CopyToDevPlugins target (plugin project) places files in `%APPDATA%\XIVLauncher\devPlugins\ParseLord3\`.
-6. Lint and static analysis: ensure no new warnings are introduced unless necessary; explain unavoidable warnings in PR.
+## 6. Common Issues / Troubleshooting
 
-3) Code-style & conventions (must-follow)
-----------------------------------------
-A. General principles
-- Match the repository’s prevailing patterns. If the repo already uses a particular naming or formatting pattern, follow it.
-- Keep changes small and reversible. Prefer minimal fixes when addressing bugs.
-- No blind refactors in a bug-fix PR — separate refactors into their own PRs.
+- **LSP Errors**: Editor may report 100+ "false positive" errors (missing references). **Trust `dotnet build` output.** If build succeeds, ignore LSP red lines
+- **Animation Lock**: Use `ActionManager.Instance()->GetActionStatus` to check status `574` (AnimLock)
+- **Action IDs**: Use `ActionID.Name` enum. Be careful with PvP vs PvE IDs (PvP often ~29000+)
+- **Target Filtering**:
+  - `IsPlayer` is NOT available on `IGameObject`
+  - Use `obj is Dalamud.Game.ClientState.Objects.SubKinds.IPlayerCharacter` instead
+- **GetActionStatus**: Use `0xE0000000` (Player ID) for availability checks, NOT target's ID
 
-B. File & namespace layout
-- Namespace hierarchy mirrors folder structure: RotationSolver, RotationSolver.Basic, RotationSolver.Updaters, etc.
-- One type per file generally. Keep file names matching public types.
+## 7. Current Context
 
-C. Naming
-- Types (classes, structs, enums, interfaces): PascalCase (e.g., MajorUpdater, DataCenter).
-- Public methods / properties: PascalCase (e.g., BeginParseLordTargetChange()).
-- Private fields: _camelCase with leading underscore (e.g., _lastKnownTargetId, _parseLordIsSettingTarget).
-- Constants: follow existing repository convention. The project historically uses UPPER_SNAKE or ALL_CAPS for const command tokens (e.g., COMMAND, ALTCOMMAND). Match the existing form in the file you change.
-- Local variables: camelCase.
+See `AGENTS_HISTORY.md` for detailed work logs.
+- **Target**: FFXIV Patch 7.4 Optimization
+- **All Jobs Optimized**: PCT, DNC, SMN, RDM, BLM, GNB, PLD, DRK, WAR, WHM, AST, SCH, SGE, NIN, DRG, RPR, SAM, MNK, VPR, MCH, BRD
 
-D. Usings and import order
-- Prefer file-scoped usings when appropriate (project uses implicit usings via Directory.Build.props).
-- Order: System / Microsoft / third-party / project-specific. Keep related groups separated by a blank line.
-- Minimize global usings; prefer clear, file-scoped using declarations introduced by the project.
+## 8. Agent Workflow Protocol
 
-E. Types & nullability
-- Nullable reference types are enabled. Annotate nullability correctly (e.g., string? when a value can be null).
-- Avoid null-forgiving operator (! ) except when absolutely certain; prefer explicit checks.
-- Prefer explicit public API types; use var for local variables when the type is obvious from the right-hand side.
+1. **Context**: Read `AGENTS_HISTORY.md` to understand recent changes
+2. **Search**: Locate relevant files using `find` or `grep`. Do NOT rely on memory
+3. **Analyze**: Read code to understand logic flow
+4. **Implement**: Make focused, minimal changes
+5. **Verify**: Run `dotnet build` and ensure success
+6. **Log**: Update `AGENTS_HISTORY.md` with your changes
 
-F. Error handling & logging
-- Never use empty catch blocks. If swallowing an exception is intentional, add a comment explaining why and log at least at Verbose/Debug level.
-- Use PluginLog (ECommons.Logging) for logging: PluginLog.Info / Warning / Error / Debug / Verbose as appropriate.
-- For user-facing warnings, use BasicWarningHelper.AddSystemWarning or Service.Config toggles where appropriate.
-- Do not suppress compiler/type errors with hacks (no @ts-ignore equivalents). Fix root cause.
+## 9. Specific Implementation Details
 
-G. Concurrency & async
-- Prefer Task-based async for asynchronous operations; use ConfigureAwait(false) only in library code if necessary.
-- When interacting with Dalamud framework ticks (Svc.Framework.RunOnTick), follow existing patterns (wrap asynchronous tasks with Task.Run where needed and handle exceptions).
-- Always catch exceptions on framework tick handlers and log them (avoid crashing the update loop).
+### Action Stacks
+- Used in `ActionQueueManager.cs`
+- Allows overriding an action (Trigger) with sequence of other actions (Stack)
+- Supports target types: `Target`, `Tank`, `PlayerTarget`, etc.
 
-H. ImGui/UI updates
-- Separate visual changes from logic changes. If change is visual-only (colors, layout), delegate to the frontend UI owner or a dedicated UI/UX agent.
-- Keep ImGui draws idempotent and fast. Avoid expensive allocations during Draw loops.
+### Debugging
+- Enable "Debug Trace" in UI for detailed logs
+- Logs appear in `%APPDATA%\XIVLauncher\dalamud.log` with `[ParseLord3]` prefix
+- Key loggers: `[ActionQueueManager]`, `[ActionUpdater]`, `[MajorUpdater]`
 
-I. Tests & coverage
-- Add unit tests for business logic (RotationSolver.Basic) where possible.
-- Keep tests focused, fast, and hermetic. Prefer pure logic tests over heavy integration tests that require game hooks.
+### Game Data
+- Use `Service.GetAdjustedActionId(id)` for job gauge adjustments (e.g., AST cards)
+- PvP action IDs typically start at ~29000
 
-J. Documentation
-- Update README.md, YAML manifests, and new_docs when UX or user-facing behavior changes.
-- Keep release notes concise and specific.
-
-4) Project-specific conventions & helpers
----------------------------------------
-- Use the Svc wrapper (ECommons.DalamudServices) for accessing Dalamud services (Svc.Targets, Svc.Framework, etc.). Do not directly access Dalamud API instances unless necessary.
-- Use ECommons helpers where available (ECommons.Logging, ImGuiMethods, etc.). Follow existing usage patterns in code.
-- When modifying plugin manifest or dev-deploy logic, ensure CopyToDevPlugins target continues to copy all required assemblies (ParseLord3.dll, ParseLord3.json, RotationSolver.Basic.dll, ECommons.dll).
-
-5) Committing and PRs (agent behavior)
---------------------------------------
-- Commit message style: short imperative summary line (50 chars or less), optional body describing why.
-- Group related edits into one PR. If multiple modules changed, split into smaller PRs.
-- Include in PR description: what changed, why, how to test locally (build + test commands), and any risk/regression notes.
-
-6) Cursor / Copilot / AI assistant rules
----------------------------------------
-- Cursor rules: no repository-level .cursor/rules/ or .cursorrules were found. If present, follow repository rules and include them in the AGENTS.md.
-- GitHub Copilot instructions: no .github/copilot-instructions.md found. If added, agents must respect those instructions.
-
-7) Safe editing constraints (agents must obey)
----------------------------------------------
-- Do not commit or push without explicit user instruction. (Tool policy)
-- When editing front-end visuals (ImGui layout, CSS, or image assets), consult the UI/UX owner or run visual regression checks.
-- Do not introduce breaking API changes without a migration plan and documentation.
-
-8) Example quick commands (summary)
------------------------------------
-- Build solution: dotnet build RotationSolver.sln -c Release
-- Build plugin: dotnet build RotationSolver/RotationSolver.csproj -c Release
-- Build core lib: dotnet build RotationSolver.Basic/RotationSolver.Basic.csproj -c Release
-- Run all tests: dotnet test -c Release
-- Run single test: dotnet test --filter "FullyQualifiedName~Namespace.Class.Method" -c Release
-- Format: dotnet format RotationSolver.sln
-
-If you find additional linter or curator files (Cursor/Copilot) in the repo, add an "AI Rules" subsection here describing them.
-
-Contact
--------
-If behavior is ambiguous, open an issue in the repository describing the ambiguity and recommended options. When in doubt, ask the repo owner before making large cross-cutting changes.
-
--- End of AGENTS.md
+### Testing
+- Uses **xUnit** framework
+- Tests located in `RotationSolver.Tests/`
+- Run single test with: `dotnet test --filter "FullyQualifiedName~MethodName"`

@@ -1,4 +1,5 @@
 ﻿using RotationSolver.Basic.Traits;
+using RotationSolver.Basic.Helpers;
 
 namespace RotationSolver.Basic.Rotations;
 
@@ -7,8 +8,31 @@ public partial class CustomRotation
     internal static void LoadActionSetting(ref IBaseAction action)
     {
         Lumina.Excel.Sheets.Action a = action.Action;
-        action.Setting.IsFriendly = a.CanTargetAlly || a.CanTargetParty || (!a.CanTargetHostile && action.TargetInfo.EffectRange > 5);
-        // TODO: better target type check. (NoNeed?)
+        var setting = action.Setting;
+        setting.IsFriendly = a.CanTargetAlly || a.CanTargetParty || (!a.CanTargetHostile && action.TargetInfo.EffectRange > 5);
+
+        if (setting.TargetType == TargetType.Big)
+        {
+            if (a.IsRaise())
+            {
+                setting.TargetType = TargetType.Death;
+            }
+            else if (setting.IsFriendly)
+            {
+                if (a.CanTargetSelf && !a.CanTargetAlly && !a.CanTargetParty)
+                {
+                    setting.TargetType = TargetType.Self;
+                }
+                else if (a.RowId == 10011 || a.RowId == 7561 || a.RowId == 3595 || a.RowId == 1707) // Esuna, Erase, Warden's Paean, Exalted Detriment
+                {
+                    setting.TargetType = TargetType.Dispel;
+                }
+                else
+                {
+                    setting.TargetType = TargetType.LowHPPercent;
+                }
+            }
+        }
     }
 
     #region Role Actions

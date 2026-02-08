@@ -3,7 +3,7 @@
 /// <summary>
 /// The bozja action.
 /// </summary>
-[DutyTerritory(920, 975)] // TODO: Verify the bozja territory IDs.
+[DutyTerritory(920, 975, 936, 937)] // Updated territory IDs for Southern Front, Zadnor, and Delubrum Reginae.
 public abstract class BozjaRotation : DutyRotation
 {
 }

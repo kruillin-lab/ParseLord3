@@ -203,7 +203,7 @@ public sealed class Rabbs_BLM : BlackMageRotation
             {
                 const int openerMinGcd = 9;
                 const int openerMaxGcd = 12;
-                double gcdDuration = 2.5; // TODO: Replace with player’s actual GCD
+                double gcdDuration = WeaponTotal; // TODO: Replace with player’s actual GCD
 
                 int currentGcdEstimate = (int)(CombatTime / gcdDuration);
 
@@ -244,9 +244,9 @@ public sealed class Rabbs_BLM : BlackMageRotation
     }
     //public double GetGCDRecastTime => ActionManager.GetAdjustedRecastTime(ActionType.Action, 162) / 1000.00;
 
-    public static bool WillHave2PolyglotWithin6GCDs => (PolyglotStacks == 1 && EnochianTime < 6 * 2.5) || PolyglotStacks >= 2;
+    public static bool WillHave2PolyglotWithin6GCDs => (PolyglotStacks == 1 && EnochianTime < 6 * WeaponTotal) || PolyglotStacks >= 2;
 
-    public static bool WillHave2PolyglotWithin2GCDs => (PolyglotStacks == 1 && EnochianTime < 2 * 2.5) || PolyglotStacks >= 2;
+    public static bool WillHave2PolyglotWithin2GCDs => (PolyglotStacks == 1 && EnochianTime < 2 * WeaponTotal) || PolyglotStacks >= 2;
 
     public bool WillBeAbleToFlareStarST
     {
