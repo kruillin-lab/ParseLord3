@@ -4,79 +4,77 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**ParseLord3** is a Dalamud plugin for FFXIV that automates combat rotations.
-- **Framework**: .NET 10 (C#) / Dalamud API 14
-- **Target**: FFXIV Patch 7.4
-- **Core Logic**: `RotationSolver.Basic` (Base classes, Action logic)
-- **UI/Entry**: `RotationSolver` (ImGui, Plugin lifecycle)
+Parse Lord is a Dalamud plugin for FFXIV that provides automated combat rotations. It combines RSR-style high-performance action execution with Wrath Combo-style granular configuration UI. The plugin targets FFXIV Patch 7.4 / Dalamud API 14 / .NET 10.
 
-## Build & Test Commands
-
-**IMPORTANT**: LSP errors in the editor are often false positives. **Trust the build output.**
+## Build Commands
 
 ```bash
-# Build full solution (Release) - Run after ANY change
-dotnet build RotationSolver.sln -c Release
+# Build (Release)
+dotnet build AutoRotationPlugin.csproj -c Release
 
-# Build Core Library only (Faster for logic-only changes)
-dotnet build RotationSolver.Basic/RotationSolver.Basic.csproj -c Release
-
-# Build Plugin only (UI/Updater changes)
-dotnet build RotationSolver/RotationSolver.csproj -c Release
-
-# Run Tests
-dotnet test -c Release
-# Run single test
-dotnet test --filter "FullyQualifiedName~Namespace.ClassName.MethodName" -c Release
+# Or use the build script
+./build.sh
 ```
+
+The PostBuild target automatically copies the compiled DLL to `%APPDATA%\XIVLauncher\devPlugins\ParseLord\`.
 
 ## Architecture
 
-The solution is divided into 5 main projects:
-1. **RotationSolver**: Main plugin entry, UI (ImGui), IPC, and Update loops.
-2. **RotationSolver.Basic**: Core library containing `BaseAction`, `BaseRotation`, helpers, and game data definitions.
-3. **RotationSolver.SourceGenerators**: Code generation for static resources.
-4. **RotationSolver.GameData**: Static game data resources.
-5. **RotationSolver.DocumentationGenerator**: Docs generation.
+### Core Flow
+1. **Plugin.cs** - Entry point. Registers commands (`/pl`, `/parselord`), hooks into `Framework.Update`, initializes services
+2. **RotationManager.cs** - Main loop. On each frame update: checks custom stacks first, then falls back to job-specific rotation
+3. **IRotation** - Interface for job rotations. Implementations return `ActionInfo?` for the next action
+4. **ActionManager.cs** - Singleton (unsafe) that wraps `FFXIVClientStructs.ActionManager`. Handles action execution, cooldowns, weaving, status checks
 
-### Key File Locations
+### Rotation Decision Flow
+```
+Framework.Update → RotationManager.OnFrameworkUpdate
+  → Check CustomStacks (reaction-style triggers with target chains)
+  → If no custom action: call IRotation.GetNextAction()
+    → Emergency (self-heals)
+    → Opener sequence (if enabled)
+    → oGCD weaving (if CanWeave())
+    → AoE or Single Target GCDs
+```
 
-| Component | Path Pattern |
-|-----------|--------------|
-| **Job Rotations** | `RotationSolver/RebornRotations/{Role}/{Job}_Reborn.cs` |
-| **Base Rotations** | `RotationSolver.Basic/Rotations/Basic/{Job}Rotation.cs` |
-| **Action Logic** | `RotationSolver.Basic/Actions/` |
-| **Config UI** | `RotationSolver/UI/` |
-| **Global Config** | `RotationSolver.Basic/Configuration/Configs.cs` |
+### Key Patterns
 
-### Rotation Structure
-Rotations inherit from job-specific base classes and implement three main logic blocks:
-1. **`EmergencyAbility`**: High-priority oGCDs (Mitigation, Interrupts, Critical Buffs). Fires first.
-2. **`GeneralGCD`**: The main GCD loop (Combo actions, Spells).
-3. **`AttackAbility`**: Offensive oGCDs to weave between GCDs.
+**Target Resolution** (`RotationManager.ResolveTarget`): Converts `TargetTag` enums (Self, Tank, LowestHpPartyMember, Mouseover, etc.) to actual game objects.
 
-**Smart Mitigation System**: A centralized system in `RotationSolver.Basic/Helpers/MitigationHelper.cs` handles tank defensive cooldowns automatically.
+**Weaving Logic** (`ActionManager`):
+- `CanWeave()` - checks if GCD remaining >= 0.7s and not animation locked
+- `CanDoubleWeave()` - checks if GCD remaining >= 1.25s
+- Actions execute only when the weave window is open
 
-## Code Style & Guidelines
+**Job Gauge Reading** (`JobGaugeReader.cs`): Static accessors for DRG (Eye count, LOTD timer), PLD (Oath gauge), WHM (Lily/Blood Lily counts).
 
-- **Formatting**: 4 spaces indentation (no tabs). File-scoped namespaces.
-- **Nullability**: Enabled globally. Use `?` for nullable types. Avoid `!` unless absolutely necessary.
-- **Error Handling**: **NEVER** use empty catch blocks. Log exceptions using `PluginLog.Error(ex, "Context")`.
-- **Targeting**:
-  - Use `StatusID` enum for buff/debuff checks.
-  - `IsPlayer` is not available on `IGameObject`; check `obj is IPlayerCharacter`.
-- **Action IDs**: Use `ActionID` enum. Be aware of PvP vs PvE ID differences.
+**Game State** (`GameState.cs`): Centralized, null-safe accessors for player state, target state, party members, status effects. Isolates Dalamud API calls.
 
-## Development Constraints
+### Job Rotations
+Located in `Rotations/`:
+- `DragoonRotation.cs` - Full combo chains, dragon gauge management, burst alignment
+- `PaladinRotation.cs` - Physical/Magic phase rotation, oath gauge
+- `WhiteMageRotation.cs` - Healing priority with lily management, DPS when safe
 
-1. **Verify Before Commit**: Always run a build before finishing a task.
-2. **No Hallucinations**: Do not add dependencies not already in the `.csproj`.
-3. **Scoped Changes**: Focus only on the requested task; do not refactor unrelated code.
-4. **UI Performance**: Keep `Draw()` methods fast; avoid allocations in the draw loop.
-5. **Action Queue**: Modifying `CanUse(out act)` is the primary method to queue actions.
+### Configuration
+`Configuration.cs` contains 100+ granular toggles organized by job and feature (ST combo, AoE, buffs, oGCDs, defensive, utility). Each healing ability can have its own target priority chain via `HealTargetPriority` lists.
 
-## Troubleshooting
+Custom reaction-style triggers (`CustomTrigger`) support conditions like HP thresholds, status checks, gauge values, and target chains for fall-through targeting.
 
-- **Animation Lock**: Use `ActionManager.Instance()->GetActionStatus` to check status 574.
-- **Action Stacks**: Used in `ActionQueueManager.cs` to override trigger actions with sequences.
-- **Debug Trace**: Enable "Debug Trace" in the UI to log logic decisions to `%APPDATA%\XIVLauncher\dalamud.log` with prefix `[ParseLord3]`.
+## Key Dependencies
+- **Dalamud API 14** - Plugin framework
+- **FFXIVClientStructs** - Direct game memory access for action execution
+- **Lumina** - Game data access
+- **DalamudPackager** - Build packaging (Release mode only)
+
+## File Naming
+- Assembly: `AutoRotationPlugin`
+- Manifest: `AutoRotationPlugin.json`
+- Display name: "Parse Lord"
+- Commands: `/pl`, `/parselord`
+
+## Important Notes
+- The `ActionManager` bypasses hotbar checks (status code 574) to execute actions directly
+- Combo state is tracked via `ActionManager.ComboAction` and `ComboTimer`
+- Status IDs and Action IDs are hardcoded constants in rotation files
+- Plugin uses `IObjectTable.LocalPlayer` (not deprecated `IClientState.LocalPlayer`)
