@@ -198,7 +198,7 @@ public sealed class VPR_Reborn : ViperRotation
     [RotationDesc]
     protected sealed override bool AntiKnockbackAbility(IAction nextGCD, out IAction? act)
     {
-        if (NoAbilityReady && ArmsLengthPvE.CanUse(out act))
+        if (NoAbilityReady && !MitigationHelper.IsFightingBoss() && ArmsLengthPvE.CanUse(out act))
         {
             return true;
         }
