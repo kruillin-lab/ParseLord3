@@ -465,6 +465,17 @@ public static class MitigationHelper
         // Check if any boss is in combat range
         var bosses = DataCenter.AllHostileTargets.Where(e => e.IsBossFromIcon()).ToList();
 
+        // Debug logging to help diagnose boss detection issues
+        if (Svc.PluginInterface != null && Service.Config.EnableDebugTrace)
+        {
+            var hostileCount = DataCenter.AllHostileTargets.Count();
+            Service.LogDebug($"[ParseLord3] IsFightingBoss: {bosses.Any()} (Hostiles: {hostileCount}, Bosses: {bosses.Count})");
+            foreach (var boss in bosses.Take(3))
+            {
+                Service.LogDebug($"[ParseLord3]   Boss: {boss.Name} (BaseId: {boss.BaseId})");
+            }
+        }
+
         return bosses.Any();
     }
 }

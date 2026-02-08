@@ -294,8 +294,20 @@ public partial class CustomRotation
             {
                 return true;
             }
-            if (DefenseSingleAbility(nextGCD, out act)
-                || (!DataCenter.IsHostileCastingToTank && !StatusHelper.PlayerHasStatus(true, StatusID.Vengeance) && !StatusHelper.PlayerHasStatus(true, StatusID.Damnation) && !MitigationHelper.IsFightingBoss() && ArmsLengthPvE.CanUse(out act)))
+
+            // Base class Arm's Length check (fallback when rotation-specific logic doesn't use it)
+            var baseCanUseArmsLength = !DataCenter.IsHostileCastingToTank &&
+                                       !StatusHelper.PlayerHasStatus(true, StatusID.Vengeance) &&
+                                       !StatusHelper.PlayerHasStatus(true, StatusID.Damnation) &&
+                                       !MitigationHelper.IsFightingBoss() &&
+                                       ArmsLengthPvE.CanUse(out act);
+
+            if (baseCanUseArmsLength && Service.Config.EnableDebugTrace)
+            {
+                Service.LogDebug($"[ParseLord3] Base DefenseSingleAbility using ArmsLength (not boss, not casting to tank)");
+            }
+
+            if (DefenseSingleAbility(nextGCD, out act) || baseCanUseArmsLength)
             {
                 return true;
             }

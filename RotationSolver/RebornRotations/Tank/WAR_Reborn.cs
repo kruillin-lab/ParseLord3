@@ -312,12 +312,24 @@ public sealed class WAR_Reborn : WarriorRotation
             }
 
             // Priority 6: Arms Length for trash pulls (NOT on bosses - they're immune to Slow)
-            if (!MitigationHelper.IsFightingBoss() &&
-                !DataCenter.IsHostileCastingToTank &&
-                !StatusHelper.PlayerHasStatus(true, StatusID.Vengeance) &&
-                !StatusHelper.PlayerHasStatus(true, StatusID.Damnation) &&
-                ArmsLengthPvE.CanUse(out act))
+            var isBoss = MitigationHelper.IsFightingBoss();
+            var isCastingToTank = DataCenter.IsHostileCastingToTank;
+            var hasVengeance = StatusHelper.PlayerHasStatus(true, StatusID.Vengeance);
+            var hasDamnation = StatusHelper.PlayerHasStatus(true, StatusID.Damnation);
+            var canUseArmsLength = ArmsLengthPvE.CanUse(out act);
+
+            if (Service.Config.EnableDebugTrace)
             {
+                Service.LogDebug($"[ParseLord3] WAR ArmsLength check - IsBoss: {isBoss}, CastingToTank: {isCastingToTank}, Vengeance: {hasVengeance}, Damnation: {hasDamnation}, CanUse: {canUseArmsLength}");
+            }
+
+            if (!isBoss &&
+                !isCastingToTank &&
+                !hasVengeance &&
+                !hasDamnation &&
+                canUseArmsLength)
+            {
+                Service.LogDebug($"[ParseLord3] WAR Using ArmsLength - not a boss fight");
                 MitigationHelper.RecordMitigationUsed(false);
                 return true;
             }
