@@ -1,0 +1,37 @@
+[
+  {
+    "Author": "Parse Lord Team",
+    "Name": "ParseLord3 - CN",
+    "InternalName": "ParseLord3",
+    "Description": "ParseLord3 自动循环：逐帧分析战斗状态，提供下一步最佳技能并维持无缝GCD节奏。",
+    "ApplicableVersion": "any",
+    "DalamudApiLevel": 14,
+    "TestingDalamudApiLevel": 14,
+    "Tags": [
+      "combat",
+      "rotation",
+      "auto",
+      "solver",
+      "pve",
+      "pvp"
+    ],
+    "CategoryTags": [
+      "jobs"
+    ],
+    "LoadRequiredState": 0,
+    "LoadSync": false,
+    "CanUnloadAsync": false,
+    "LoadPriority": 0,
+    "IsTestingExclusive": false,
+    "IconUrl": "https://raw.githubusercontent.com/kruil/ParseLord3/main/Images/Logo.png",
+    "Punchline": "ParseLord3 自动循环：逐帧分析战斗状态，提供下一步最佳技能。",
+    "AcceptsFeedback": true,
+    "DownloadLinkInstall": "https://github.com/kruil/ParseLord3/releases/latest/download/ParseLord3.zip",
+    "AssemblyVersion": "1.0.0.0",
+    "DownloadLinkUpdate": "https://github.com/kruil/ParseLord3/releases/latest/download/ParseLord3.zip",
+    "DownloadLinkTesting": "https://github.com/kruil/ParseLord3/releases/latest/download/ParseLord3.zip",
+    "TestingAssemblyVersion": "1.0.0.0",
+    "Changelog": "## 更新内容\r\n* ParseLord 中文版本完成品牌更新",
+    "DownloadCount": 0
+  }
+]

@@ -1,0 +1,17 @@
+name: ParseLord3
+author: kruil
+description: |-
+  ParseLord3 is the ParseLord rotation engine with enhanced manual target control and teaching mode overlays.
+
+  Features manual target override that respects your target selection while auto-targeting is active.
+
+  It is designed for `general combat`, not for savage or ultimate. Use it carefully.
+punchline: ParseLord3 - Enhanced rotation solver with manual target control.
+repo_url: https://github.com/kruil/ParseLord3
+icon_url: https://raw.githubusercontent.com/kruil/ParseLord3/main/Images/Logo.png
+dalamud_api_level: 14
+tags:
+  - combat
+  - rotation
+category_tags:
+  - jobs
