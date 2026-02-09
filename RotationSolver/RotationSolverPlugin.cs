@@ -37,6 +37,7 @@ public sealed class RotationSolverPlugin : IDalamudPlugin, IDisposable
 
     private static readonly List<IDisposable> _dis = [];
     public static string Name => "ParseLord3";
+    public static RotationSolverPlugin? Instance { get; private set; }
 
     internal static readonly List<DrawingHighlightHotbarBase> _drawingElements = [];
 
@@ -45,8 +46,10 @@ public sealed class RotationSolverPlugin : IDalamudPlugin, IDisposable
     private static readonly Random _random = new();
 
     internal IPCProvider IPCProvider;
+    internal ACTCalloutListener? ACTCalloutListener;
     public RotationSolverPlugin(IDalamudPluginInterface pluginInterface)
     {
+        Instance = this;
         ECommonsMain.Init(pluginInterface, this, ECommons.Module.DalamudReflector, ECommons.Module.ObjectFunctions);
         _ = Svc.Framework.RunOnTick(() =>
         {
@@ -84,6 +87,15 @@ public sealed class RotationSolverPlugin : IDalamudPlugin, IDisposable
         }
 
         IPCProvider = new();
+
+        // Initialize ACT Callout Listener if enabled
+        if (Service.Config.EnableACTCallouts)
+        {
+            ACTCalloutListener = new();
+            ACTCalloutListener.OnMechanicReceived += OnMechanicReceived;
+            ACTCalloutListener.Port = Service.Config.ACTWebSocketPort;
+            ACTCalloutListener.Start();
+        }
 
         _rotationConfigWindow = new();
         _controlWindow = new();
@@ -266,6 +278,23 @@ public sealed class RotationSolverPlugin : IDalamudPlugin, IDisposable
         _easterEggWindow?.IsOpen = true;
     }
 
+    private void OnMechanicReceived(ACTMechanicEvent mechanic)
+    {
+        if (!Service.Config.EnableACTCallouts)
+        {
+            return;
+        }
+
+        // Record the mechanic for predictive mitigation
+        Basic.Services.ACTMitigationService.RecordMechanic(mechanic);
+
+        if (Service.Config.EnableDebugTrace)
+        {
+            Service.LogDebug($"[ParseLord3] ACT mechanic received: {mechanic.Type} - {mechanic.Name} " +
+                           $"(Target: {mechanic.Target}, Time: {mechanic.TimeUntilImpact}s)");
+        }
+    }
+
     internal static void UpdateDisplayWindow()
     {
         bool isValid = MajorUpdater.IsValid && DataCenter.CurrentRotation != null;
@@ -320,9 +349,19 @@ public sealed class RotationSolverPlugin : IDalamudPlugin, IDisposable
 
     public async Task Dispose()
     {
+        Instance = null;
         RSCommands.Disable();
         Watcher.Disable();
         ActionQueueManager.Disable();
+
+        // Cleanup ACT Callout Listener
+        if (ACTCalloutListener != null)
+        {
+            ACTCalloutListener.OnMechanicReceived -= OnMechanicReceived;
+            ACTCalloutListener.Dispose();
+            ACTCalloutListener = null;
+        }
+
         Svc.PluginInterface.UiBuilder.OpenConfigUi -= OnOpenConfigUi;
         Svc.PluginInterface.UiBuilder.Draw -= OnDraw;
 

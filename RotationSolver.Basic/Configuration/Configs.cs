@@ -36,7 +36,8 @@ internal partial class Configs : IPluginConfiguration
         List = "List",
         List2 = "List2",
         List3 = "List3",
-        Debug = "Debug";
+        Debug = "Debug",
+        ACTIntegration = "ACTIntegration";
 
     public const int CurrentVersion = 12;
     public int Version { get; set; } = CurrentVersion;
@@ -82,6 +83,8 @@ internal partial class Configs : IPluginConfiguration
     Filter = AutoActionUsage, Section = 5)]
     [Range(1, 10, ConfigUnitType.Seconds)]
     public float InterceptActionTime { get; set; } = 5;
+
+
 
     /// <markdown file="Auto" name="What kind of AoE moves to use" section="Action Usage and Control">
     /// - Full: Use all available AoE actions.
@@ -275,6 +278,36 @@ internal partial class Configs : IPluginConfiguration
 
     [ConditionBool, UI("Debug Mode", Filter = Debug)]
     private static readonly bool _inDebug = false;
+
+    [ConditionBool, UI("Enable Debug Trace", Description = "Enables additional debug logging for troubleshooting.", Filter = Debug)]
+    private static readonly bool _enableDebugTrace = false;
+
+    // ACT Integration Settings
+    [ConditionBool, UI("Enable ACT Callouts",
+        Description = "Receive mechanic warnings from ACT/Triggernometry via WebSocket for predictive mitigation.",
+        Filter = ACTIntegration)]
+    private static readonly bool _enableActCallouts = false;
+
+    [ConditionBool, UI("Prioritize ACT over Detection",
+        Description = "Use ACT callouts for mitigation decisions even when game state detection disagrees.",
+        Filter = ACTIntegration, Parent = nameof(EnableActCallouts))]
+    private static readonly bool _prioritizeACTCallouts = true;
+
+    [ConditionBool, UI("Auto Mitigate Tankbusters",
+        Description = "Automatically use defensive cooldowns when ACT reports an incoming tankbuster targeting you.",
+        Filter = ACTIntegration, Parent = nameof(EnableActCallouts))]
+    private static readonly bool _actAutoMitigateTankbusters = true;
+
+    [ConditionBool, UI("Auto Mitigate Raid-wide AoE",
+        Description = "Automatically use party mitigation when ACT reports incoming raid-wide damage.",
+        Filter = ACTIntegration, Parent = nameof(EnableActCallouts))]
+    private static readonly bool _actAutoMitigateRaidWide = true;
+
+    [UI("ACT WebSocket Port",
+        Description = "Port for ACT/Triggernometry to connect to. Default: 29292",
+        Filter = ACTIntegration, Parent = nameof(EnableActCallouts))]
+    [Range(1024, 65535, ConfigUnitType.None)]
+    public int ACTWebSocketPort { get; set; } = 29292;
 
     [ConditionBool, UI("Make /rotation Manual a toggle command.",
         Filter = BasicParams)]

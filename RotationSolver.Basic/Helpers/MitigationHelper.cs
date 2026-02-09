@@ -48,10 +48,26 @@ public static class MitigationHelper
 
     /// <summary>
     /// Evaluates the current incoming damage level to the player.
+    /// Also considers ACT predictive callout data if enabled.
     /// </summary>
     public static DamageLevel GetIncomingDamageLevel()
     {
         if (Player.Object == null) return DamageLevel.None;
+
+        // Check ACT predictive data first if enabled
+        if (Service.Config.EnableACTCallouts && Service.Config.ActAutoMitigateTankbusters)
+        {
+            var actDamageLevel = Services.ACTMitigationService.GetPredictedDamageLevel();
+            if (actDamageLevel != DamageLevel.None)
+            {
+                // Use ACT prediction but cap at Heavy (let game detection handle Emergency)
+                if (Service.Config.EnableDebugTrace)
+                {
+                    Service.LogDebug($"[ParseLord3] Using ACT predictive damage level: {actDamageLevel}");
+                }
+                return actDamageLevel;
+            }
+        }
 
         var healthRatio = Player.Object.GetHealthRatio();
         var isBeingAttacked = DataCenter.IsHostileCastingToTank || DataCenter.PartyMembers.Any(p =>
@@ -97,10 +113,25 @@ public static class MitigationHelper
 
     /// <summary>
     /// Determines the type of incoming damage based on enemy casts and statuses.
+    /// Also considers ACT predictive callout data if enabled.
     /// </summary>
     public static DamageType GetIncomingDamageType()
     {
         if (Player.Object == null) return DamageType.Unknown;
+
+        // Check ACT predictive data first if enabled
+        if (Service.Config.EnableACTCallouts && Service.Config.ActAutoMitigateTankbusters)
+        {
+            var actDamageType = Services.ACTMitigationService.GetPredictedDamageType();
+            if (actDamageType != DamageType.Unknown)
+            {
+                if (Service.Config.EnableDebugTrace)
+                {
+                    Service.LogDebug($"[ParseLord3] Using ACT predictive damage type: {actDamageType}");
+                }
+                return actDamageType;
+            }
+        }
 
         var castingEnemies = DataCenter.AllHostileTargets.Where(e =>
             e.IsCasting && e.CastTargetObjectId == Player.Object.GameObjectId).ToList();
@@ -477,5 +508,59 @@ public static class MitigationHelper
         }
 
         return bosses.Any();
+    }
+
+    /// <summary>
+    /// Checks if predictive mitigation should be used based on ACT callout data.
+    /// </summary>
+    /// <param name="damageLevel">The predicted damage level from ACT data.</param>
+    /// <returns>True if ACT-based predictive mitigation should be used.</returns>
+    public static bool ShouldUsePredictiveMitigation(out DamageLevel damageLevel)
+    {
+        damageLevel = DamageLevel.None;
+
+        if (!Service.Config.EnableACTCallouts)
+        {
+            return false;
+        }
+
+        // Check if ACT suggests using mitigation
+        if (Services.ACTMitigationService.ShouldUsePredictiveMitigation(out var actDamageLevel))
+        {
+            damageLevel = actDamageLevel;
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Checks if a tankbuster is incoming based on ACT predictive data.
+    /// </summary>
+    /// <param name="withinSeconds">Time window to check.</param>
+    /// <returns>True if a tankbuster is predicted within the time window.</returns>
+    public static bool IsTankbusterIncomingACT(float withinSeconds = 5.0f)
+    {
+        if (!Service.Config.EnableACTCallouts || !Service.Config.ActAutoMitigateTankbusters)
+        {
+            return false;
+        }
+
+        return Services.ACTMitigationService.IsTankbusterIncoming(withinSeconds);
+    }
+
+    /// <summary>
+    /// Checks if party-wide AoE damage is incoming based on ACT predictive data.
+    /// </summary>
+    /// <param name="withinSeconds">Time window to check.</param>
+    /// <returns>True if party AoE is predicted within the time window.</returns>
+    public static bool IsPartyAoEIncomingACT(float withinSeconds = 5.0f)
+    {
+        if (!Service.Config.EnableACTCallouts || !Service.Config.ActAutoMitigateRaidWide)
+        {
+            return false;
+        }
+
+        return Services.ACTMitigationService.IsPartyAoEIncoming(withinSeconds);
     }
 }

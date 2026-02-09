@@ -66,6 +66,9 @@ internal enum RotationConfigWindowTab : byte
 
     [Description("Configure AutoDuty settings and view related information.")]
     [TabIcon(Icon = 4)] AutoDuty,
+
+    [Description("Configure ACT/Triggernometry callout integration for predictive mitigation.")]
+    [TabIcon(Icon = 72)] ACTIntegration,
 }
 
 /// <summary>

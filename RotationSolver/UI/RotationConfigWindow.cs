@@ -1106,6 +1106,10 @@ public partial class RotationConfigWindow : Window
                         DrawAutoduty();
                         break;
 
+                    case RotationConfigWindowTab.ACTIntegration:
+                        DrawACTIntegration();
+                        break;
+
                     case RotationConfigWindowTab.About:
                         DrawAbout();
                         break;
@@ -1187,6 +1191,8 @@ public partial class RotationConfigWindow : Window
 
             Configs.Debug => $"Debug",
 
+            Configs.ACTIntegration => $"ACT Integration",
+
             _ => string.Empty,
         };
     }
@@ -1249,6 +1255,10 @@ public partial class RotationConfigWindow : Window
 
             case Configs.Debug:
                 _activeTab = RotationConfigWindowTab.Debug;
+                break;
+
+            case Configs.ACTIntegration:
+                _activeTab = RotationConfigWindowTab.ACTIntegration;
                 break;
         }
     }
@@ -1903,6 +1913,140 @@ public partial class RotationConfigWindow : Window
         Service.Config.HostileType = type;
         // Add any additional logic needed when changing the targeting type
         PluginLog.Information($"Targeting type changed to: {type}");
+    }
+
+    #endregion
+
+    #region ACT Integration
+
+    private void DrawACTIntegration()
+    {
+        ImGui.TextWrapped("Configure ACT (Advanced Combat Tracker) and Triggernometry callout integration for predictive mitigation.");
+        ImGui.Spacing();
+        ImGui.TextWrapped("This feature receives mechanic warnings from ACT via WebSocket before in-game cast bars appear, allowing preemptive defensive cooldown usage.");
+        ImGui.Spacing();
+        ImGui.Separator();
+        ImGui.Spacing();
+
+        // Enable ACT Callouts
+        bool enableACT = Service.Config.EnableACTCallouts;
+        if (ImGui.Checkbox("Enable ACT Callout Integration", ref enableACT))
+        {
+            Service.Config.EnableACTCallouts.Value = enableACT;
+
+            // Start/stop listener based on setting change
+            if (enableACT && RotationSolverPlugin.Instance?.ACTCalloutListener == null)
+            {
+                RotationSolverPlugin.Instance!.ACTCalloutListener = new();
+                RotationSolverPlugin.Instance.ACTCalloutListener.OnMechanicReceived += RotationSolverPlugin.Instance.OnMechanicReceived;
+                RotationSolverPlugin.Instance.ACTCalloutListener.Port = Service.Config.ACTWebSocketPort;
+                RotationSolverPlugin.Instance.ACTCalloutListener.Start();
+            }
+            else if (!enableACT && RotationSolverPlugin.Instance?.ACTCalloutListener != null)
+            {
+                RotationSolverPlugin.Instance.ACTCalloutListener.Dispose();
+                RotationSolverPlugin.Instance.ACTCalloutListener = null;
+            }
+        }
+        ImGui.Spacing();
+
+        if (!enableACT)
+        {
+            ImGui.TextColored(ImGuiColors.DalamudGrey, "ACT integration is disabled. Enable to configure settings.");
+            return;
+        }
+
+        // WebSocket Port
+        int port = Service.Config.ACTWebSocketPort;
+        ImGui.SetNextItemWidth(100);
+        if (ImGui.InputInt("WebSocket Port", ref port))
+        {
+            Service.Config.ACTWebSocketPort.Value = Math.Clamp(port, 1024, 65535);
+        }
+        ImGui.SameLine();
+        ImGui.TextColored(ImGuiColors.DalamudGrey, "(Default: 29292)");
+        ImGui.Spacing();
+
+        // Auto-mitigate tankbusters
+        bool autoTankbuster = Service.Config.ActAutoMitigateTankbusters;
+        if (ImGui.Checkbox("Auto-mitigate Tankbusters", ref autoTankbuster))
+        {
+            Service.Config.ActAutoMitigateTankbusters.Value = autoTankbuster;
+        }
+        ImGui.TextColored(ImGuiColors.DalamudGrey, "Automatically use defensive cooldowns when ACT reports an incoming tankbuster.");
+        ImGui.Spacing();
+
+        // Auto-mitigate raid-wide
+        bool autoRaidWide = Service.Config.ActAutoMitigateRaidWide;
+        if (ImGui.Checkbox("Auto-mitigate Party AoE (Raid-wide)", ref autoRaidWide))
+        {
+            Service.Config.ActAutoMitigateRaidWide.Value = autoRaidWide;
+        }
+        ImGui.TextColored(ImGuiColors.DalamudGrey, "Automatically use party mitigation (Reprisal, shield abilities) for raid-wide damage.");
+        ImGui.Spacing();
+
+        // Prioritize ACT callouts
+        bool prioritizeACT = Service.Config.PrioritizeACTCallouts;
+        if (ImGui.Checkbox("Prioritize ACT Predictions", ref prioritizeACT))
+        {
+            Service.Config.PrioritizeACTCallouts.Value = prioritizeACT;
+        }
+        ImGui.TextColored(ImGuiColors.DalamudGrey, "Use ACT predictive data before in-game detection (faster but requires ACT setup).");
+        ImGui.Spacing();
+
+        ImGui.Separator();
+        ImGui.Spacing();
+
+        // Status display
+        bool isListening = RotationSolverPlugin.Instance?.ACTCalloutListener?.IsRunning ?? false;
+        Vector4 statusColor = isListening ? ImGuiColors.ParsedGreen : ImGuiColors.DalamudRed;
+        string statusText = isListening ? "Listening" : "Not Running";
+
+        ImGui.Text("Listener Status: ");
+        ImGui.SameLine();
+        ImGui.PushStyleColor(ImGuiCol.Text, statusColor);
+        ImGui.Text(statusText);
+        ImGui.PopStyleColor();
+
+        if (isListening)
+        {
+            ImGui.Text($"Listening on port: {Service.Config.ACTWebSocketPort}");
+        }
+
+        ImGui.Spacing();
+        ImGui.Separator();
+        ImGui.Spacing();
+
+        // Help text
+        ImGui.TextWrapped("Setup Instructions:");
+        ImGui.BulletText("Install ACT and Triggernometry plugin");
+        ImGui.BulletText("Import Triggernometry triggers that send mechanic callouts");
+        ImGui.BulletText("Configure triggers to send JSON to ws://localhost:29292");
+        ImGui.BulletText("Enable 'Auto-mitigate Tankbusters' for tanks");
+        ImGui.BulletText("Enable 'Auto-mitigate Party AoE' for tanks/healers");
+
+        ImGui.Spacing();
+
+        // Display active mechanics
+        var activeMechanics = Basic.Services.ACTMitigationService.GetActiveMechanics();
+        if (activeMechanics.Any())
+        {
+            ImGui.Text("Active Mechanics:");
+            foreach (var mechanic in activeMechanics.Take(5))
+            {
+                Vector4 mechanicColor = mechanic.RemainingTime < 2.0f ? ImGuiColors.DalamudRed :
+                                       mechanic.RemainingTime < 5.0f ? ImGuiColors.DalamudYellow :
+                                       ImGuiColors.ParsedGreen;
+
+                ImGui.PushStyleColor(ImGuiCol.Text, mechanicColor);
+                ImGui.Text($"  {mechanic.Type}: {mechanic.Name} ({mechanic.RemainingTime:F1}s)");
+                ImGui.PopStyleColor();
+            }
+        }
+        else
+        {
+            ImGui.TextColored(ImGuiColors.DalamudGrey, "No active mechanics from ACT.");
+        }
     }
 
     #endregion

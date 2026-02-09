@@ -189,5 +189,94 @@ namespace RotationSolver.IPC
             RSCommands.DoActionCommand($"{combinedString}");
             PluginLog.Debug($"IPC ActionCommand was called. Action Name:{action}, Time:{time}");
         }
+
+        // ACT Integration IPC Methods
+
+        /// <summary>
+        /// Records a mechanic event from ACT via IPC for predictive mitigation.
+        /// </summary>
+        /// <param name="mechanicJson">JSON string containing mechanic event data.</param>
+        [EzIPC]
+        public void ACTRecordMechanic(string mechanicJson)
+        {
+            try
+            {
+                Basic.Services.ACTMitigationService.RecordMechanicFromJson(mechanicJson);
+                PluginLog.Debug("IPC ACTRecordMechanic was called.");
+            }
+            catch (Exception ex)
+            {
+                PluginLog.Warning($"IPC ACTRecordMechanic failed: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Records a tankbuster warning from ACT via IPC.
+        /// </summary>
+        /// <param name="source">The source of the tankbuster (boss name).</param>
+        /// <param name="target">The target of the tankbuster (player name).</param>
+        /// <param name="timeUntilImpact">Time until the tankbuster resolves (seconds).</param>
+        [EzIPC]
+        public void ACTTankbusterWarning(string source, string target, float timeUntilImpact)
+        {
+            try
+            {
+                var mechanic = new Basic.Data.ACTMechanicEvent
+                {
+                    Type = Basic.Data.MechanicType.Tankbuster,
+                    Name = "Tankbuster",
+                    Source = source,
+                    Target = target,
+                    TimeUntilImpact = timeUntilImpact,
+                    DamageType = Basic.Data.MechanicDamageType.Unknown,
+                    Severity = Basic.Data.MechanicSeverity.Heavy
+                };
+                Basic.Services.ACTMitigationService.RecordMechanic(mechanic);
+                PluginLog.Debug($"IPC ACTTankbusterWarning: {source} -> {target} in {timeUntilImpact}s");
+            }
+            catch (Exception ex)
+            {
+                PluginLog.Warning($"IPC ACTTankbusterWarning failed: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Records a raid-wide AoE warning from ACT via IPC.
+        /// </summary>
+        /// <param name="source">The source of the AoE.</param>
+        /// <param name="timeUntilImpact">Time until the AoE resolves (seconds).</param>
+        [EzIPC]
+        public void ACTRaidWideWarning(string source, float timeUntilImpact)
+        {
+            try
+            {
+                var mechanic = new Basic.Data.ACTMechanicEvent
+                {
+                    Type = Basic.Data.MechanicType.RaidWide,
+                    Name = "Raid-wide",
+                    Source = source,
+                    Target = "party",
+                    TimeUntilImpact = timeUntilImpact,
+                    DamageType = Basic.Data.MechanicDamageType.Unknown,
+                    Severity = Basic.Data.MechanicSeverity.Moderate
+                };
+                Basic.Services.ACTMitigationService.RecordMechanic(mechanic);
+                PluginLog.Debug($"IPC ACTRaidWideWarning: {source} in {timeUntilImpact}s");
+            }
+            catch (Exception ex)
+            {
+                PluginLog.Warning($"IPC ACTRaidWideWarning failed: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Clears all ACT mechanic events (e.g., on wipe or zone change).
+        /// </summary>
+        [EzIPC]
+        public void ACTClearMechanics()
+        {
+            Basic.Services.ACTMitigationService.ClearAll();
+            PluginLog.Debug("IPC ACTClearMechanics was called.");
+        }
     }
 }
