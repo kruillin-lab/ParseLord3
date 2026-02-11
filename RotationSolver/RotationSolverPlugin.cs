@@ -29,6 +29,7 @@ public sealed class RotationSolverPlugin : IDalamudPlugin, IDisposable
     private static RotationConfigWindow? _rotationConfigWindow;
     private static ControlWindow? _controlWindow;
     private static NextActionWindow? _nextActionWindow;
+    private static InterceptedActionWindow? _interceptedActionWindow;
     private static CooldownWindow? _cooldownWindow;
     private static ActionTimelineWindow? _actionTimelineWindow;
     private static WelcomeWindow? _changelogWindow;
@@ -89,7 +90,7 @@ public sealed class RotationSolverPlugin : IDalamudPlugin, IDisposable
         IPCProvider = new();
 
         // Initialize ACT Callout Listener if enabled
-        if (Service.Config.EnableACTCallouts)
+        if (Service.Config.EnableActCallouts)
         {
             ACTCalloutListener = new();
             ACTCalloutListener.OnMechanicReceived += OnMechanicReceived;
@@ -100,6 +101,7 @@ public sealed class RotationSolverPlugin : IDalamudPlugin, IDisposable
         _rotationConfigWindow = new();
         _controlWindow = new();
         _nextActionWindow = new();
+        _interceptedActionWindow = new();
         _cooldownWindow = new();
         _actionTimelineWindow = new();
         _changelogWindow = new();
@@ -124,6 +126,7 @@ public sealed class RotationSolverPlugin : IDalamudPlugin, IDisposable
         windowSystem.AddWindow(_rotationConfigWindow);
         windowSystem.AddWindow(_controlWindow);
         windowSystem.AddWindow(_nextActionWindow);
+        windowSystem.AddWindow(_interceptedActionWindow);
         windowSystem.AddWindow(_cooldownWindow);
         windowSystem.AddWindow(_actionTimelineWindow);
         windowSystem.AddWindow(_changelogWindow);
@@ -278,9 +281,9 @@ public sealed class RotationSolverPlugin : IDalamudPlugin, IDisposable
         _easterEggWindow?.IsOpen = true;
     }
 
-    private void OnMechanicReceived(ACTMechanicEvent mechanic)
+    internal void OnMechanicReceived(ACTMechanicEvent mechanic)
     {
-        if (!Service.Config.EnableACTCallouts)
+        if (!Service.Config.EnableActCallouts)
         {
             return;
         }
@@ -306,6 +309,7 @@ public sealed class RotationSolverPlugin : IDalamudPlugin, IDisposable
         _controlWindow!.IsOpen = isValid && Service.Config.ShowControlWindow;
         _cooldownWindow!.IsOpen = isValid && Service.Config.ShowCooldownWindow;
         _nextActionWindow!.IsOpen = isValid && Service.Config.ShowNextActionWindow;
+        _interceptedActionWindow!.IsOpen = isValid && Service.Config.ShowInterceptedActionWindow;
 
         // ActionTimeline window with additional checks
         bool showActionTimeline = isValid && Service.Config.ShowActionTimelineWindow;

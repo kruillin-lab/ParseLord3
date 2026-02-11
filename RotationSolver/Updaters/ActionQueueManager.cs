@@ -188,6 +188,16 @@ namespace RotationSolver.Updaters
         {
             try
             {
+                // Track intercepted actions so UI can display current & previous intercepted actions
+                try
+                {
+                    DataCenter.CurrentInterceptedAction = matchingAction;
+                }
+                catch (Exception ex)
+                {
+                    PluginLog.Warning($"[ActionQueueManager] Failed to set intercepted action tracking: {ex}");
+                }
+
                 var expirationTime = expiration ?? Service.Config.InterceptActionTime;
                 RSCommands.DoSpecialCommandType(SpecialCommandType.Intercepting);
                 DataCenter.AddCommandAction(matchingAction, expirationTime);

@@ -332,6 +332,9 @@ internal partial class Configs : IPluginConfiguration
     [ConditionBool, UI("Show Next Action Window", Filter = UiWindows)]
     private static readonly bool _showNextActionWindow = false;
 
+    [ConditionBool, UI("Show Intercepted Action Window", Filter = UiWindows)]
+    private static readonly bool _showInterceptedActionWindow = false;
+
     [ConditionBool, UI("No Inputs", Parent = nameof(ShowNextActionWindow))]
     private static readonly bool _isInfoWindowNoInputs = false;
 
@@ -415,6 +418,10 @@ internal partial class Configs : IPluginConfiguration
     [ConditionBool, UI("Use defensive abilities", Description = "It is recommended to check this option if you are playing Raids or you can plan the heal and defense ability usage by yourself.",
         Parent = nameof(UseAbility))]
     private static readonly bool _useDefenseAbility = true;
+
+    [ConditionBool, UI("Enable Smart Mitigation", Description = "Enables the smart auto-mitigation logic used by tank rotations (invuln/mitigation decision helpers).",
+        Parent = nameof(UseDefenseAbility))]
+    private static readonly bool _enableSmartMitigation = true;
 
     [ConditionBool, UI("Automatically activate tank stance", Parent = nameof(UseAbility),
         PvEFilter = JobFilterType.Tank)]
