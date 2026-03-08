@@ -36,8 +36,13 @@ public sealed class WHM_Reborn : WhiteMageRotation
     [RotationConfig(CombatType.PvE, Name = "Regen on Tank at 5 seconds remaining on Prepull Countdown.")]
     public bool UsePreRegen { get; set; } = true;
 
-    [RotationConfig(CombatType.PvE, Name = "Keep Regen rolling on the Tank")]
-    public bool KeepRegenRolling { get; set; } = false;
+    [Range(0, 1, ConfigUnitType.Percent)]
+    [RotationConfig(CombatType.PvE, Name = "Apply Regen to tanks when their HP falls below this threshold (0 = disabled)")]
+    public float RegenTankThreshold { get; set; } = 0.85f;
+
+    [Range(0, 1, ConfigUnitType.Percent)]
+    [RotationConfig(CombatType.PvE, Name = "Apply Regen to non-tanks when their HP falls below this threshold (0 = disabled)")]
+    public float RegenPartyThreshold { get; set; } = 0.65f;
 
     [RotationConfig(CombatType.PvE, Name = "Use Divine Caress as soon as its available")]
     public bool UseDivine { get; set; } = false;
@@ -373,9 +378,24 @@ public sealed class WHM_Reborn : WhiteMageRotation
             return true;
         }
 
-        if (KeepRegenRolling && RegenPvE.CanUse(out act) && RegenPvE.Target.Target.IsJobCategory(JobRole.Tank))
+        // Apply Regen based on HP thresholds - separate for tanks vs other party members
+        if (RegenPvE.CanUse(out act))
         {
-            return true;
+            var target = RegenPvE.Target.Target;
+            if (target != null)
+            {
+                float targetHpRatio = target.GetHealthRatio();
+                bool isTank = target.IsJobCategory(JobRole.Tank);
+
+                if (isTank && RegenTankThreshold > 0 && targetHpRatio < RegenTankThreshold)
+                {
+                    return true;
+                }
+                else if (!isTank && RegenPartyThreshold > 0 && targetHpRatio < RegenPartyThreshold)
+                {
+                    return true;
+                }
+            }
         }
 
         bool liliesNearlyFull = Lily == 2 && LilyTime < LilyOvercapTime;

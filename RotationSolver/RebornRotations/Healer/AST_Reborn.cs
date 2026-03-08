@@ -39,11 +39,16 @@ public sealed class AST_Reborn : AstrologianRotation
     [RotationConfig(CombatType.PvE, Name = "Use Earthly Star during countdown timer.")]
     public float UseEarthlyStarTime { get; set; } = 4;
 
-    [RotationConfig(CombatType.PvE, Name = "Keep Aspected Benefic rolling on the Tank")]
-    public bool KeepAspectedRolling { get; set; } = false;
+    [Range(0, 1, ConfigUnitType.Percent)]
+    [RotationConfig(CombatType.PvE, Name = "Apply Aspected Benefic to tanks when their HP falls below this threshold (0 = disabled)")]
+    public float AspectedBeneficTankThreshold { get; set; } = 0.85f;
 
     [Range(0, 1, ConfigUnitType.Percent)]
-    [RotationConfig(CombatType.PvE, Name = "Minimum HP threshold party member needs to be to use Aspected Benefic")]
+    [RotationConfig(CombatType.PvE, Name = "Apply Aspected Benefic to non-tanks when their HP falls below this threshold (0 = disabled)")]
+    public float AspectedBeneficPartyThreshold { get; set; } = 0.65f;
+
+    [Range(0, 1, ConfigUnitType.Percent)]
+    [RotationConfig(CombatType.PvE, Name = "Minimum HP threshold party member needs to be to use Aspected Benefic (for HealSingleGCD)")]
     public float AspectedBeneficHeal { get; set; } = 0.4f;
 
     [Range(0, 1, ConfigUnitType.Percent)]
@@ -620,9 +625,24 @@ public sealed class AST_Reborn : AstrologianRotation
             return base.GeneralGCD(out act);
         }
 
-        if (KeepAspectedRolling && AspectedBeneficPvE.CanUse(out act) && AspectedBeneficPvE.Target.Target.IsJobCategory(JobRole.Tank))
+        // Apply Aspected Benefic based on HP thresholds - separate for tanks vs other party members
+        if (AspectedBeneficPvE.CanUse(out act))
         {
-            return true;
+            var target = AspectedBeneficPvE.Target.Target;
+            if (target != null)
+            {
+                float targetHpRatio = target.GetHealthRatio();
+                bool isTank = target.IsJobCategory(JobRole.Tank);
+
+                if (isTank && AspectedBeneficTankThreshold > 0 && targetHpRatio < AspectedBeneficTankThreshold)
+                {
+                    return true;
+                }
+                else if (!isTank && AspectedBeneficPartyThreshold > 0 && targetHpRatio < AspectedBeneficPartyThreshold)
+                {
+                    return true;
+                }
+            }
         }
 
         if (GravityIiPvE.EnoughLevel && GravityIiPvE.CanUse(out act))
