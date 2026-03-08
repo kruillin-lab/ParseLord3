@@ -103,7 +103,7 @@ public sealed class PLD_Reborn : PaladinRotation
         }
 
         // Smart Mitigation emergency logic
-        if (UseSmartMitigation && MitigationHelper.ShouldUseInvulnerability())
+        if (UseSmartMitigation && Service.Config.UseSmartTankMitigation && MitigationHelper.ShouldUseInvulnerability())
         {
             if (HallowedGroundPvE.CanUse(out act))
             {
@@ -224,12 +224,13 @@ public sealed class PLD_Reborn : PaladinRotation
         }
 
         // Smart Mitigation for party-wide damage
-        if (UseSmartMitigation)
+        if (UseSmartMitigation && Service.Config.UseSmartTankMitigation)
         {
             var damageLevel = MitigationHelper.GetIncomingDamageLevel();
 
             // Use Divine Veil for moderate/heavy party damage
             if (damageLevel >= MitigationHelper.DamageLevel.Moderate &&
+                MitigationHelper.CanUseActionWithoutOverwrite(DivineVeilPvE.Cooldown) &&
                 DivineVeilPvE.CanUse(out act))
             {
                 return true;
@@ -237,6 +238,7 @@ public sealed class PLD_Reborn : PaladinRotation
 
             // Use Passage of Arms for heavy raidwide damage
             if (damageLevel >= MitigationHelper.DamageLevel.Heavy &&
+                MitigationHelper.CanUseActionWithoutOverwrite(PassageOfArmsPvE.Cooldown) &&
                 PassageOfArmsPvE.CanUse(out act))
             {
                 return true;
@@ -287,7 +289,7 @@ public sealed class PLD_Reborn : PaladinRotation
         }
 
         // Smart Mitigation System
-        if (UseSmartMitigation)
+        if (UseSmartMitigation && Service.Config.UseSmartTankMitigation)
         {
             var damageLevel = MitigationHelper.GetIncomingDamageLevel();
             var damageType = MitigationHelper.GetIncomingDamageType();
@@ -303,7 +305,8 @@ public sealed class PLD_Reborn : PaladinRotation
             var useBigCooldown = MitigationHelper.ShouldUseBigCooldown(damageLevel);
 
             // Priority 1: Bulwark (90s CD, block rate up)
-            if (BulwarkPvE.CanUse(out act, skipAoeCheck: true))
+            if (MitigationHelper.CanUseActionWithoutOverwrite(BulwarkPvE.Cooldown) &&
+                BulwarkPvE.CanUse(out act, skipAoeCheck: true))
             {
                 MitigationHelper.RecordMitigationUsed(false);
                 return true;
@@ -324,7 +327,9 @@ public sealed class PLD_Reborn : PaladinRotation
             }
 
             // Priority 4: Sentinel/Guardian (30% mit, 120s CD)
-            if (useBigCooldown && (!RampartPvE.Cooldown.IsCoolingDown || RampartPvE.Cooldown.ElapsedAfter(60)))
+            if (useBigCooldown &&
+                (!RampartPvE.Cooldown.IsCoolingDown || RampartPvE.Cooldown.ElapsedAfter(60)) &&
+                MitigationHelper.CanUseActionWithoutOverwrite(GuardianPvE.EnoughLevel ? GuardianPvE.Cooldown : SentinelPvE.Cooldown))
             {
                 if (GuardianPvE.EnoughLevel && GuardianPvE.CanUse(out act))
                 {
@@ -343,6 +348,7 @@ public sealed class PLD_Reborn : PaladinRotation
             if (((GuardianPvE.Cooldown.IsCoolingDown && GuardianPvE.Cooldown.ElapsedAfter(60)) ||
                 (SentinelPvE.Cooldown.IsCoolingDown && SentinelPvE.Cooldown.ElapsedAfter(60)) ||
                 !SentinelPvE.EnoughLevel || damageLevel >= MitigationHelper.DamageLevel.Heavy) &&
+                MitigationHelper.CanUseActionWithoutOverwrite(RampartPvE.Cooldown) &&
                 RampartPvE.CanUse(out act))
             {
                 MitigationHelper.RecordMitigationUsed(true);

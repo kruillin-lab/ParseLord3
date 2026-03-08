@@ -103,6 +103,7 @@ public interface ICustomRotation : ITexture
     internal IAction? ActionDefenseAreaAbility { get; }
     internal IAction? ActionDefenseSingleGCD { get; }
     internal IAction? ActionDefenseSingleAbility { get; }
+    internal IAction? ActionTankMitigationAbility { get; }
     internal IAction? ActionMoveForwardGCD { get; }
     internal IAction? ActionMoveForwardAbility { get; }
     internal IAction? ActionMoveBackAbility { get; }

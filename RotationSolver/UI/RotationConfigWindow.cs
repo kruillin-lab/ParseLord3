@@ -1929,10 +1929,10 @@ public partial class RotationConfigWindow : Window
         ImGui.Spacing();
 
         // Enable ACT Callouts
-        bool enableACT = Service.Config.EnableACTCallouts;
+        bool enableACT = Service.Config.EnableActCallouts;
         if (ImGui.Checkbox("Enable ACT Callout Integration", ref enableACT))
         {
-            Service.Config.EnableACTCallouts.Value = enableACT;
+            Service.Config.EnableActCallouts.Value = enableACT;
 
             // Start/stop listener based on setting change
             if (enableACT && RotationSolverPlugin.Instance?.ACTCalloutListener == null)
@@ -1961,7 +1961,13 @@ public partial class RotationConfigWindow : Window
         ImGui.SetNextItemWidth(100);
         if (ImGui.InputInt("WebSocket Port", ref port))
         {
-            Service.Config.ACTWebSocketPort.Value = Math.Clamp(port, 1024, 65535);
+            Service.Config.ACTWebSocketPort = Math.Clamp(port, 1024, 65535);
+
+            // Apply immediately if listener is running
+            if (RotationSolverPlugin.Instance?.ACTCalloutListener != null)
+            {
+                RotationSolverPlugin.Instance.ACTCalloutListener.Port = Service.Config.ACTWebSocketPort;
+            }
         }
         ImGui.SameLine();
         ImGui.TextColored(ImGuiColors.DalamudGrey, "(Default: 29292)");
@@ -1986,10 +1992,10 @@ public partial class RotationConfigWindow : Window
         ImGui.Spacing();
 
         // Prioritize ACT callouts
-        bool prioritizeACT = Service.Config.PrioritizeACTCallouts;
+        bool prioritizeACT = Service.Config.PrioritizeActCallouts;
         if (ImGui.Checkbox("Prioritize ACT Predictions", ref prioritizeACT))
         {
-            Service.Config.PrioritizeACTCallouts.Value = prioritizeACT;
+            Service.Config.PrioritizeActCallouts.Value = prioritizeACT;
         }
         ImGui.TextColored(ImGuiColors.DalamudGrey, "Use ACT predictive data before in-game detection (faster but requires ACT setup).");
         ImGui.Spacing();

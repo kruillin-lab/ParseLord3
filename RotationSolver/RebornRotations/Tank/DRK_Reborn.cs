@@ -73,7 +73,7 @@ public sealed class DRK_Reborn : DarkKnightRotation
     protected override bool EmergencyAbility(IAction nextGCD, out IAction? act)
     {
         // Smart Mitigation emergency logic
-        if (UseSmartMitigation && MitigationHelper.ShouldUseInvulnerability())
+        if (UseSmartMitigation && Service.Config.UseSmartTankMitigation && MitigationHelper.ShouldUseInvulnerability())
         {
             if (LivingDeadPvE.CanUse(out act))
             {
@@ -113,7 +113,7 @@ public sealed class DRK_Reborn : DarkKnightRotation
     protected override bool DefenseAreaAbility(IAction nextGCD, out IAction? act)
     {
         // Smart Mitigation for party-wide damage
-        if (UseSmartMitigation)
+        if (UseSmartMitigation && Service.Config.UseSmartTankMitigation)
         {
             var damageLevel = MitigationHelper.GetIncomingDamageLevel();
 
@@ -135,6 +135,7 @@ public sealed class DRK_Reborn : DarkKnightRotation
 
             // Use Dark Missionary for moderate/heavy party damage
             if (!InTwoMIsBurst && damageLevel >= MitigationHelper.DamageLevel.Moderate &&
+                MitigationHelper.CanUseActionWithoutOverwrite(DarkMissionaryPvE.Cooldown) &&
                 DarkMissionaryPvE.CanUse(out act))
             {
                 return true;
@@ -197,7 +198,7 @@ public sealed class DRK_Reborn : DarkKnightRotation
         }
 
         // Smart Mitigation System
-        if (UseSmartMitigation)
+        if (UseSmartMitigation && Service.Config.UseSmartTankMitigation)
         {
             var damageLevel = MitigationHelper.GetIncomingDamageLevel();
             var damageType = MitigationHelper.GetIncomingDamageType();
@@ -241,7 +242,9 @@ public sealed class DRK_Reborn : DarkKnightRotation
             }
 
             // Priority 5: Shadow Wall/Shadowed Vigil (30% mit, 120s CD)
-            if (useBigCooldown && (!RampartPvE.Cooldown.IsCoolingDown || RampartPvE.Cooldown.ElapsedAfter(60)))
+            if (useBigCooldown &&
+                (!RampartPvE.Cooldown.IsCoolingDown || RampartPvE.Cooldown.ElapsedAfter(60)) &&
+                MitigationHelper.CanUseActionWithoutOverwrite(ShadowedVigilPvE.EnoughLevel ? ShadowedVigilPvE.Cooldown : ShadowWallPvE.Cooldown))
             {
                 if (ShadowedVigilPvE.EnoughLevel && ShadowedVigilPvE.CanUse(out act))
                 {
@@ -260,6 +263,7 @@ public sealed class DRK_Reborn : DarkKnightRotation
             if (((ShadowWallPvE.Cooldown.IsCoolingDown && ShadowWallPvE.Cooldown.ElapsedAfter(60)) ||
                 (ShadowedVigilPvE.Cooldown.IsCoolingDown && ShadowedVigilPvE.Cooldown.ElapsedAfter(60)) ||
                 !ShadowWallPvE.EnoughLevel || damageLevel >= MitigationHelper.DamageLevel.Heavy) &&
+                MitigationHelper.CanUseActionWithoutOverwrite(RampartPvE.Cooldown) &&
                 RampartPvE.CanUse(out act))
             {
                 MitigationHelper.RecordMitigationUsed(true);
@@ -539,7 +543,41 @@ public sealed class DRK_Reborn : DarkKnightRotation
                 return true;
             }
 
-            return (!TheBlackestNight || CurrentMp >= 6000) && CurrentMp >= 8500;
+            // Check if we should preserve MP for Blackest Night
+            if (TheBlackestNight)
+            {
+                // Edge/Flood costs 3000 MP, reserve 3000 for TBN = need 6000 total
+                uint mpAfterCast = CurrentMp - 3000;
+
+                // If we'd have less than 3000 MP after cast, check if TBN is on cooldown
+                // and MP will regenerate before it's ready
+                if (mpAfterCast < 3000)
+                {
+                    // If TBN is on cooldown, calculate MP regen before it's available
+                    if (TheBlackestNightPvE.Cooldown.IsCoolingDown)
+                    {
+                        float cooldownRemaining = TheBlackestNightPvE.Cooldown.RecastTimeRemain;
+                        // MP regenerates every 3 seconds in FFXIV
+                        // Approx 200 MP per tick at level 90+
+                        int ticks = (int)(cooldownRemaining / 3f);
+                        uint mpRegen = (uint)(ticks * 200);
+
+                        // Allow cast if MP after cast + expected regen >= 3000
+                        if (mpAfterCast + mpRegen >= 3000)
+                        {
+                            return true;
+                        }
+                    }
+
+                    // TBN is ready or MP won't regenerate in time - don't cast
+                    return false;
+                }
+
+                // We'd have >= 3000 MP after cast - safe to use
+                return CurrentMp >= 6000;
+            }
+
+            return CurrentMp >= 8500;
         }
     }
     #endregion

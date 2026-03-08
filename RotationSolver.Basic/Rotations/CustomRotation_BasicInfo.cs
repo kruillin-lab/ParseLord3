@@ -131,6 +131,9 @@ public partial class CustomRotation : ICustomRotation
     public IAction? ActionDefenseSingleAbility { get; private set; }
 
     /// <inheritdoc/>
+    public IAction? ActionTankMitigationAbility { get; private set; }
+
+    /// <inheritdoc/>
     public IAction? ActionMoveForwardGCD { get; private set; }
 
     /// <inheritdoc/>

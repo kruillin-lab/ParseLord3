@@ -1254,6 +1254,15 @@ public struct ActionTargetInfo(IBaseAction action)
             return Player.Object;
         }
 
+        // By convention, "default" (TargetType.Big / 0) means "no override provided".
+        // Use the action's configured TargetType unless an explicit override was passed.
+        TargetType targetType = targetOverride == default ? type : targetOverride;
+
+        if (Service.Config?.EnableDebugTrace == true && (type == TargetType.TheBalance || type == TargetType.TheSpear || targetType == TargetType.TheBalance || targetType == TargetType.TheSpear))
+        {
+            Service.LogDebug($"[Targeting] Card target resolve: action={(action?.Info.ID ?? 0)} type={type} override={targetOverride} resolved={targetType}");
+        }
+
         switch (actionType)
         {
             case SpecialActionType.MeleeRange:
@@ -1406,9 +1415,9 @@ public struct ActionTargetInfo(IBaseAction action)
             List<IBattleChara> objects = [.. battleChara];
             List<IBattleChara> filtered = [.. objects];
 
-            if (targetOverride != default)
+            if (targetType != default)
             {
-                switch (targetOverride)
+                switch (targetType)
                 {
                     case TargetType.Small:
                         if (Service.Config.SmallHp)
@@ -1596,7 +1605,7 @@ public struct ActionTargetInfo(IBaseAction action)
             return null;
         }
 
-        return targetOverride switch
+        return targetType switch
         {
             TargetType.BeAttacked => FindBeAttackedTarget(),
             TargetType.Provoke => FindProvokeTarget(),
@@ -2002,15 +2011,15 @@ public struct ActionTargetInfo(IBaseAction action)
             }
             if (best != null)
             {
-                PluginLog.Debug($"FindTheBalance: {best.Name} selected by priority index {bestIndex} with tie-breakers.");
+                PluginLog.Debug($"FindTheSpear: {best.Name} selected by priority index {bestIndex} with tie-breakers.");
                 return best;
             }
 
-            // Fallback: prefer melee for Balance, then other DPS buckets (aligns with 6% on melee/tank)
+            // Fallback: prefer ranged for Spear, then other DPS buckets (aligns with 6% on ranged/healer)
             IBattleChara? result = null;
-            result = RandomMeleeTarget(candidates);
-            if (result != null) return result;
             result = RandomRangeTarget(candidates);
+            if (result != null) return result;
+            result = RandomMeleeTarget(candidates);
             if (result != null) return result;
             result = RandomMagicalTarget(candidates);
             if (result != null) return result;

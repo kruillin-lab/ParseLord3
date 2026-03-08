@@ -481,7 +481,7 @@ public partial class SamuraiRotation
 
     static partial void ModifyTenkaGokenPvE(ref ActionSetting setting)
     {
-        setting.ActionCheck = () => SenCount == 2 && !HasTendo;
+        setting.ActionCheck = () => SenCount == 2 && !HasTendo && DataCenter.NumberOfHostilesInRange >= 3;
         setting.IsFriendly = false;
         setting.CreateConfig = () => new ActionConfig()
         {
@@ -498,6 +498,7 @@ public partial class SamuraiRotation
     {
         setting.StatusNeed = [StatusID.TsubamegaeshiReady];
         setting.IsFriendly = false;
+        setting.ActionCheck = () => DataCenter.NumberOfHostilesInRange >= 3;
         setting.CreateConfig = () => new ActionConfig()
         {
             AoeCount = 3,
@@ -520,7 +521,7 @@ public partial class SamuraiRotation
 
     static partial void ModifyTendoGokenPvE(ref ActionSetting setting)
     {
-        setting.ActionCheck = () => SenCount == 2;
+        setting.ActionCheck = () => SenCount == 2 && DataCenter.NumberOfHostilesInRange >= 3;
         setting.StatusNeed = [StatusID.Tendo];
         setting.IsFriendly = false;
         setting.CreateConfig = () => new ActionConfig()
@@ -540,6 +541,7 @@ public partial class SamuraiRotation
     {
         setting.StatusNeed = [StatusID.Tsubamegaeshi_4217];
         setting.IsFriendly = false;
+        setting.ActionCheck = () => DataCenter.NumberOfHostilesInRange >= 3;
         setting.CreateConfig = () => new ActionConfig()
         {
             AoeCount = 3,

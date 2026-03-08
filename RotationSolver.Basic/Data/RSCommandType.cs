@@ -36,6 +36,12 @@ public enum SpecialCommandType : byte
     DefenseSingle,
 
     /// <summary>
+    /// Open a window to use tank mitigation (active cooldowns, invulnerability).
+    /// </summary>
+    [Description("Open a window to use tank mitigation (active cooldowns, invulnerability).")]
+    TankMitigation,
+
+    /// <summary>
     /// Open a window to use Esuna, tank stance actions or True North.
     /// </summary>
     [Description("Open a window to use Esuna, tank stance actions or True North.")]

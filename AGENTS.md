@@ -113,7 +113,9 @@ dotnet build RotationSolver.sln -c Release
 - **Target Filtering**:
   - `IsPlayer` is NOT available on `IGameObject`
   - Use `obj is Dalamud.Game.ClientState.Objects.SubKinds.IPlayerCharacter` instead
-- **GetActionStatus**: Use `0xE0000000` (Player ID) for availability checks, NOT target's ID
+- **GetActionStatus**:
+  - Use `0xE0000000` for generic “can I use this at all?” checks.
+  - For target-dependent actions (e.g., buffs/cards), pass the resolved target’s ID to avoid false “not available”.
 
 ## 7. Current Context
 
@@ -129,6 +131,9 @@ See `AGENTS_HISTORY.md` for detailed work logs.
 4. **Implement**: Make focused, minimal changes
 5. **Verify**: Run `dotnet build` and ensure success
 6. **Log**: Update `AGENTS_HISTORY.md` with your changes
+
+## 10. PromptMaxer
+If the user asks to “prompt max/maxer/maximize”, follow `PromptMaxer.md` (Return mode vs Execute mode).
 
 ## 9. Specific Implementation Details
 

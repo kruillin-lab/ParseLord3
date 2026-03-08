@@ -379,22 +379,42 @@ public sealed class WHM_Reborn : WhiteMageRotation
         }
 
         // Apply Regen based on HP thresholds - separate for tanks vs other party members
-        if (RegenPvE.CanUse(out act))
+        if (RegenTankThreshold > 0 || RegenPartyThreshold > 0)
         {
-            var target = RegenPvE.Target.Target;
-            if (target != null)
-            {
-                float targetHpRatio = target.GetHealthRatio();
-                bool isTank = target.IsJobCategory(JobRole.Tank);
+            // Check if any party member needs the HoT based on our thresholds
+            bool shouldApplyHoT = false;
 
-                if (isTank && RegenTankThreshold > 0 && targetHpRatio < RegenTankThreshold)
+            foreach (var member in PartyMembers)
+            {
+                if (member.IsDead) continue;
+                if (member.HasStatus(true, StatusID.Regen)) continue;
+
+                float hpRatio = member.GetHealthRatio();
+                bool isTank = member.IsJobCategory(JobRole.Tank);
+
+                // Tank check: below threshold OR threshold is 1.0 (always apply)
+                if (isTank && RegenTankThreshold > 0)
                 {
-                    return true;
+                    if (hpRatio < RegenTankThreshold || RegenTankThreshold >= 1.0f)
+                    {
+                        shouldApplyHoT = true;
+                        break;
+                    }
                 }
-                else if (!isTank && RegenPartyThreshold > 0 && targetHpRatio < RegenPartyThreshold)
+                // Non-tank check: below threshold
+                else if (!isTank && RegenPartyThreshold > 0)
                 {
-                    return true;
+                    if (hpRatio < RegenPartyThreshold)
+                    {
+                        shouldApplyHoT = true;
+                        break;
+                    }
                 }
+            }
+
+            if (shouldApplyHoT && RegenPvE.CanUse(out act, skipStatusProvideCheck: true))
+            {
+                return true;
             }
         }
 

@@ -202,7 +202,7 @@ public sealed class WAR_Reborn : WarriorRotation
     protected override bool EmergencyAbility(IAction nextGCD, out IAction? act)
     {
         // Use Holmgang for emergencies if Smart Mitigation is enabled
-        if (UseSmartMitigation && MitigationHelper.ShouldUseInvulnerability())
+        if (UseSmartMitigation && Service.Config.UseSmartTankMitigation && MitigationHelper.ShouldUseInvulnerability())
         {
             if (HolmgangPvE.CanUse(out act, skipAoeCheck: true))
             {
@@ -235,7 +235,7 @@ public sealed class WAR_Reborn : WarriorRotation
         }
 
         // Smart Mitigation System
-        if (UseSmartMitigation)
+        if (UseSmartMitigation && Service.Config.UseSmartTankMitigation)
         {
             var damageLevel = MitigationHelper.GetIncomingDamageLevel();
             var damageType = MitigationHelper.GetIncomingDamageType();
@@ -279,7 +279,9 @@ public sealed class WAR_Reborn : WarriorRotation
             }
 
             // Priority 3: Vengeance/Damnation (30% mit + damage reflect)
-            if (useBigCooldown && (!RampartPvE.Cooldown.IsCoolingDown || RampartPvE.Cooldown.ElapsedAfter(60)))
+            if (useBigCooldown &&
+                (!RampartPvE.Cooldown.IsCoolingDown || RampartPvE.Cooldown.ElapsedAfter(60)) &&
+                MitigationHelper.CanUseActionWithoutOverwrite(DamnationPvE.EnoughLevel ? DamnationPvE.Cooldown : VengeancePvE.Cooldown))
             {
                 if (DamnationPvE.EnoughLevel && DamnationPvE.CanUse(out act))
                 {
@@ -297,6 +299,7 @@ public sealed class WAR_Reborn : WarriorRotation
             // Priority 4: Rampart (20% mit, 90s CD)
             if (((VengeancePvE.Cooldown.IsCoolingDown && VengeancePvE.Cooldown.ElapsedAfter(60)) ||
                 !VengeancePvE.EnoughLevel || damageLevel >= MitigationHelper.DamageLevel.Heavy) &&
+                MitigationHelper.CanUseActionWithoutOverwrite(RampartPvE.Cooldown) &&
                 RampartPvE.CanUse(out act))
             {
                 MitigationHelper.RecordMitigationUsed(true);
@@ -305,7 +308,9 @@ public sealed class WAR_Reborn : WarriorRotation
 
             // Priority 5: Thrill of Battle for emergency HP boost
             if (damageLevel >= MitigationHelper.DamageLevel.Moderate &&
-                Player?.GetHealthRatio() < 0.7f && ThrillOfBattlePvE.CanUse(out act))
+                Player?.GetHealthRatio() < 0.7f &&
+                MitigationHelper.CanUseActionWithoutOverwrite(ThrillOfBattlePvE.Cooldown) &&
+                ThrillOfBattlePvE.CanUse(out act))
             {
                 MitigationHelper.RecordMitigationUsed(false);
                 return true;
@@ -379,7 +384,7 @@ public sealed class WAR_Reborn : WarriorRotation
     protected override bool DefenseAreaAbility(IAction nextGCD, out IAction? act)
     {
         // Smart Mitigation for party-wide damage
-        if (UseSmartMitigation)
+        if (UseSmartMitigation && Service.Config.UseSmartTankMitigation)
         {
             var damageLevel = MitigationHelper.GetIncomingDamageLevel();
 

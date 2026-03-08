@@ -626,22 +626,42 @@ public sealed class AST_Reborn : AstrologianRotation
         }
 
         // Apply Aspected Benefic based on HP thresholds - separate for tanks vs other party members
-        if (AspectedBeneficPvE.CanUse(out act))
+        if (AspectedBeneficTankThreshold > 0 || AspectedBeneficPartyThreshold > 0)
         {
-            var target = AspectedBeneficPvE.Target.Target;
-            if (target != null)
-            {
-                float targetHpRatio = target.GetHealthRatio();
-                bool isTank = target.IsJobCategory(JobRole.Tank);
+            // Check if any party member needs the HoT based on our thresholds
+            bool shouldApplyHoT = false;
 
-                if (isTank && AspectedBeneficTankThreshold > 0 && targetHpRatio < AspectedBeneficTankThreshold)
+            foreach (var member in PartyMembers)
+            {
+                if (member.IsDead) continue;
+                if (member.HasStatus(true, StatusID.AspectedBenefic)) continue;
+
+                float hpRatio = member.GetHealthRatio();
+                bool isTank = member.IsJobCategory(JobRole.Tank);
+
+                // Tank check: below threshold OR threshold is 1.0 (always apply)
+                if (isTank && AspectedBeneficTankThreshold > 0)
                 {
-                    return true;
+                    if (hpRatio < AspectedBeneficTankThreshold || AspectedBeneficTankThreshold >= 1.0f)
+                    {
+                        shouldApplyHoT = true;
+                        break;
+                    }
                 }
-                else if (!isTank && AspectedBeneficPartyThreshold > 0 && targetHpRatio < AspectedBeneficPartyThreshold)
+                // Non-tank check: below threshold
+                else if (!isTank && AspectedBeneficPartyThreshold > 0)
                 {
-                    return true;
+                    if (hpRatio < AspectedBeneficPartyThreshold)
+                    {
+                        shouldApplyHoT = true;
+                        break;
+                    }
                 }
+            }
+
+            if (shouldApplyHoT && AspectedBeneficPvE.CanUse(out act, skipStatusProvideCheck: true))
+            {
+                return true;
             }
         }
 

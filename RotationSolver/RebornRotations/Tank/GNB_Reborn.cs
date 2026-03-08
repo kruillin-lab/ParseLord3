@@ -34,7 +34,7 @@ public sealed class GNB_Reborn : GunbreakerRotation
     protected override bool EmergencyAbility(IAction nextGCD, out IAction? act)
     {
         // Smart Mitigation emergency logic
-        if (UseSmartMitigation && MitigationHelper.ShouldUseInvulnerability())
+        if (UseSmartMitigation && Service.Config.UseSmartTankMitigation && MitigationHelper.ShouldUseInvulnerability())
         {
             if (SuperbolidePvE.CanUse(out act, skipAoeCheck: true))
             {
@@ -88,12 +88,13 @@ public sealed class GNB_Reborn : GunbreakerRotation
         }
 
         // Smart Mitigation for party-wide damage
-        if (UseSmartMitigation)
+        if (UseSmartMitigation && Service.Config.UseSmartTankMitigation)
         {
             var damageLevel = MitigationHelper.GetIncomingDamageLevel();
 
             // Use Heart of Light for moderate/heavy party damage
             if (!HasNoMercy && damageLevel >= MitigationHelper.DamageLevel.Moderate &&
+                MitigationHelper.CanUseActionWithoutOverwrite(HeartOfLightPvE.Cooldown) &&
                 HeartOfLightPvE.CanUse(out act, skipAoeCheck: true))
             {
                 return true;
@@ -141,7 +142,7 @@ public sealed class GNB_Reborn : GunbreakerRotation
         }
 
         // Smart Mitigation System
-        if (UseSmartMitigation)
+        if (UseSmartMitigation && Service.Config.UseSmartTankMitigation)
         {
             var damageLevel = MitigationHelper.GetIncomingDamageLevel();
             var damageType = MitigationHelper.GetIncomingDamageType();
@@ -170,7 +171,8 @@ public sealed class GNB_Reborn : GunbreakerRotation
             }
 
             // Priority 2: Camouflage (90s CD, parry rate + -10% damage)
-            if (CamouflagePvE.CanUse(out act))
+            if (MitigationHelper.CanUseActionWithoutOverwrite(CamouflagePvE.Cooldown) &&
+                CamouflagePvE.CanUse(out act))
             {
                 MitigationHelper.RecordMitigationUsed(false);
                 return true;
@@ -185,6 +187,7 @@ public sealed class GNB_Reborn : GunbreakerRotation
 
             // Priority 4: Nebula (30% mit, 120s CD)
             if (useBigCooldown && (!RampartPvE.Cooldown.IsCoolingDown || RampartPvE.Cooldown.ElapsedAfter(60)) &&
+                MitigationHelper.CanUseActionWithoutOverwrite(NebulaPvE.Cooldown) &&
                 NebulaPvE.CanUse(out act))
             {
                 MitigationHelper.RecordMitigationUsed(true);
@@ -194,6 +197,7 @@ public sealed class GNB_Reborn : GunbreakerRotation
             // Priority 5: Rampart (20% mit, 90s CD)
             if (((NebulaPvE.Cooldown.IsCoolingDown && NebulaPvE.Cooldown.ElapsedAfter(60)) ||
                 !NebulaPvE.EnoughLevel || damageLevel >= MitigationHelper.DamageLevel.Heavy) &&
+                MitigationHelper.CanUseActionWithoutOverwrite(RampartPvE.Cooldown) &&
                 RampartPvE.CanUse(out act))
             {
                 MitigationHelper.RecordMitigationUsed(true);

@@ -52,6 +52,7 @@ internal class MajorConditionValue(string name = MajorConditionValue.conditionNa
     public ConditionSet HealSingleConditionSet { get; set; } = new();
     public ConditionSet DefenseAreaConditionSet { get; set; } = new();
     public ConditionSet DefenseSingleConditionSet { get; set; } = new();
+    public ConditionSet TankMitigationConditionSet { get; set; } = new();
     public ConditionSet DispelStancePositionalConditionSet { get; set; } = new();
     public ConditionSet RaiseShirkConditionSet { get; set; } = new();
     public ConditionSet MoveForwardConditionSet { get; set; } = new();

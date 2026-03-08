@@ -110,4 +110,9 @@ public enum AutoStatus : uint
     /// Intercepting indicator.
     /// </summary>
     Intercepting = 1 << 19,
+
+    /// <summary>
+    /// We should use tank mitigation abilities (smart auto-mitigation).
+    /// </summary>
+    TankMitigation = 1 << 20,
 }

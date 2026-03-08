@@ -22,6 +22,7 @@ public static class MitigationHelper
     private static DateTime _lastMitigationTime = DateTime.MinValue;
     private static DateTime _lastBigCooldownTime = DateTime.MinValue;
     private static readonly TimeSpan MinMitigationInterval = TimeSpan.FromSeconds(2);
+    private static DateTime _lastDecisionDebugLog = DateTime.MinValue;
 
     /// <summary>
     /// Gets the incoming damage level to the player.
@@ -55,16 +56,12 @@ public static class MitigationHelper
         if (Player.Object == null) return DamageLevel.None;
 
         // Check ACT predictive data first if enabled
-        if (Service.Config.EnableACTCallouts && Service.Config.ActAutoMitigateTankbusters)
+        if (Service.Config.EnableActCallouts && Service.Config.ActAutoMitigateTankbusters)
         {
             var actDamageLevel = Services.ACTMitigationService.GetPredictedDamageLevel();
             if (actDamageLevel != DamageLevel.None)
             {
                 // Use ACT prediction but cap at Heavy (let game detection handle Emergency)
-                if (Service.Config.EnableDebugTrace)
-                {
-                    Service.LogDebug($"[ParseLord3] Using ACT predictive damage level: {actDamageLevel}");
-                }
                 return actDamageLevel;
             }
         }
@@ -120,15 +117,11 @@ public static class MitigationHelper
         if (Player.Object == null) return DamageType.Unknown;
 
         // Check ACT predictive data first if enabled
-        if (Service.Config.EnableACTCallouts && Service.Config.ActAutoMitigateTankbusters)
+        if (Service.Config.EnableActCallouts && Service.Config.ActAutoMitigateTankbusters)
         {
             var actDamageType = Services.ACTMitigationService.GetPredictedDamageType();
             if (actDamageType != DamageType.Unknown)
             {
-                if (Service.Config.EnableDebugTrace)
-                {
-                    Service.LogDebug($"[ParseLord3] Using ACT predictive damage type: {actDamageType}");
-                }
                 return actDamageType;
             }
         }
@@ -292,6 +285,10 @@ public static class MitigationHelper
         return StatusHelper.PlayerHasStatus(true,
             // 90s cooldown - Rampart (20% mitigation)
             StatusID.Rampart,
+            StatusID.Bulwark,
+            StatusID.Camouflage,
+            StatusID.ThrillOfBattle,
+            StatusID.PassageOfArms,
 
             // 120s cooldowns - Major tank mitigations (30%)
             StatusID.Sentinel,
@@ -360,7 +357,10 @@ public static class MitigationHelper
     /// <param name="isLongCooldown">Whether the mitigation being considered has a 90+ second cooldown.</param>
     public static bool ShouldUseMitigation(DamageLevel damageLevel, bool hasStrongMitigationAvailable = false, bool isLongCooldown = false)
     {
-        if (Player.Object == null || !Player.Object.IsTargetable) return false;
+        if (Player.Object == null || !Player.Object.IsTargetable)
+        {
+            return false;
+        }
 
         var hasActiveMit = HasActiveMitigation();
         var hasStrongMit = HasStrongMitigation();
@@ -371,7 +371,7 @@ public static class MitigationHelper
             return false;
         }
 
-        return damageLevel switch
+        bool should = damageLevel switch
         {
             DamageLevel.Emergency => true, // Always mitigate emergencies
             DamageLevel.Heavy => !hasStrongMit, // Use if no strong mitigation active
@@ -380,6 +380,8 @@ public static class MitigationHelper
             DamageLevel.None => false,
             _ => false
         };
+
+        return should;
     }
 
     /// <summary>
@@ -496,17 +498,6 @@ public static class MitigationHelper
         // Check if any boss is in combat range
         var bosses = DataCenter.AllHostileTargets.Where(e => e.IsBossFromIcon()).ToList();
 
-        // Debug logging to help diagnose boss detection issues
-        if (Svc.PluginInterface != null && Service.Config.EnableDebugTrace)
-        {
-            var hostileCount = DataCenter.AllHostileTargets.Count();
-            Service.LogDebug($"[ParseLord3] IsFightingBoss: {bosses.Any()} (Hostiles: {hostileCount}, Bosses: {bosses.Count})");
-            foreach (var boss in bosses.Take(3))
-            {
-                Service.LogDebug($"[ParseLord3]   Boss: {boss.Name} (BaseId: {boss.BaseId})");
-            }
-        }
-
         return bosses.Any();
     }
 
@@ -519,7 +510,7 @@ public static class MitigationHelper
     {
         damageLevel = DamageLevel.None;
 
-        if (!Service.Config.EnableACTCallouts)
+        if (!Service.Config.EnableActCallouts)
         {
             return false;
         }
@@ -541,7 +532,7 @@ public static class MitigationHelper
     /// <returns>True if a tankbuster is predicted within the time window.</returns>
     public static bool IsTankbusterIncomingACT(float withinSeconds = 5.0f)
     {
-        if (!Service.Config.EnableACTCallouts || !Service.Config.ActAutoMitigateTankbusters)
+        if (!Service.Config.EnableActCallouts || !Service.Config.ActAutoMitigateTankbusters)
         {
             return false;
         }
@@ -556,7 +547,7 @@ public static class MitigationHelper
     /// <returns>True if party AoE is predicted within the time window.</returns>
     public static bool IsPartyAoEIncomingACT(float withinSeconds = 5.0f)
     {
-        if (!Service.Config.EnableACTCallouts || !Service.Config.ActAutoMitigateRaidWide)
+        if (!Service.Config.EnableActCallouts || !Service.Config.ActAutoMitigateRaidWide)
         {
             return false;
         }

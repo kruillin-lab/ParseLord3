@@ -478,6 +478,10 @@ internal static class MajorUpdater
                 if (DataCenter.ManualTargetOverride)
                     return;
 
+                // Skip auto-targeting in Manual mode when out of combat (if option enabled)
+                if (Service.Config.ManualModeNoAutoTargetOutOfCombat && DataCenter.IsManual && !DataCenter.InCombat)
+                    return;
+
                 IAction? nextAction2 = ActionUpdater.NextAction;
                 if (nextAction2 == null)
                 {

@@ -105,6 +105,16 @@ internal class Service : IDisposable
     /// </summary>
     public static Configs ConfigDefault { get; set; } = new Configs();
 
+    internal static void LogDebug(string message)
+    {
+        if (!Config.EnableDebugTrace)
+        {
+            return;
+        }
+
+        PluginLog.Debug(message);
+    }
+
     /// <summary>
     /// Initializes a new instance of the <see cref="Service"/> class.
     /// </summary>

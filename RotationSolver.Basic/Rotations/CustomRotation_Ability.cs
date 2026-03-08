@@ -265,6 +265,29 @@ public partial class CustomRotation
         }
         IBaseAction.ShouldEndSpecial = false;
 
+        // Tank-specific smart mitigation system - completely separate from general defensive cooldowns
+        if (role is JobRole.Tank)
+        {
+            IBaseAction.TargetOverride = TargetType.Self;
+
+            if (DataCenter.CommandStatus.HasFlag(AutoStatus.TankMitigation))
+            {
+                IBaseAction.ShouldEndSpecial = true;
+            }
+            if (DataCenter.MergedStatus.HasFlag(AutoStatus.TankMitigation) && Service.Config.UseSmartTankMitigation)
+            {
+                if (DataCenter.CurrentDutyRotation?.TankMitigationAbility(nextGCD, out act) == true)
+                {
+                    return true;
+                }
+                if (TankMitigationAbility(nextGCD, out act))
+                {
+                    return true;
+                }
+            }
+            IBaseAction.ShouldEndSpecial = false;
+        }
+
         IBaseAction.TargetOverride = TargetType.BeAttacked;
 
         if (DataCenter.CommandStatus.HasFlag(AutoStatus.DefenseArea))
@@ -301,11 +324,6 @@ public partial class CustomRotation
                                        !StatusHelper.PlayerHasStatus(true, StatusID.Damnation) &&
                                        !MitigationHelper.IsFightingBoss() &&
                                        ArmsLengthPvE.CanUse(out act);
-
-            if (baseCanUseArmsLength && Service.Config.EnableDebugTrace)
-            {
-                Service.LogDebug($"[ParseLord3] Base DefenseSingleAbility using ArmsLength (not boss, not casting to tank)");
-            }
 
             if (DefenseSingleAbility(nextGCD, out act) || baseCanUseArmsLength)
             {
@@ -715,6 +733,21 @@ public partial class CustomRotation
     protected virtual bool DefenseAreaAbility(IAction nextGCD, out IAction? act)
     {
 
+        act = null;
+        return false;
+    }
+
+    /// <summary>
+    /// Tank-specific smart mitigation ability.
+    /// This is completely separate from DefenseSingleAbility/DefenseAreaAbility.
+    /// Use this for active mitigation cooldowns (Rampart, Shadow Wall, etc.) and invulnerability.
+    /// </summary>
+    /// <param name="nextGCD">The next GCD action.</param>
+    /// <param name="act">The resulting action.</param>
+    /// <returns>True if the ability can be used; otherwise, false.</returns>
+    [RotationDesc(DescType.TankMitigationAbility)]
+    protected virtual bool TankMitigationAbility(IAction nextGCD, out IAction? act)
+    {
         act = null;
         return false;
     }

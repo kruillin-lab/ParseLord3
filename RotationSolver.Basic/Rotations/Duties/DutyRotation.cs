@@ -118,6 +118,11 @@ public partial class DutyRotation : IDisposable
         act = null; return false;
     }
 
+    public virtual bool TankMitigationAbility(IAction nextGCD, out IAction? act)
+    {
+        act = null; return false;
+    }
+
     public virtual bool SpeedAbility(IAction nextGCD, out IAction? act)
     {
         act = null; return false;

@@ -121,6 +121,11 @@ public partial class CustomRotation
         {
             ActionDefenseAreaAbility = DefenseAreaAbility(AddlePvE, out act) ? act : null;
             ActionDefenseSingleAbility = DefenseSingleAbility(AddlePvE, out act) ? act : null;
+
+            // Tank-specific smart mitigation - separate from general defensive cooldowns
+            IBaseAction.TargetOverride = TargetType.Self;
+            ActionTankMitigationAbility = Role is JobRole.Tank && TankMitigationAbility(AddlePvE, out act) ? act : null;
+            IBaseAction.TargetOverride = null;
         }
         catch (MissingMethodException ex)
         {

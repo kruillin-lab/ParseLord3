@@ -419,9 +419,9 @@ internal partial class Configs : IPluginConfiguration
         Parent = nameof(UseAbility))]
     private static readonly bool _useDefenseAbility = true;
 
-    [ConditionBool, UI("Enable Smart Mitigation", Description = "Enables the smart auto-mitigation logic used by tank rotations (invuln/mitigation decision helpers).",
-        Parent = nameof(UseDefenseAbility))]
-    private static readonly bool _enableSmartMitigation = true;
+    [ConditionBool, UI("Use Smart Tank Mitigation", Description = "Enables intelligent tank mitigation with damage prediction, cooldown rotation, and ACT callout integration (tanks only).",
+        Filter = AutoActionUsage, Parent = nameof(UseDefenseAbility), PvEFilter = JobFilterType.Tank)]
+    private static readonly bool _useSmartTankMitigation = true;
 
     [ConditionBool, UI("Automatically activate tank stance", Parent = nameof(UseAbility),
         PvEFilter = JobFilterType.Tank)]
@@ -869,6 +869,11 @@ internal partial class Configs : IPluginConfiguration
     [ConditionBool, UI("Set target to closest targetable enemy if no valid action target nearby and target not set (This works in Manual mode as well)",
         Filter = TargetConfig, Section = 3)]
     private static readonly bool _targetFreely = false;
+
+    [ConditionBool, UI("In Manual mode, don't auto-select targets when out of combat",
+        Description = "When enabled and in Manual mode, ParseLord will not automatically select targets unless you are in combat.",
+        Filter = TargetConfig, Section = 3, Parent = nameof(TargetFreely))]
+    private static readonly bool _manualModeNoAutoTargetOutOfCombat = false;
 
     [ConditionBool, UI("Respect manual target selection",
         Description = "When enabled, if you manually change your target while auto-targeting is active, ParseLord will respect your choice and not override it until the target dies, you clear your target, or combat ends.",

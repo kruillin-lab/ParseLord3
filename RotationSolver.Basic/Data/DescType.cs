@@ -65,6 +65,12 @@ public enum DescType : byte
     DefenseSingleAbility,
 
     /// <summary>
+    /// Tank-specific smart mitigation ability (active mitigation, invulnerability, predictive mitigation).
+    /// </summary>
+    [Description("Tank Mitigation Ability")]
+    TankMitigationAbility,
+
+    /// <summary>
     /// Move forward GCD.
     /// </summary>
     [Description("Move Forward GCD")]

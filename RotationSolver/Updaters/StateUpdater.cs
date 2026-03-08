@@ -5,6 +5,8 @@ namespace RotationSolver.Updaters;
 
 internal static class StateUpdater
 {
+    private static DateTime _lastDefenseDebugLog = DateTime.MinValue;
+
     private static bool CanUseHealAction =>
         // PvP
         DataCenter.IsPvP
@@ -58,6 +60,8 @@ internal static class StateUpdater
             status |= AutoStatus.DefenseArea;
         if (ShouldAddDefenseSingle())
             status |= AutoStatus.DefenseSingle;
+        if (ShouldAddTankMitigation())
+            status |= AutoStatus.TankMitigation;
         if (ShouldAddRaise())
             status |= AutoStatus.Raise;
         if (ShouldAddProvoke())
@@ -113,7 +117,19 @@ internal static class StateUpdater
 
     private static bool ShouldAddDefenseArea()
     {
-        return DataCenter.InCombat && Service.Config.UseDefenseAbility && DataCenter.IsHostileCastingAOE;
+        bool should = DataCenter.InCombat && Service.Config.UseDefenseAbility && DataCenter.IsHostileCastingAOE;
+
+        if (should && Service.Config.EnableDebugTrace)
+        {
+            var now = DateTime.Now;
+            if ((now - _lastDefenseDebugLog) > TimeSpan.FromSeconds(1))
+            {
+                _lastDefenseDebugLog = now;
+                Basic.Service.LogDebug($"[ParseLord3] DefenseArea enabled (InCombat={DataCenter.InCombat}, UseDefenseAbility={Service.Config.UseDefenseAbility}, IsHostileCastingAOE={DataCenter.IsHostileCastingAOE})");
+            }
+        }
+
+        return should;
     }
 
     private static bool ShouldAddDefenseSingle()
@@ -180,6 +196,64 @@ internal static class StateUpdater
             }
 
             if (DataCenter.IsHostileCastingToTank)
+            {
+                return true;
+            }
+        }
+
+        if (Service.Config.EnableDebugTrace)
+        {
+            var now = DateTime.Now;
+            if ((now - _lastDefenseDebugLog) > TimeSpan.FromSeconds(2))
+            {
+                _lastDefenseDebugLog = now;
+                Basic.Service.LogDebug($"[ParseLord3] DefenseSingle not enabled (Role={DataCenter.Role}, InCombat={DataCenter.InCombat}, UseDefenseAbility={Service.Config.UseDefenseAbility}, IsHostileCastingToTank={DataCenter.IsHostileCastingToTank}, AutoDefenseNumber={Service.Config.AutoDefenseNumber}, HealthForAutoDefense={Service.Config.HealthForAutoDefense:F2}, PlayerHP={ObjectHelper.GetPlayerHealthRatio():F2})");
+            }
+        }
+
+        return false;
+    }
+
+    private static bool ShouldAddTankMitigation()
+    {
+        // Only apply to tanks
+        if (DataCenter.Role != JobRole.Tank)
+        {
+            return false;
+        }
+
+        // Only in combat with smart mitigation enabled
+        if (!DataCenter.InCombat || !Service.Config.UseSmartTankMitigation)
+        {
+            return false;
+        }
+
+        // Trigger when hostile is casting to tank (indicates tank buster or heavy damage incoming)
+        if (DataCenter.IsHostileCastingToTank)
+        {
+            return true;
+        }
+
+        // Trigger when tank is being targeted by multiple hostiles (indicates sustained damage)
+        int tarOnMeCount = 0;
+        int attackedCount = 0;
+        foreach (IBattleChara hostile in DataCenter.AllHostileTargets)
+        {
+            if (hostile.DistanceToPlayer() <= 3 && hostile.TargetObject == Player.Object)
+            {
+                tarOnMeCount++;
+                if (ObjectHelper.IsAttacked(hostile))
+                {
+                    attackedCount++;
+                }
+            }
+        }
+
+        // If tank is being actively attacked by multiple enemies
+        if (tarOnMeCount >= Service.Config.AutoDefenseNumber && attackedCount > 0)
+        {
+            // Check health threshold for auto-defense
+            if (ObjectHelper.GetPlayerHealthRatio() <= Service.Config.HealthForAutoDefense)
             {
                 return true;
             }
@@ -580,6 +654,7 @@ internal static class StateUpdater
                                 | AutoStatus.HealSingleAbility,
             SpecialCommandType.DefenseArea => AutoStatus.DefenseArea,
             SpecialCommandType.DefenseSingle => AutoStatus.DefenseSingle,
+            SpecialCommandType.TankMitigation => AutoStatus.TankMitigation,
             SpecialCommandType.DispelStancePositional => AutoStatus.Dispel
                                 | AutoStatus.TankStance
                                 | AutoStatus.Positional,
