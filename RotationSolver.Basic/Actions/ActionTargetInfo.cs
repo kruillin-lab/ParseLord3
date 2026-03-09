@@ -1861,7 +1861,7 @@ public struct ActionTargetInfo(IBaseAction action)
             foreach (IBattleChara m in DataCenter.PartyMembers)
             {
                 if (m == null) continue;
-                if (m == Player.Object) continue; // never card self
+                if (m.GameObjectId == Player.Object?.GameObjectId) continue; // never card self
                 if (m.IsDead) continue;
                 if (m.IsConditionCannotTarget()) continue;
                 //if (StatusHelper.IsStatusCapped(m)) continue; // cannot receive more statuses
@@ -1957,7 +1957,7 @@ public struct ActionTargetInfo(IBaseAction action)
             foreach (IBattleChara m in DataCenter.PartyMembers)
             {
                 if (m == null) continue;
-                if (m == Player.Object) continue; // never card self
+                if (m.GameObjectId == Player.Object?.GameObjectId) continue; // never card self
                 if (m.IsDead) continue;
                 if (m.IsConditionCannotTarget()) continue;
                 //if (StatusHelper.IsStatusCapped(m)) continue; // cannot receive more statuses
@@ -2011,19 +2011,19 @@ public struct ActionTargetInfo(IBaseAction action)
             }
             if (best != null)
             {
-                PluginLog.Debug($"FindTheSpear: {best.Name} selected by priority index {bestIndex} with tie-breakers.");
+                PluginLog.Debug($"FindTheBalance: {best.Name} selected by priority index {bestIndex} with tie-breakers.");
                 return best;
             }
 
-            // Fallback: prefer ranged for Spear, then other DPS buckets (aligns with 6% on ranged/healer)
+            // Fallback: prefer melee/physical for Balance (8% physical buff), then ranged, then magical
             IBattleChara? result = null;
-            result = RandomRangeTarget(candidates);
-            if (result != null) return result;
             result = RandomMeleeTarget(candidates);
             if (result != null) return result;
-            result = RandomMagicalTarget(candidates);
-            if (result != null) return result;
             result = RandomPhysicalTarget(candidates);
+            if (result != null) return result;
+            result = RandomRangeTarget(candidates);
+            if (result != null) return result;
+            result = RandomMagicalTarget(candidates);
             if (result != null) return result;
             return null;
         }
