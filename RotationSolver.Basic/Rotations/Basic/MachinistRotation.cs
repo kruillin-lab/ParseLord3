@@ -338,7 +338,7 @@ public partial class MachinistRotation
         setting.IsFriendly = false;
         setting.CreateConfig = () => new ActionConfig()
         {
-            AoeCount = 6,
+            AoeCount = 3,
         };
     }
 
