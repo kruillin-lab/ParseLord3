@@ -287,6 +287,7 @@ public partial class GunbreakerRotation
     static partial void ModifyBurstStrikePvE(ref ActionSetting setting)
     {
         setting.ActionCheck = () => Ammo >= 1;
+        setting.StatusProvide = [StatusID.ReadyToBlast];
     }
 
     static partial void ModifyNebulaPvE(ref ActionSetting setting)
