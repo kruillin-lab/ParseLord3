@@ -61,31 +61,38 @@ Located in `Rotations/`:
 
 Custom reaction-style triggers (`CustomTrigger`) support conditions like HP thresholds, status checks, gauge values, and target chains for fall-through targeting.
 
-## jCodeMunch MCP — Token-Efficient Code Navigation
+## jCodeMunch MCP — REQUIRED Code Navigation Tool
 
-This project is configured with [jcodemunch-mcp](https://github.com/jgravelle/jcodemunch-mcp), an MCP server that indexes the codebase once via tree-sitter AST parsing and lets agents fetch only the symbols they need (~200× fewer tokens than reading whole files).
+**IMPORTANT: jcodemunch-mcp is installed and indexed for this repo. You MUST use it instead of reading files directly whenever possible. Do NOT use `Read`, `Grep`, or `Glob` on `.cs` files until you have first used jcodemunch to locate what you need.**
 
-### Setup
-- **Installed**: `pip install jcodemunch-mcp` (v1.2.5+)
-- **Config**: `.mcp.json` at repo root registers `jcodemunch` as an MCP server
-- **Index stored**: `~/.code-index/` (local, no cloud upload)
+The repo index ID is: `local/ParseLord3-3fe5a21f`
 
-### Initial Index Stats
-- **296 C# files** / **3,712 symbols** indexed from this repo
-- Re-index after large changes: call the `index_folder` tool with `path=/home/user/ParseLord3`
+### Mandatory Usage Rules
 
-### Recommended Workflow
-Use jcodemunch tools **before** reading files to save context:
+**ALWAYS use jcodemunch first in these situations:**
 
-| Task | Tool to use first |
+| Situation | Required jcodemunch tool |
 |---|---|
-| Find a function/class by name | `search_symbols` |
-| Read one specific method | `get_symbol` |
-| Find where a string/pattern appears | `search_text` |
-| See all symbols in a file | `get_file_outline` |
-| Re-index after big changes | `index_folder` |
+| Looking for a class, method, or function by name | `search_symbols` |
+| Need to read a specific method or class body | `get_symbol` |
+| Searching for a string, pattern, or usage across the codebase | `search_text` |
+| Need to understand what's in a file before reading it | `get_file_outline` |
+| Starting work on an unfamiliar file or subsystem | `get_file_outline` first, then `get_symbol` for specific members |
 
-**Example**: Instead of reading all of `BaseAction.cs`, call `get_symbol` with `repo=local/ParseLord3-3fe5a21f` and `symbol=BaseAction` to retrieve only that class.
+**Only fall back to `Read`/`Grep` when:**
+- jcodemunch returns no results for a symbol (may be auto-generated or macro-expanded)
+- You need to read a non-`.cs` file (`.json`, `.csproj`, `.md`, etc.)
+- You need surrounding context that `get_symbol` doesn't capture (e.g. file-level usings, attributes above a class)
+
+**After large edits, re-index:**
+```
+index_folder(path="/home/user/ParseLord3", incremental=true)
+```
+
+### Setup Reference
+- **Installed**: `jcodemunch-mcp` v1.2.5 at `/usr/local/bin/jcodemunch-mcp`
+- **Config**: `.mcp.json` at repo root
+- **Index**: `~/.code-index/` — 296 C# files, 3,712 symbols
 
 ## Key Dependencies
 - **Dalamud API 14** - Plugin framework
