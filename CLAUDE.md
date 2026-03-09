@@ -61,6 +61,32 @@ Located in `Rotations/`:
 
 Custom reaction-style triggers (`CustomTrigger`) support conditions like HP thresholds, status checks, gauge values, and target chains for fall-through targeting.
 
+## jCodeMunch MCP — Token-Efficient Code Navigation
+
+This project is configured with [jcodemunch-mcp](https://github.com/jgravelle/jcodemunch-mcp), an MCP server that indexes the codebase once via tree-sitter AST parsing and lets agents fetch only the symbols they need (~200× fewer tokens than reading whole files).
+
+### Setup
+- **Installed**: `pip install jcodemunch-mcp` (v1.2.5+)
+- **Config**: `.mcp.json` at repo root registers `jcodemunch` as an MCP server
+- **Index stored**: `~/.code-index/` (local, no cloud upload)
+
+### Initial Index Stats
+- **296 C# files** / **3,712 symbols** indexed from this repo
+- Re-index after large changes: call the `index_folder` tool with `path=/home/user/ParseLord3`
+
+### Recommended Workflow
+Use jcodemunch tools **before** reading files to save context:
+
+| Task | Tool to use first |
+|---|---|
+| Find a function/class by name | `search_symbols` |
+| Read one specific method | `get_symbol` |
+| Find where a string/pattern appears | `search_text` |
+| See all symbols in a file | `get_file_outline` |
+| Re-index after big changes | `index_folder` |
+
+**Example**: Instead of reading all of `BaseAction.cs`, call `get_symbol` with `repo=local/ParseLord3-3fe5a21f` and `symbol=BaseAction` to retrieve only that class.
+
 ## Key Dependencies
 - **Dalamud API 14** - Plugin framework
 - **FFXIVClientStructs** - Direct game memory access for action execution

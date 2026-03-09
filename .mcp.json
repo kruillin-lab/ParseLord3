@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "jcodemunch": {
+      "command": "jcodemunch-mcp",
+      "args": [],
+      "env": {}
+    }
+  }
+}
