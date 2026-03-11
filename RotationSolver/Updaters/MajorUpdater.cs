@@ -495,16 +495,23 @@ internal static class MajorUpdater
                         IBattleChara? priorityEnemy = null;
                         int maxPriority = int.MinValue;
 
-                        foreach (var enemy in DataCenter.AllHostileTargets)
+                        var hostileTargets = DataCenter.AllHostileTargets;
+                        int hostileCount = hostileTargets.Count;
+                        var priorityTargets = Service.Config.PriorityTargets;
+                        int priorityCount = priorityTargets.Count;
+
+                        for (int i = 0; i < hostileCount; i++)
                         {
+                            var enemy = hostileTargets[i];
                             if (enemy == null || !enemy.IsEnemy() || enemy == Player.Object)
                                 continue;
 
                             // Priority Logic
-                            if (Service.Config.PriorityTargets.Count > 0)
+                            if (priorityCount > 0)
                             {
-                                foreach (var pConfig in Service.Config.PriorityTargets)
+                                for (int j = 0; j < priorityCount; j++)
                                 {
+                                    var pConfig = priorityTargets[j];
                                     if (!pConfig.Enabled) continue;
 
                                     bool match = false;

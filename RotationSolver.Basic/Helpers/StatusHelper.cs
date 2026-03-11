@@ -756,6 +756,112 @@ public static class StatusHelper
     }
 
     /// <summary>
+    /// Gets the maximum base duration (in seconds) for the specified status IDs from game data.
+    /// This returns the longest duration among all provided status IDs.
+    /// </summary>
+    /// <param name="statusIDs">The status IDs to check.</param>
+    /// <returns>The maximum duration in seconds, or 0 if none found.</returns>
+    public static float GetMaxStatusDuration(params StatusID[] statusIDs)
+    {
+        if (statusIDs == null || statusIDs.Length == 0)
+        {
+            return 0f;
+        }
+
+        Lumina.Excel.ExcelSheet<Lumina.Excel.Sheets.Status> sheet = Service.GetSheet<Lumina.Excel.Sheets.Status>();
+        if (sheet == null)
+        {
+            return 0f;
+        }
+
+        float maxDuration = 0f;
+        foreach (StatusID id in statusIDs)
+        {
+            Lumina.Excel.Sheets.Status statusRow = sheet.GetRow((uint)id);
+            if (statusRow.RowId != 0)
+            {
+                // Try to get duration - in Lumina.Excel, duration is typically MaxDuration (in milliseconds)
+                // Use reflection to safely get the property as it may vary by game version
+                float duration = TryGetStatusDuration(statusRow);
+                if (duration > maxDuration)
+                {
+                    maxDuration = duration;
+                }
+            }
+        }
+
+        return maxDuration;
+    }
+
+    /// <summary>
+    /// Safely tries to get the duration from a Status row using reflection.
+    /// </summary>
+    /// <param name="statusRow">The status row.</param>
+    /// <returns>Duration in seconds, or 0 if not found.</returns>
+    private static float TryGetStatusDuration(Lumina.Excel.Sheets.Status statusRow)
+    {
+        try
+        {
+            // Try common property names for duration
+            System.Reflection.PropertyInfo? prop = statusRow.GetType().GetProperty("MaxDuration")
+                ?? statusRow.GetType().GetProperty("Duration")
+                ?? statusRow.GetType().GetProperty("MaxDurationMillis");
+
+            if (prop != null)
+            {
+                object? value = prop.GetValue(statusRow);
+                if (value is uint uintVal)
+                {
+                    return uintVal / 1000f; // Convert from milliseconds to seconds
+                }
+                else if (value is int intVal)
+                {
+                    return intVal / 1000f;
+                }
+                else if (value is float floatVal)
+                {
+                    return floatVal / 1000f;
+                }
+                else if (value is ushort ushortVal)
+                {
+                    return ushortVal / 1000f;
+                }
+            }
+
+            // Try fields if properties didn't work
+            System.Reflection.FieldInfo? field = statusRow.GetType().GetField("MaxDuration")
+                ?? statusRow.GetType().GetField("Duration");
+
+            if (field != null)
+            {
+                object? value = field.GetValue(statusRow);
+                if (value is uint uintVal)
+                {
+                    return uintVal / 1000f;
+                }
+                else if (value is int intVal)
+                {
+                    return intVal / 1000f;
+                }
+                else if (value is float floatVal)
+                {
+                    return floatVal / 1000f;
+                }
+                else if (value is ushort ushortVal)
+                {
+                    return ushortVal / 1000f;
+                }
+            }
+        }
+        catch
+        {
+            // Ignore reflection errors
+        }
+
+        return 0f;
+    }
+
+    /// <summary>
     /// Get the statuses of the specified object.
     /// </summary>
     /// <param name="battleChara">The object to get the statuses from.</param>

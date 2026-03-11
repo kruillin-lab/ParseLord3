@@ -218,6 +218,12 @@ public class BaseAction : IBaseAction
                 {
                     return false;
                 }
+
+                // Cooldown protection: Don't use long cooldowns if target will die before buff/debuff expires
+                if (!IsCooldownProtectionValid())
+                {
+                    return false;
+                }
             }
         }
         PreviewTarget = TargetInfo.FindTarget(skipAoeCheck, skipStatusProvideCheck, skipTargetStatusNeedCheck, targetOverride);
@@ -237,6 +243,103 @@ public class BaseAction : IBaseAction
     private bool IsTimeToKillValid()
     {
         return DataCenter.AverageTTK >= Config.TimeToKill;
+    }
+
+    /// <summary>
+    /// Checks cooldown protection: For actions with cooldown >= 60 seconds that provide buffs/debuffs,
+    /// prevents usage if the target will die (TTK) before the buff/debuff expires.
+    /// </summary>
+    /// <returns>True if the action can be used (cooldown protection passes), false otherwise.</returns>
+    private bool IsCooldownProtectionValid()
+    {
+        // Only check if cooldown is 60 seconds or more
+        const float COOLDOWN_THRESHOLD = 60f;
+        float cooldownDuration = Cooldown.RecastTimeOneChargeRaw;
+
+        if (cooldownDuration < COOLDOWN_THRESHOLD)
+        {
+            return true; // Short cooldowns are always fine
+        }
+
+        // Get the status IDs this action provides (buffs on self or debuffs on target)
+        StatusID[]? statusProvide = Setting.StatusProvide;
+        StatusID[]? targetStatusProvide = Setting.TargetStatusProvide;
+
+        // If no statuses are provided, no need to check
+        if ((statusProvide == null || statusProvide.Length == 0) &&
+            (targetStatusProvide == null || targetStatusProvide.Length == 0))
+        {
+            return true;
+        }
+
+        // Get the maximum duration of all provided statuses from game data
+        float maxStatusDuration = 0f;
+
+        if (statusProvide != null && statusProvide.Length > 0)
+        {
+            maxStatusDuration = Math.Max(maxStatusDuration, StatusHelper.GetMaxStatusDuration(statusProvide));
+        }
+
+        if (targetStatusProvide != null && targetStatusProvide.Length > 0)
+        {
+            maxStatusDuration = Math.Max(maxStatusDuration, StatusHelper.GetMaxStatusDuration(targetStatusProvide));
+        }
+
+        // If we couldn't get duration from game data, use typical durations based on cooldown
+        // Common FFXIV patterns:
+        // - 60s cooldowns (oGCDs): typically 10-15s buffs
+        // - 90s cooldowns (oGCDs): typically 15-20s buffs  
+        // - 120s cooldowns (2-min bursts): typically 15-20s buffs
+        // - 180s cooldowns (3-min bursts): typically 15-20s buffs
+        // - 300s+ cooldowns (tank invulns): typically 6-10s buffs
+        if (maxStatusDuration <= 0f)
+        {
+            maxStatusDuration = EstimateStatusDuration(cooldownDuration);
+        }
+
+        // Check if target will die before the buff/debuff expires
+        // If TTK < status duration, the buff/debuff won't get full value, so skip it
+        float ttk = DataCenter.AverageTTK;
+        if (ttk > 0f && ttk < maxStatusDuration)
+        {
+            return false; // Target dies too soon, don't waste the cooldown
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Estimates the typical status duration based on cooldown length using common FFXIV patterns.
+    /// </summary>
+    /// <param name="cooldownDuration">The cooldown duration in seconds.</param>
+    /// <returns>Estimated status duration in seconds.</returns>
+    private static float EstimateStatusDuration(float cooldownDuration)
+    {
+        // Tank invulns (Holmgang, Hallowed Ground, etc.) - 6-8s duration
+        if (cooldownDuration >= 300f)
+        {
+            return 8f;
+        }
+        // 3-minute burst buffs - typically 15-20s
+        else if (cooldownDuration >= 180f)
+        {
+            return 18f;
+        }
+        // 2-minute burst buffs (Battle Litany, Divination, etc.) - typically 15-20s
+        else if (cooldownDuration >= 120f)
+        {
+            return 16f;
+        }
+        // 90s cooldowns - typically 15-20s
+        else if (cooldownDuration >= 90f)
+        {
+            return 15f;
+        }
+        // 60s cooldowns - typically 10-15s
+        else
+        {
+            return 12f;
+        }
     }
 
     /// <inheritdoc/>

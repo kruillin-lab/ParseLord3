@@ -14,6 +14,8 @@ namespace RotationSolver;
 
 public static class Watcher
 {
+    // Object pooling for tick-level allocations
+    private static readonly HashSet<ulong> _partyIdsPool = [];
     public static void Enable()
     {
         ActionEffect.ActionEffectEvent += ActionFromEnemy;
@@ -109,22 +111,19 @@ public static class Watcher
                 {
                     int damageEffectCount = 0;
 
-                    var partyIds = new HashSet<ulong>();
-                    foreach (var pm in partyMembers)
+                    _partyIdsPool.Clear();
+                    for (int i = 0; i < partyMemberCount; i++)
                     {
-                        partyIds.Add(pm.GameObjectId);
+                        var pm = partyMembers[i];
+                        _partyIdsPool.Add(pm.GameObjectId);
                     }
 
                     foreach (var effect in set.TargetEffects)
                     {
                         bool isPartyMember = false;
-                        foreach (var pId in partyIds)
+                        if (_partyIdsPool.Contains(effect.TargetID))
                         {
-                            if (pId == effect.TargetID)
-                            {
-                                isPartyMember = true;
-                                break;
-                            }
+                            isPartyMember = true;
                         }
 
                         if (isPartyMember &&

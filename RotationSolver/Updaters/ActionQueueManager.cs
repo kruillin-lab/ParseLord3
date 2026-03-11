@@ -60,12 +60,21 @@ namespace RotationSolver.Updaters
 
         private static bool BlackListedInterceptActionsContains(ActionID id)
         {
-            var arr = BlackListedInterceptActions;
-            for (int i = 0; i < arr.Length; i++)
+            return id switch
             {
-                if (arr[i] == id) return true;
-            }
-            return false;
+                ActionID.TenPvE or ActionID.TenPvE_18805 or
+                ActionID.ChiPvE or ActionID.ChiPvE_18806 or
+                ActionID.JinPvE or ActionID.JinPvE_18807 or
+                ActionID.StandardStepPvE or ActionID.TechnicalStepPvE or
+                ActionID.EmboitePvE or ActionID.EntrechatPvE or
+                ActionID.JetePvE or ActionID.PirouettePvE or
+                ActionID.StandardFinishPvE or ActionID.TechnicalFinishPvE or
+                ActionID.EukrasiaPvE or ActionID.EukrasianDosisPvE or
+                ActionID.EukrasianDosisIiPvE or ActionID.EukrasianDosisIiiPvE or
+                ActionID.EukrasianDyskrasiaPvE or ActionID.EukrasianPrognosisPvE or
+                ActionID.EukrasianPrognosisIiPvE => true,
+                _ => false
+            };
         }
 
         private static unsafe void InitializeActionHooks()
