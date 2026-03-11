@@ -1,5 +1,5 @@
-﻿using ECommons.GameHelpers;
-using RotationSolver.Basic.Configuration.Conditions;
+﻿using ECommons.GameFunctions;
+using ECommons.GameHelpers;
 
 namespace RotationSolver.Updaters;
 
@@ -106,7 +106,20 @@ internal static class StateUpdater
                 return false;
             }
 
-            if (ConfigurationHelper.ActionPositional.TryGetValue((ActionID)id, out EnemyPositional positional)
+			if (target.IsDead)
+			{
+				return false;
+			}
+
+			unsafe
+			{
+				if (target.Struct() == null)
+				{
+					return false;
+				}
+			}
+
+			if (ConfigurationHelper.ActionPositional.TryGetValue((ActionID)id, out EnemyPositional positional)
                 && target?.HasPositional() == true && positional != target.FindEnemyPositional())
             {
                 return true;
@@ -134,7 +147,7 @@ internal static class StateUpdater
 
     private static bool ShouldAddDefenseSingle()
     {
-        if (!DataCenter.InCombat || !Service.Config.UseDefenseAbility)
+        if (!DataCenter.InCombat || !Service.Config.UseStDefense || DataCenter.IsTyrantCastingSpecialIndicator())
         {
             return false;
         }
@@ -284,7 +297,7 @@ internal static class StateUpdater
 
     private static bool ShouldAddHealAreaAbility()
     {
-        if (!DataCenter.HPNotFull || !CanUseHealAction)
+        if (!DataCenter.HPNotFull || !CanUseHealAction|| DataCenter.IsTyrantCastingSpecialIndicator())
         {
             return false;
         }
@@ -341,7 +354,7 @@ internal static class StateUpdater
 
     private static bool ShouldAddHealAreaSpell()
     {
-        if (!DataCenter.HPNotFull || !CanUseHealAction)
+        if (!DataCenter.HPNotFull || !CanUseHealAction || DataCenter.IsTyrantCastingSpecialIndicator())
         {
             return false;
         }
@@ -405,7 +418,7 @@ internal static class StateUpdater
 
     private static bool ShouldAddHealSingleAbility()
     {
-        if (!DataCenter.HPNotFull || !CanUseHealAction)
+        if (!DataCenter.HPNotFull || !CanUseHealAction || DataCenter.IsTyrantCastingSpecialIndicator())
         {
             return false;
         }
@@ -446,7 +459,7 @@ internal static class StateUpdater
 
     private static bool ShouldAddHealSingleSpell()
     {
-        if (!DataCenter.HPNotFull || !CanUseHealAction)
+        if (!DataCenter.HPNotFull || !CanUseHealAction || DataCenter.IsTyrantCastingSpecialIndicator())
         {
             return false;
         }
@@ -676,21 +689,6 @@ internal static class StateUpdater
         }
 
         return status;
-    }
-
-    private static void AddStatus(ref AutoStatus status, AutoStatus flag, ConditionSet set)
-    {
-        AddStatus(ref status, flag, () => set.IsTrue(DataCenter.CurrentRotation));
-    }
-
-    private static void AddStatus(ref AutoStatus status, AutoStatus flag, Func<bool> getValue)
-    {
-        if (status.HasFlag(flag) || !getValue())
-        {
-            return;
-        }
-
-        status |= flag;
     }
 
     private static int CountAllianceTanks()

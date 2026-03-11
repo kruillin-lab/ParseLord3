@@ -2,7 +2,7 @@ using RotationSolver.Basic.Helpers;
 
 namespace RotationSolver.RebornRotations.Tank;
 
-[Rotation("Reborn", CombatType.PvE, GameVersion = "7.4")]
+[Rotation("Reborn", CombatType.PvE, GameVersion = "7.45")]
 [SourceCode(Path = "main/RebornRotations/Tank/GNB_Reborn.cs")]
 
 public sealed class GNB_Reborn : GunbreakerRotation
@@ -12,8 +12,8 @@ public sealed class GNB_Reborn : GunbreakerRotation
     public bool UseSmartMitigation { get; set; } = true;
     #endregion
 
-    #region Countdown Logic
-    protected override IAction? CountDownAction(float remainTime)
+	#region Countdown Logic
+	protected override IAction? CountDownAction(float remainTime)
     {
         if (remainTime <= 0.7 && LightningShotPvE.CanUse(out IAction? act))
         {
@@ -284,7 +284,12 @@ public sealed class GNB_Reborn : GunbreakerRotation
             {
                 return true;
             }
-        }
+
+			if (AuroraSelf && AuroraPvE.CanUse(out act))
+			{
+				return true;
+			}
+		}
 
         return base.HealSingleAbility(nextGCD, out act);
     }

@@ -2,7 +2,7 @@ using RotationSolver.Basic.Helpers;
 
 namespace RotationSolver.RebornRotations.Tank;
 
-[Rotation("Reborn", CombatType.PvE, GameVersion = "7.4")]
+[Rotation("Reborn", CombatType.PvE, GameVersion = "7.45")]
 [SourceCode(Path = "main/RebornRotations/Tank/DRK_Reborn.cs")]
 
 public sealed class DRK_Reborn : DarkKnightRotation
@@ -452,7 +452,7 @@ public sealed class DRK_Reborn : DarkKnightRotation
         }
 
         //AOE
-        if (StalwartSoulPvE.CanUse(out act, skipAoeCheck: true))
+        if (StalwartSoulPvE.CanUse(out act, skipAoeCheck: true) && NumberOfHostilesInRange > 0)
         {
             return true;
         }

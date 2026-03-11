@@ -307,8 +307,9 @@ public partial class GunbreakerRotation
     static partial void ModifyAuroraPvE(ref ActionSetting setting)
     {
         setting.TargetStatusProvide = [StatusID.Aurora];
-        setting.IsFriendly = true;
-    }
+		setting.TargetType = TargetType.Self;
+		setting.IsFriendly = true;
+	}
 
     static partial void ModifySuperbolidePvE(ref ActionSetting setting)
     {
@@ -412,9 +413,9 @@ public partial class GunbreakerRotation
     static partial void ModifyHeartOfCorundumPvE(ref ActionSetting setting)
     {
         setting.StatusProvide = [StatusID.CatharsisOfCorundum, StatusID.ClarityOfCorundum];
-        setting.ActionCheck = () => ObjectHelper.IsPlayerInParty() || ObjectHelper.PlayerIsTargetOnSelf();
-        setting.IsFriendly = true;
-    }
+		setting.TargetType = TargetType.Self;
+		setting.IsFriendly = true;
+	}
 
     static partial void ModifyHypervelocityPvE(ref ActionSetting setting)
     {

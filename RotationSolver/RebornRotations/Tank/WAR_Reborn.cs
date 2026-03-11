@@ -2,7 +2,7 @@ using RotationSolver.Basic.Helpers;
 
 namespace RotationSolver.RebornRotations.Tank;
 
-[Rotation("Reborn", CombatType.PvE, GameVersion = "7.4")]
+[Rotation("Reborn", CombatType.PvE, GameVersion = "7.45")]
 [SourceCode(Path = "main/RebornRotations/Tank/WAR_Reborn.cs")]
 
 public sealed class WAR_Reborn : WarriorRotation
@@ -472,7 +472,7 @@ public sealed class WAR_Reborn : WarriorRotation
         }
 
         // AOE
-        if (!StatusHelper.PlayerWillStatusEndGCD(3, 0, true, StatusID.SurgingTempest))
+        if (!StatusHelper.PlayerWillStatusEndGCD(3, 0, true, StatusID.SurgingTempest) || !StormsEyePvE.EnoughLevel)
         {
             if (DecimatePvE.CanUse(out act, skipStatusProvideCheck: true))
             {
@@ -495,7 +495,7 @@ public sealed class WAR_Reborn : WarriorRotation
         }
 
         // Single Target
-        if (!StatusHelper.PlayerWillStatusEndGCD(3, 0, true, StatusID.SurgingTempest))
+        if (!StatusHelper.PlayerWillStatusEndGCD(3, 0, true, StatusID.SurgingTempest) || !StormsEyePvE.EnoughLevel)
         {
             if (FellCleavePvE.CanUse(out act, skipStatusProvideCheck: true))
             {

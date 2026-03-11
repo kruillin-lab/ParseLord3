@@ -1,14 +1,12 @@
 ﻿namespace RotationSolver.RebornRotations.PVPRotations.Healer;
 
-[Rotation("Default PVP", CombatType.PvP, GameVersion = "7.4")]
+[Rotation("Default PVP", CombatType.PvP, GameVersion = "7.45")]
 [SourceCode(Path = "main/RebornRotations/PVPRotations/Healer/AST_Default.PVP.cs")]
 
 public class AST_DefaultPVP : AstrologianRotation
 {
     #region Configurations
 
-    [RotationConfig(CombatType.PvP, Name = "Stop attacking while in Guard.")]
-    public bool RespectGuard { get; set; } = true;
     #endregion
 
     #region oGCDs
@@ -79,11 +77,6 @@ public class AST_DefaultPVP : AstrologianRotation
 
     protected override bool AttackAbility(IAction nextGCD, out IAction? action)
     {
-        if (RespectGuard && HasPVPGuard)
-        {
-            return base.AttackAbility(nextGCD, out action);
-        }
-
         if (DiabrosisPvP.CanUse(out action))
         {
             return true;
@@ -121,11 +114,6 @@ public class AST_DefaultPVP : AstrologianRotation
     #region GCDs
     protected override bool DefenseSingleGCD(out IAction? action)
     {
-        if (RespectGuard && HasPVPGuard)
-        {
-            return base.DefenseSingleGCD(out action);
-        }
-
         if (StoneskinIiPvP.CanUse(out action))
         {
             return true;
@@ -136,11 +124,6 @@ public class AST_DefaultPVP : AstrologianRotation
 
     protected override bool HealSingleGCD(out IAction? action)
     {
-        if (RespectGuard && HasPVPGuard)
-        {
-            return base.HealSingleGCD(out action);
-        }
-
         if (HaelanPvP.CanUse(out action))
         {
             return true;
@@ -156,11 +139,6 @@ public class AST_DefaultPVP : AstrologianRotation
 
     protected override bool HealAreaGCD(out IAction? action)
     {
-        if (RespectGuard && HasPVPGuard)
-        {
-            return base.HealAreaGCD(out action);
-        }
-
         if (LadyOfCrownsPvP.CanUse(out action))
         {
             return true;
@@ -171,11 +149,6 @@ public class AST_DefaultPVP : AstrologianRotation
 
     protected override bool GeneralGCD(out IAction? action)
     {
-        if (RespectGuard && HasPVPGuard)
-        {
-            return base.GeneralGCD(out action);
-        }
-
         if (GravityIiPvP.CanUse(out action))
         {
             return true;

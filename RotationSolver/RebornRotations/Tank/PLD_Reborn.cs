@@ -2,7 +2,7 @@
 
 namespace RotationSolver.RebornRotations.Tank;
 
-[Rotation("Reborn", CombatType.PvE, GameVersion = "7.4")]
+[Rotation("Reborn", CombatType.PvE, GameVersion = "7.45")]
 [SourceCode(Path = "main/RebornRotations/Tank/PLD_Reborn.cs")]
 
 public sealed class PLD_Reborn : PaladinRotation
@@ -19,9 +19,6 @@ public sealed class PLD_Reborn : PaladinRotation
 
     [RotationConfig(CombatType.PvE, Name = "Only use Fight or Flight while in melee range of an enemy")]
     public bool MeleeFoF { get; set; } = true;
-
-    [RotationConfig(CombatType.PvE, Name = "Prevent actions while you have Passage of Arms up")]
-    public bool PassageProtec { get; set; } = false;
 
     [RotationConfig(CombatType.PvE, Name = "Use Hallowed Ground with Cover")]
     private bool HallowedWithCover { get; set; } = true;
@@ -200,12 +197,6 @@ public sealed class PLD_Reborn : PaladinRotation
     [RotationDesc]
     protected override bool MoveForwardAbility(IAction nextGCD, out IAction? act)
     {
-        act = null;
-        if (PassageProtec && StatusHelper.PlayerHasStatus(true, StatusID.PassageOfArms))
-        {
-            return false;
-        }
-
         if (IntervenePvE.CanUse(out act))
         {
             return true;
@@ -271,12 +262,6 @@ public sealed class PLD_Reborn : PaladinRotation
     [RotationDesc(ActionID.SentinelPvE, ActionID.RampartPvE, ActionID.BulwarkPvE, ActionID.SheltronPvE, ActionID.ReprisalPvE)]
     protected override bool DefenseSingleAbility(IAction nextGCD, out IAction? act)
     {
-        act = null;
-        if (PassageProtec && StatusHelper.PlayerHasStatus(true, StatusID.PassageOfArms))
-        {
-            return false;
-        }
-
         if (InterventionTank && InterventionPvE.CanUse(out act))
         {
             return true;
@@ -408,12 +393,6 @@ public sealed class PLD_Reborn : PaladinRotation
     [RotationDesc(ActionID.SheltronPvE, ActionID.HolySheltronPvE)]
     protected override bool GeneralAbility(IAction nextGCD, out IAction? act)
     {
-        act = null;
-        if (PassageProtec && StatusHelper.PlayerHasStatus(true, StatusID.PassageOfArms))
-        {
-            return false;
-        }
-
         if (InCombat && OathGauge >= WhenToSheltron && WhenToSheltron > 0 && UseOath(out act))
         {
             return true;
@@ -430,12 +409,6 @@ public sealed class PLD_Reborn : PaladinRotation
     [RotationDesc(ActionID.IntervenePvE, ActionID.SpiritsWithinPvE, ActionID.ExpiacionPvE, ActionID.CircleOfScornPvE, ActionID.RequiescatPvE, ActionID.ImperatorPvE, ActionID.FightOrFlightPvE)]
     protected override bool AttackAbility(IAction nextGCD, out IAction? act)
     {
-        act = null;
-        if (PassageProtec && StatusHelper.PlayerHasStatus(true, StatusID.PassageOfArms))
-        {
-            return false;
-        }
-
         if (BladeOfHonorPvE.CanUse(out act, skipAoeCheck: true))
         {
             return true;
@@ -470,11 +443,6 @@ public sealed class PLD_Reborn : PaladinRotation
     [RotationDesc(ActionID.ClemencyPvE)]
     protected override bool HealSingleGCD(out IAction? act)
     {
-        if (PassageProtec && StatusHelper.PlayerHasStatus(true, StatusID.PassageOfArms))
-        {
-            return base.HealSingleGCD(out act);
-        }
-
         if (RequiescatHealBot && RequiescatStacks > 0 && ClemencyPvE.CanUse(out act, skipCastingCheck: true) && ClemencyPvE.Target.Target?.GetHealthRatio() < ClemencyRequi)
         {
             return true;
@@ -491,12 +459,6 @@ public sealed class PLD_Reborn : PaladinRotation
     [RotationDesc(ActionID.ShieldBashPvE)]
     protected override bool MyInterruptGCD(out IAction? act)
     {
-        act = null;
-        if (PassageProtec && StatusHelper.PlayerHasStatus(true, StatusID.PassageOfArms))
-        {
-            return false;
-        }
-
         if (LowBlowPvE.Cooldown.IsCoolingDown && ShieldBashPvE.CanUse(out act))
         {
             return true;
@@ -507,12 +469,6 @@ public sealed class PLD_Reborn : PaladinRotation
 
     protected override bool GeneralGCD(out IAction? act)
     {
-        act = null;
-        if (PassageProtec && StatusHelper.PlayerHasStatus(true, StatusID.PassageOfArms))
-        {
-            return false;
-        }
-
         // Confiteor Combo
         if (ConfiteorPvE.CanUse(out act, usedUp: true, skipAoeCheck: true))
         {

@@ -749,13 +749,13 @@ public sealed class ChurinMNK : MonkRotation
             if (BrotherhoodPvE.Cooldown.HasOneCharge &&
                 RiddleOfFirePvE.Cooldown.HasOneCharge)
             {
-                return PerfectBalancePvE.CanUse(out act, usedUp: false);
+                return PerfectBalancePvE.CanUse(out act, usedUp: false, skipTTKCheck:true);
             }
         }
 
         if (InBurst && !HasFiresRumination)
         {
-            return IsLastGCDOpo && PerfectBalancePvE.CanUse(out act, usedUp: true);
+            return IsLastGCDOpo && PerfectBalancePvE.CanUse(out act, usedUp: true, skipTTKCheck:true);
         }
 
         if (SolarOddWindow && IsLastGCDOpo && IsReadySoon(RiddleOfFirePvE, 2))

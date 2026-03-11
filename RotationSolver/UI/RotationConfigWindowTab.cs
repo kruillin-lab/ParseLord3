@@ -35,7 +35,7 @@ internal enum RotationConfigWindowTab : byte
     [TabIcon(Icon = 4)] Job,
 
     [Description("Configure Duty Rotation.")]
-    [TabIcon(Icon = 4)] Duty,
+    [TabIcon(Icon = 4)] DutyRotation,
 
     [Description("Configure abilities and custom conditions for your current job.")]
     [TabIcon(Icon = 4)] Actions,

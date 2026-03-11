@@ -125,7 +125,15 @@ public static class ObjectHelper
             return false;
         }
 
-        try
+		unsafe
+		{
+			if (battleChara.Struct() == null)
+			{
+				return false;
+			}
+		}
+
+		try
         {
             if (battleChara.StatusList == null)
             {
@@ -146,7 +154,7 @@ public static class ObjectHelper
         return Svc.Data.GetExcelSheet<BNpcBase>().TryGetRow(battleChara.BaseId, out var dataRow) && !dataRow.IsOmnidirectional;
     }
 
-    internal static unsafe bool IsOthersPlayersMob(this IBattleChara battleChara)
+	internal static bool IsOthersPlayersMob(this IBattleChara battleChara)
     {
         //SpecialType but no NamePlateIcon
         bool isEventType = false;
@@ -1529,6 +1537,209 @@ public static class ObjectHelper
         return battleChara.Struct()->FateId;
     }
 
+    /// <summary>
+    /// Attempts to retrieve all tethers currently present using the ECommons TetherInfo API via reflection.
+    /// </summary>
+    public static IReadOnlyList<TetherInfo> GetAllTethers()
+    {
+        try
+        {
+            var tType = typeof(TetherInfo);
+            // Look for a public static method that returns an array or IEnumerable of TetherInfo
+            var methods = tType.GetMethods(BindingFlags.Public | BindingFlags.Static);
+            foreach (var m in methods)
+            {
+                var ret = m.ReturnType;
+                if (ret == typeof(TetherInfo[]) || typeof(System.Collections.IEnumerable).IsAssignableFrom(ret))
+                {
+                    var res = m.Invoke(null, null);
+                    if (res == null) continue;
+
+                    if (res is TetherInfo[] arr)
+                        return arr;
+
+                    if (res is System.Collections.IEnumerable ie)
+                    {
+                        var list = new List<TetherInfo>();
+                        foreach (var o in ie)
+                        {
+                            if (o is TetherInfo ti) list.Add(ti);
+                        }
+                        return list;
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // ignore and fallthrough to empty
+        }
+
+        return [];
+    }
+
+    /// <summary>
+    /// Returns tethers where the object is either source or target.
+    /// </summary>
+    public static IReadOnlyList<TetherInfo> GetTethersFor(this IGameObject obj)
+    {
+        if (obj == null) return [];
+        var all = GetAllTethers();
+        ulong id = obj.GameObjectId;
+        var result = new List<TetherInfo>();
+        foreach (var t in all)
+        {
+            if (t == null) continue;
+            if (ExtractTetherId(t, out _, out var src, out var tgt) && (src == id || tgt == id))
+                result.Add(t);
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Returns outgoing tethers (where object is source).
+    /// </summary>
+    public static IReadOnlyList<TetherInfo> GetOutgoingTethers(this IGameObject obj)
+    {
+        if (obj == null) return [];
+        var all = GetAllTethers();
+        ulong id = obj.GameObjectId;
+        var result = new List<TetherInfo>();
+        foreach (var t in all)
+        {
+            if (t == null) continue;
+            if (ExtractTetherId(t, out _, out var src, out _ ) && src == id)
+                result.Add(t);
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Returns incoming tethers (where object is target).
+    /// </summary>
+    public static IReadOnlyList<TetherInfo> GetIncomingTethers(this IGameObject obj)
+    {
+        if (obj == null) return [];
+        var all = GetAllTethers();
+        ulong id = obj.GameObjectId;
+        var result = new List<TetherInfo>();
+        foreach (var t in all)
+        {
+            if (t == null) continue;
+            if (ExtractTetherId(t, out _, out _, out var tgt) && tgt == id)
+                result.Add(t);
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Try to extract common tether fields (tether id, source object id, target object id) using reflection.
+    /// Returns true if at least source/target were obtained.
+    /// </summary>
+    private static bool ExtractTetherId(TetherInfo t, out uint tetherId, out ulong sourceObjectId, out ulong targetObjectId)
+    {
+        tetherId = 0;
+        sourceObjectId = 0;
+        targetObjectId = 0;
+        try
+        {
+            var tType = typeof(TetherInfo);
+
+            // possible names for fields/properties
+            string[] tetherNames = ["TetherId", "Id", "Tether"];
+            string[] sourceNames = ["SourceObjectId", "SourceId", "Source", "SourceActorId"];
+            string[] targetNames = ["TargetObjectId", "TargetId", "Target", "TargetActorId"];
+
+            object? val;
+
+            val = TryGetMemberValue(tType, t, tetherNames);
+            if (val != null)
+            {
+                if (val is uint ui) tetherId = ui;
+                else if (val is int i) tetherId = (uint)i;
+                else if (uint.TryParse(val.ToString(), out var parsed)) tetherId = parsed;
+            }
+
+            val = TryGetMemberValue(tType, t, sourceNames);
+            if (val != null)
+            {
+                if (val is ulong ul) sourceObjectId = ul;
+                else if (val is uint u) sourceObjectId = u;
+                else if (ulong.TryParse(val.ToString(), out var pul)) sourceObjectId = pul;
+            }
+
+            val = TryGetMemberValue(tType, t, targetNames);
+            if (val != null)
+            {
+                if (val is ulong ul2) targetObjectId = ul2;
+                else if (val is uint u2) targetObjectId = u2;
+                else if (ulong.TryParse(val.ToString(), out var pul2)) targetObjectId = pul2;
+            }
+
+            return sourceObjectId != 0 || targetObjectId != 0 || tetherId != 0;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static object? TryGetMemberValue(Type tType, object instance, string[] names)
+    {
+        foreach (var n in names)
+        {
+            var f = tType.GetField(n, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+            if (f != null)
+            {
+                var v = f.GetValue(instance);
+                if (v != null) return v;
+            }
+            var p = tType.GetProperty(n, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+            if (p != null)
+            {
+                var v = p.GetValue(instance);
+                if (v != null) return v;
+            }
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Returns true if the specified battleChara is tethered to the player.
+    /// </summary>
+    public static bool IsTetheredToPlayer(this IBattleChara battleChara)
+    {
+        if (battleChara == null || Player.Object == null) return false;
+
+        ulong playerId = Player.Object.GameObjectId;
+        var tethers = GetTethersFor(battleChara);
+        foreach (var t in tethers)
+        {
+            if (t == null) continue;
+            if (ExtractTetherId(t, out _, out var src, out var tgt) && (src == playerId || tgt == playerId))
+                return true;
+        }
+        return false;
+    }
+
+	/// <summary>
+	/// Returns true if the specified checkedtarget is tethered to checkedtarget.
+	/// </summary>
+	public static bool IsTetheredToSpecificTarget(this IBattleChara battleChara, IBattleChara checkedtarget)
+    {
+        if (battleChara == null || checkedtarget == null) return false;
+
+		ulong memberId = checkedtarget.GameObjectId;
+        var tethers = GetTethersFor(battleChara);
+        foreach (var t in tethers)
+        {
+            if (t == null) continue;
+            if (ExtractTetherId(t, out _, out var src, out var tgt) && (src == memberId || tgt == memberId))
+                return true;
+        }
+        return false;
+    }
+
     private static readonly ConcurrentDictionary<uint, bool> _effectRangeCheck = [];
 
     /// <summary>
@@ -1709,7 +1920,7 @@ public static class ObjectHelper
     /// </summary>
     public static bool IsColossusRubricatusImmune(this IBattleChara battleChara)
     {
-        if (DataCenter.TerritoryID == 1174)
+        if (Service.Config.ColossusRubricatusImmune && DataCenter.TerritoryID == 1174)
         {
             var ColossusRubricatus = battleChara.NameId == 9511;
 
@@ -1733,32 +1944,9 @@ public static class ObjectHelper
     /// <summary>
     /// 
     /// </summary>
-    public static bool IsTrueHeartImmune(this IBattleChara battleChara)
-    {
-        if (DataCenter.TerritoryID == 887)
-        {
-            var TrueHeart = battleChara.NameId == 9223;
-
-            if (TrueHeart)
-            {
-                if (Service.Config.InDebug)
-                {
-                    PluginLog.Information("IsTrueHeartImmune status found");
-                }
-                return true;
-            }
-
-        }
-
-        return false;
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
     public static bool IsEminentGriefImmune(this IBattleChara battleChara)
     {
-        if (DataCenter.TerritoryID == 1311 || DataCenter.TerritoryID == 1333 || DataCenter.TerritoryID == 1290)
+        if (Service.Config.Eminent && (DataCenter.TerritoryID == 1311 || DataCenter.TerritoryID == 1333 || DataCenter.TerritoryID == 1290))
         {
             var EminentGrief = battleChara.NameId == 14037;
             var DevouredEater = battleChara.NameId == 14038;
@@ -1793,7 +1981,7 @@ public static class ObjectHelper
     /// </summary>
     public static bool IsLOTAImmune(this IBattleChara battleChara)
     {
-        if (DataCenter.TerritoryID == 174)
+        if (Service.Config.ThanatosImmune && DataCenter.TerritoryID == 174)
         {
             var Thanatos = battleChara.NameId == 710;
             var AstralRealignment = StatusHelper.PlayerHasStatus(false, StatusID.AstralRealignment);
@@ -1816,7 +2004,7 @@ public static class ObjectHelper
     /// </summary>
     public static bool IsMesoImmune(this IBattleChara battleChara)
     {
-        if (DataCenter.TerritoryID == 1292)
+        if (Service.Config.JailerImmune && DataCenter.TerritoryID == 1292)
         {
             StatusID CellJailerA = (StatusID)4546;
             StatusID CellJailerB = (StatusID)4547;
@@ -1883,12 +2071,12 @@ public static class ObjectHelper
     /// </summary>
     public static bool IsJagdDollImmune(this IBattleChara battleChara)
     {
-        if (DataCenter.TerritoryID == 887)
+        if (Service.Config.TeaJagdDoll && DataCenter.TerritoryID == 887)
         {
             var JagdDoll = battleChara.NameId == 9214;
             var HealthThreshold = battleChara.GetEffectiveHpPercent();
 
-            if (JagdDoll && HealthThreshold < 25)
+            if (JagdDoll && HealthThreshold < 25f)
             {
                 return true;
             }
@@ -1897,12 +2085,57 @@ public static class ObjectHelper
         return false;
     }
 
-    /// <summary>
-    /// 
-    /// </summary>
-    public static bool IsLyreImmune(this IBattleChara battleChara)
+	/// <summary>
+	/// 
+	/// </summary>
+	public static bool IsTrueHeartImmune(this IBattleChara battleChara)
+	{
+		if (Service.Config.TeaTrueHeart && DataCenter.TerritoryID == 887) // In TEA
+		{
+			var TrueHeart = battleChara.NameId == 9223;
+
+			if (TrueHeart)
+			{
+				if (Service.Config.InDebug)
+				{
+					PluginLog.Information("IsTrueHeartImmune mob found, ignoring mob");
+				}
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/// <summary>
+	/// 
+	/// </summary>
+	public static bool IsCrystalOfDarknessImmune(this IBattleChara battleChara)
+	{
+		if (Service.Config.FruCrystalOfDarkness && DataCenter.TerritoryID == 1238)
+		{
+			var CrystalOfDarkness = battleChara.NameId == 13556;
+
+			if (CrystalOfDarkness)
+			{
+				if (Service.Config.InDebug)
+				{
+					PluginLog.Information("IsCrystalOfDarknessImmune mob found, ignoring mob");
+				}
+				return true;
+			}
+
+		}
+
+		return false;
+	}
+
+	/// <summary>
+	/// 
+	/// </summary>
+	public static bool IsLyreImmune(this IBattleChara battleChara)
     {
-        if (DataCenter.TerritoryID == 821)
+        if (Service.Config.DohnMhegLyre && DataCenter.TerritoryID == 821)
         {
             var LiarsLyre = battleChara.NameId == 8958;
             var Unfooled = StatusHelper.PlayerHasStatus(false, StatusID.Unfooled);
@@ -1921,7 +2154,7 @@ public static class ObjectHelper
     /// </summary>
     public static bool IsDrakeImmune(this IBattleChara battleChara)
     {
-        if (DataCenter.TerritoryID == 1069)
+        if (Service.Config.DrakeImmune && DataCenter.TerritoryID == 1069)
         {
             // NameIds for each drake
             const uint DrakefatherId = 11463;
@@ -1985,7 +2218,7 @@ public static class ObjectHelper
     /// <returns></returns>
     public static bool IsWolfImmune(this IBattleChara battleChara)
     {
-        if (DataCenter.TerritoryID == 1263)
+        if (Service.Config.M8SWindStone && DataCenter.TerritoryID == 1263)
         {
             // Numeric values used instead of name as Lumina does not provide name yet, and may update to change name
             StatusID WindPack = (StatusID)4389; // Numeric value for "Rsv43891100S74Cfc3B0E74Cfc3B0", unable to hit Wolf of Wind
@@ -2026,7 +2259,7 @@ public static class ObjectHelper
     /// <returns></returns>
     public static bool IsIrminsulSawtoothImmune(this IBattleChara battleChara)
     {
-        if (DataCenter.TerritoryID == 508)
+        if (Service.Config.IrminsulSawtoothImmune && DataCenter.TerritoryID == 508)
         {
             var RangedPhysicalRole = Player.Job.IsPhysicalRangedDps();
             var RangedMagicalRole = Player.Job.IsMagicalRangedDps();
@@ -2064,7 +2297,7 @@ public static class ObjectHelper
     /// <returns></returns>
     public static bool IsSuperiorFlightUnitImmune(this IBattleChara battleChara)
     {
-        if (DataCenter.TerritoryID == 917)
+        if (Service.Config.SuperiorFlightUnitImmune && DataCenter.TerritoryID == 917)
         {
             var ShieldProtocolAPlayer = StatusHelper.PlayerHasStatus(false, StatusID.ShieldProtocolA);
             var ShieldProtocolBPlayer = StatusHelper.PlayerHasStatus(false, StatusID.ShieldProtocolB);
@@ -2105,14 +2338,40 @@ public static class ObjectHelper
         return false;
     }
 
-    /// <summary>
-    /// Is target Jeuno Boss immune.
-    /// </summary>
-    /// <param name="battleChara">the object.</param>
-    /// <returns></returns>
-    public static bool IsJeunoBossImmune(this IBattleChara battleChara)
+	/// <summary>
+	/// Is target Hansel or Gretel and has the Strong of Shield status.
+	/// </summary>
+	/// <param name="battleChara">the object.</param>
+	/// <returns></returns>
+	public static bool IsHanselorGretelShielded(this IBattleChara battleChara)
+	{
+		if (Service.Config.HanselorGretelShieldedImmune && DataCenter.TerritoryID == 966)
+		{
+			EnemyPositional strongOfShieldPositional = EnemyPositional.Front;
+			StatusID strongOfShieldStatus = StatusID.StrongOfShield;
+
+			if (battleChara.HasStatus(false, strongOfShieldStatus) &&
+					strongOfShieldPositional != battleChara.FindEnemyPositional())
+			{
+				if (Service.Config.InDebug)
+				{
+					PluginLog.Information("IsHanselorGretelShielded: StrongOfShield status found, ignoring status haver if player is out of position");
+				}
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/// <summary>
+	/// Is target Jeuno Boss immune.
+	/// </summary>
+	/// <param name="battleChara">the object.</param>
+	/// <returns></returns>
+	public static bool IsJeunoBossImmune(this IBattleChara battleChara)
     {
-        if (DataCenter.TerritoryID == 1248)
+        if (Service.Config.JeunoBossImmune && DataCenter.TerritoryID == 1248)
         {
             var FatedVillain = battleChara.HasStatus(false, StatusID.FatedVillain);
             var VauntedVillain = battleChara.HasStatus(false, StatusID.VauntedVillain);
@@ -2160,7 +2419,7 @@ public static class ObjectHelper
     /// <returns></returns>
     public static bool IsDeadStarImmune(this IBattleChara battleChara)
     {
-        if (DataCenter.IsInForkedTower)
+        if (Service.Config.ForkedtowerDeadStar && DataCenter.IsInForkedTower)
         {
             var Triton = battleChara.NameId == 13730;
             var Nereid = battleChara.NameId == 13731;
@@ -2208,7 +2467,7 @@ public static class ObjectHelper
     /// <returns></returns>
     public static bool IsCODBossImmune(this IBattleChara battleChara)
     {
-        if (DataCenter.TerritoryID == 1241)
+        if (Service.Config.CodImmune && DataCenter.TerritoryID == 1241)
         {
             var CloudOfDarknessStatus = battleChara.HasStatus(false, StatusID.VeilOfDarkness);
             var StygianStatus = battleChara.HasStatus(false, StatusID.UnnamedStatus_4388);
@@ -2314,14 +2573,54 @@ public static class ObjectHelper
         return false;
     }
 
-    /// <summary>
-    /// Is target Omega Boss immune.
-    /// </summary>
-    /// <param name="battleChara">the object.</param>
-    /// <returns></returns>
-    public static bool IsOmegaImmune(this IBattleChara battleChara)
+	/// <summary>
+	/// Is target Omega Boss immune.
+	/// </summary>
+	/// <param name="battleChara">the object.</param>
+	/// <returns></returns>
+	public static bool IsTOPImmune(this IBattleChara battleChara)
+	{
+		if (Service.Config.TopOmegaMf && DataCenter.TerritoryID == 1122)
+		{
+			StatusID AntiOmegaF_Ultimate = StatusID.PacketFilterF_3500;
+			StatusID AntiOmegaM_Ultimate = StatusID.PacketFilterM_3499;
+
+			StatusID OmegaF = StatusID.OmegaF;
+			StatusID OmegaM = StatusID.Omega;
+			StatusID OmegaM2 = StatusID.OmegaM_3454;
+
+			if (battleChara.HasStatus(false, OmegaF) &&
+					StatusHelper.PlayerHasStatus(false, AntiOmegaF_Ultimate))
+			{
+				if (Service.Config.InDebug)
+				{
+					PluginLog.Information("IsTOPImmune: PacketFilterF status found");
+				}
+				return true;
+			}
+
+			if (battleChara.HasStatus(false, OmegaM, OmegaM2) &&
+				StatusHelper.PlayerHasStatus(false, AntiOmegaM_Ultimate))
+			{
+				if (Service.Config.InDebug)
+				{
+					PluginLog.Information("IsTOPImmune: PacketFilterM status found");
+				}
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/// <summary>
+	/// Is target Omega Boss immune.
+	/// </summary>
+	/// <param name="battleChara">the object.</param>
+	/// <returns></returns>
+	public static bool IsOmegaImmune(this IBattleChara battleChara)
     {
-        if (DataCenter.TerritoryID == 801 || DataCenter.TerritoryID == 805)
+        if (Service.Config.O12SOmegaMf && (DataCenter.TerritoryID == 801 || DataCenter.TerritoryID == 805))
         {
             StatusID AntiOmegaF = StatusID.PacketFilterF;
             StatusID AntiOmegaF_Extreme = StatusID.PacketFilterF_3500;
@@ -2348,84 +2647,6 @@ public static class ObjectHelper
                 if (Service.Config.InDebug)
                 {
                     PluginLog.Information("IsOmegaImmune: PacketFilterM status found");
-                }
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /// <summary>
-    /// Is target Limitless Blue immune.
-    /// </summary>
-    /// <param name="battleChara">the object.</param>
-    /// <returns></returns>
-    public static bool IsLimitlessBlue(this IBattleChara battleChara)
-    {
-        if (DataCenter.TerritoryID == 436 || DataCenter.TerritoryID == 447)
-        {
-            StatusID WillOfTheWater = StatusID.WillOfTheWater;
-            StatusID WillOfTheWind = StatusID.WillOfTheWind;
-            StatusID WhaleBack = StatusID.Whaleback;
-
-            bool Green = battleChara.NameId == 3654;
-            bool Blue = battleChara.NameId == 3655;
-            bool BismarkShell = battleChara.NameId == 3656;
-            bool BismarkCorona = battleChara.NameId == 3657;
-
-            if ((BismarkShell || BismarkCorona) &&
-                    !StatusHelper.PlayerHasStatus(false, WhaleBack))
-            {
-                if (Service.Config.InDebug)
-                {
-                    PluginLog.Information("IsLimitlessBlue: Bismark found, WhaleBack status not found");
-                }
-                return true;
-            }
-
-            if (Blue &&
-                StatusHelper.PlayerHasStatus(false, WillOfTheWater))
-            {
-                if (Service.Config.InDebug)
-                {
-                    PluginLog.Information("IsLimitlessBlue: WillOfTheWater status found");
-                }
-                return true;
-            }
-
-            if (Green &&
-                StatusHelper.PlayerHasStatus(false, WillOfTheWind))
-            {
-                if (Service.Config.InDebug)
-                {
-                    PluginLog.Information("IsLimitlessBlue: WillOfTheWind status found");
-                }
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /// <summary>
-    /// Is target Hansel or Gretel and has the Strong of Shield status.
-    /// </summary>
-    /// <param name="battleChara">the object.</param>
-    /// <returns></returns>
-    public static bool IsHanselorGretelShielded(this IBattleChara battleChara)
-    {
-        if (DataCenter.TerritoryID == 966)
-        {
-            EnemyPositional strongOfShieldPositional = EnemyPositional.Front;
-            StatusID strongOfShieldStatus = StatusID.StrongOfShield;
-
-            if (battleChara.HasStatus(false, strongOfShieldStatus) &&
-                    strongOfShieldPositional != battleChara.FindEnemyPositional())
-            {
-                if (Service.Config.InDebug)
-                {
-                    PluginLog.Information("IsHanselorGretelShielded: StrongOfShield status found, ignoring status haver if player is out of position");
                 }
                 return true;
             }

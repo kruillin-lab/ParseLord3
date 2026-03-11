@@ -1320,14 +1320,26 @@ public partial class CustomRotation
         return IActionHelper.IsLastAction(ids);
     }
 
-    /// <summary>
-    /// Last used Combo Action.
-    /// <br>WARNING: Do Not make this method the main of your rotation.</br>
-    /// </summary>
-    /// <param name="isAdjust">Check for adjust id not raw id.</param>
-    /// <param name="actions">True if any of this is matched.</param>
-    /// <returns></returns>
-    [Description("Just used Combo Action")]
+	/// <summary>
+	/// Returns the number of seconds since the last action was changed, capped at 10 seconds.
+	/// </summary>
+	public static float TimeSinceLastActionCapped
+	{
+		get
+		{
+			var seconds = (float)TimeSinceLastAction.TotalSeconds;
+			return Math.Min(seconds, 10f);
+		}
+	}
+
+	/// <summary>
+	/// Last used Combo Action.
+	/// <br>WARNING: Do Not make this method the main of your rotation.</br>
+	/// </summary>
+	/// <param name="isAdjust">Check for adjust id not raw id.</param>
+	/// <param name="actions">True if any of this is matched.</param>
+	/// <returns></returns>
+	[Description("Just used Combo Action")]
     public static bool IsLastComboAction(bool isAdjust, params IAction[] actions)
     {
         CountingOfLastUsing++;

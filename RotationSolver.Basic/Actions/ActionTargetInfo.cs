@@ -185,7 +185,21 @@ public struct ActionTargetInfo(IBaseAction action)
                 if (isRestricted) continue;
             }
 
-            if (CheckStatus(tar, skipStatusProvideCheck, skipTargetStatusNeedCheck) && CheckTimeToKill(tar) && CheckResistance(tar))
+			if (DataCenter.IsInM9S && action.AdjustedID == 36982 && DataCenter.RestrictedActionNameIds != null)
+			{
+				bool isRestrictedAction = false;
+				for (int i = 0; i < DataCenter.RestrictedActionNameIds.Count; i++)
+				{
+					if (tar.NameId == DataCenter.RestrictedActionNameIds[i])
+					{
+						isRestrictedAction = true;
+						break;
+					}
+				}
+				if (isRestrictedAction) continue;
+			}
+
+			if (CheckStatus(tar, skipStatusProvideCheck, skipTargetStatusNeedCheck) && CheckTimeToKill(tar) && CheckResistance(tar))
             {
                 validTargets.Add(tar);
             }
@@ -672,8 +686,33 @@ public struct ActionTargetInfo(IBaseAction action)
             return new TargetResult(player, [.. GetAffectsVector(player.Position, canAffects)], player.Position);
         }
 
-        // --- Try OnLocations logic first ---
-        _ = OtherConfiguration.BeneficialPositions.TryGetValue(Svc.ClientState.TerritoryType, out Vector3[]? pts);
+		if (Service.Config.UseTargetTankForGroundHeal && DataCenter.PartyMembers != null)
+		{
+			IBattleChara? tankWithStance = null;
+			IBattleChara? tankWithoutStance = null;
+			foreach (var member in DataCenter.PartyMembers)
+			{
+				if (member == null || member.GameObjectId == player.GameObjectId) continue;
+				if (member.IsJobCategory(JobRole.Tank))
+				{
+					if (member.HasStatus(false, StatusHelper.TankStanceStatus))
+					{
+						tankWithStance = member;
+						break; // Prefer tank with stance
+					}
+					else tankWithoutStance ??= member;
+				}
+			}
+			IBattleChara? tankTarget = tankWithStance ?? tankWithoutStance;
+			if (tankTarget != null)
+			{
+				List<IBattleChara> affectsList = [.. GetAffectsVector(tankTarget.Position, canAffects)];
+				return new TargetResult(tankTarget, [.. affectsList], tankTarget.Position);
+			}
+		}
+
+		// --- Try OnLocations logic first ---
+		_ = OtherConfiguration.BeneficialPositions.TryGetValue(Svc.ClientState.TerritoryType, out Vector3[]? pts);
         pts ??= [];
 
         // Use fallback points if no beneficial positions are found
@@ -919,7 +958,7 @@ public struct ActionTargetInfo(IBaseAction action)
         }
 
         // Cleave mode
-        if (aoeCount > 1 && Service.Config.AoEType == AoEType.Cleave)
+        if (aoeCount > 1 && (Service.Config.AoEType == AoEType.Cleave || (DataCenter.IsInM9S && Service.Config.M9SCleaveOnly)))
         {
             yield break;
         }
@@ -1020,7 +1059,10 @@ public struct ActionTargetInfo(IBaseAction action)
                     return (tdirLen - subTarget.HitboxRadius) <= EffectRange;
 
                 default:
-                    PluginLog.Debug($"{action.Action.Name.ExtractText()}'s CastType is not valid! The value is {action.Action.CastType}");
+					if (Service.Config.InDebug)
+					{
+						PluginLog.Debug($"{action.Action.Name.ExtractText()}'s CastType is not valid! The value is {action.Action.CastType}");
+					}
                     return false;
             }
         }
@@ -1078,7 +1120,10 @@ public struct ActionTargetInfo(IBaseAction action)
                 }
 
             default:
-                PluginLog.Debug($"{action.Action.Name.ExtractText()}'s CastType is not valid! The value is {action.Action.CastType}");
+				if (Service.Config.InDebug)
+				{
+					PluginLog.Debug($"{action.Action.Name.ExtractText()}'s CastType is not valid! The value is {action.Action.CastType}");
+				}
                 return false;
         }
     }
@@ -1790,12 +1835,18 @@ public struct ActionTargetInfo(IBaseAction action)
                     {
                         if (member.IsConditionCannotTarget())
                         {
-                            PluginLog.Debug($"FindDancePartner: {member.Name} selected target.");
+							if (Service.Config.InDebug)
+							{
+								PluginLog.Debug($"FindDancePartner: {member.Name} selected target.");
+							}
                             return null;
                         }
                         if (!member.IsConditionCannotTarget())
                         {
-                            PluginLog.Debug($"FindDancePartner: {member.Name} selected target.");
+							if (Service.Config.InDebug)
+							{
+								PluginLog.Debug($"FindDancePartner: {member.Name} selected target.");
+							}
                             return member;
                         }
                     }
@@ -1811,19 +1862,28 @@ public struct ActionTargetInfo(IBaseAction action)
                     {
                         if (member.IsConditionCannotTarget())
                         {
-                            PluginLog.Debug($"FindDancePartner: {member.Name} secondary logic target.");
+							if (Service.Config.InDebug)
+							{
+								PluginLog.Debug($"FindDancePartner: {member.Name} secondary logic target.");
+							}
                             return null;
                         }
                         if (!member.IsConditionCannotTarget())
                         {
-                            PluginLog.Debug($"FindDancePartner: {member.Name} secondary logic target.");
+							if (Service.Config.InDebug)
+							{
+								PluginLog.Debug($"FindDancePartner: {member.Name} secondary logic target.");
+							}
                             return member;
                         }
                     }
                 }
             }
 
-            PluginLog.Debug($"FindDancePartner: No target found, using fallback.");
+			if (Service.Config.InDebug)
+			{
+				PluginLog.Debug($"FindDancePartner: No target found, using fallback.");
+			}
 
             IBattleChara? result = RandomMeleeTarget(battleChara);
             if (result != null) return result;
@@ -1856,13 +1916,33 @@ public struct ActionTargetInfo(IBaseAction action)
                 return Player.Object;
             }
 
+            // If there are two party members and the other is the player's chocobo,
+            // treat this as effectively solo and return the player.
+            if (DataCenter.PartyMembers.Count == 2 && Player.Object != null)
+            {
+                bool hasPlayer = false;
+                bool hasChocobo = false;
+                foreach (var m in DataCenter.PartyMembers)
+                {
+                    if (m == null) continue;
+                    if (m.GameObjectId == Player.Object.GameObjectId) hasPlayer = true;
+                    else if (ObjectHelper.IsPlayerCharacterChocobo(m)) hasChocobo = true;
+                }
+
+                if (hasPlayer && hasChocobo)
+                {
+                    return Player.Object;
+                }
+            }
+
             // Build filtered candidate list
             List<IBattleChara> candidates = [];
             foreach (IBattleChara m in DataCenter.PartyMembers)
             {
                 if (m == null) continue;
                 if (m == Player.Object) continue; // never card self
-                if (m.IsDead) continue;
+				if (ObjectHelper.IsPlayerCharacterChocobo(m)) continue;
+				if (m.IsDead) continue;
                 if (m.IsConditionCannotTarget()) continue;
                 //if (StatusHelper.IsStatusCapped(m)) continue; // cannot receive more statuses
                 if (m.HasStatus(false, StatusID.DamageDown_2911, StatusID.DamageDown, StatusID.Weakness, StatusID.BrinkOfDeath)) continue; // poor target value
@@ -1915,7 +1995,10 @@ public struct ActionTargetInfo(IBaseAction action)
             }
             if (best != null)
             {
-                PluginLog.Debug($"FindTheSpear: {best.Name} selected by priority index {bestIndex} with tie-breakers.");
+				if (Service.Config.InDebug)
+				{
+					PluginLog.Debug($"FindTheSpear: {best.Name} selected by priority index {bestIndex} with tie-breakers.");
+				}
                 return best;
             }
 
@@ -1947,18 +2030,38 @@ public struct ActionTargetInfo(IBaseAction action)
                 return null;
             }
 
-            if (DataCenter.PartyMembers.Count == 1)
+			if (DataCenter.PartyMembers.Count == 1)
             {
                 return Player.Object;
             }
 
-            // Build filtered candidate list
-            List<IBattleChara> candidates = [];
+			// If there are two party members and the other is the player's chocobo,
+			// treat this as effectively solo and return the player.
+			if (DataCenter.PartyMembers.Count == 2 && Player.Object != null)
+			{
+				bool hasPlayer = false;
+				bool hasChocobo = false;
+				foreach (var m in DataCenter.PartyMembers)
+				{
+					if (m == null) continue;
+					if (m.GameObjectId == Player.Object.GameObjectId) hasPlayer = true;
+					else if (ObjectHelper.IsPlayerCharacterChocobo(m)) hasChocobo = true;
+				}
+
+				if (hasPlayer && hasChocobo)
+				{
+					return Player.Object;
+				}
+			}
+
+			// Build filtered candidate list
+			List<IBattleChara> candidates = [];
             foreach (IBattleChara m in DataCenter.PartyMembers)
             {
                 if (m == null) continue;
                 if (m == Player.Object) continue; // never card self
-                if (m.IsDead) continue;
+				if (ObjectHelper.IsPlayerCharacterChocobo(m)) continue;
+				if (m.IsDead) continue;
                 if (m.IsConditionCannotTarget()) continue;
                 //if (StatusHelper.IsStatusCapped(m)) continue; // cannot receive more statuses
                 if (m.HasStatus(false, StatusID.DamageDown_2911, StatusID.DamageDown, StatusID.Weakness, StatusID.BrinkOfDeath)) continue; // poor target value
@@ -2058,12 +2161,18 @@ public struct ActionTargetInfo(IBaseAction action)
                         {
                             if (m.IsConditionCannotTarget())
                             {
-                                PluginLog.Debug($"FindKardia 1: {m.Name} is a tank with TankStanceStatus and without Kardion.");
+								if (Service.Config.InDebug)
+								{
+									PluginLog.Debug($"FindKardia 1: {m.Name} is a tank with TankStanceStatus and without Kardion.");
+								}
                                 return null;
                             }
                             if (!m.IsConditionCannotTarget())
                             {
-                                PluginLog.Debug($"FindKardia 1: {m.Name} is a tank with TankStanceStatus and without Kardion.");
+								if (Service.Config.InDebug)
+								{
+									PluginLog.Debug($"FindKardia 1: {m.Name} is a tank with TankStanceStatus and without Kardion.");
+								}
                                 return m;
                             }
                         }
@@ -2082,12 +2191,18 @@ public struct ActionTargetInfo(IBaseAction action)
                         {
                             if (m.IsConditionCannotTarget())
                             {
-                                PluginLog.Debug($"FindKardia 2: {m.Name} is a tank with TankStanceStatus.");
+								if (Service.Config.InDebug)
+								{
+									PluginLog.Debug($"FindKardia 2: {m.Name} is a tank with TankStanceStatus.");
+								}
                                 return null;
                             }
                             if (!m.IsConditionCannotTarget())
                             {
-                                PluginLog.Debug($"FindKardia 2: {m.Name} is a tank with TankStanceStatus.");
+								if (Service.Config.InDebug)
+								{
+									PluginLog.Debug($"FindKardia 2: {m.Name} is a tank with TankStanceStatus.");
+								}
                                 return m;
                             }
                         }
@@ -2104,19 +2219,28 @@ public struct ActionTargetInfo(IBaseAction action)
                         // 3. Any alive tank in priority order
                         if (m.IsConditionCannotTarget())
                         {
-                            PluginLog.Debug($"FindKardia 3: {m.Name} is a tank fallback.");
+							if (Service.Config.InDebug)
+							{
+								PluginLog.Debug($"FindKardia 3: {m.Name} is a tank fallback.");
+							}
                             return null;
                         }
                         if (!m.IsConditionCannotTarget())
                         {
-                            PluginLog.Debug($"FindKardia 3: {m.Name} is a tank fallback.");
+							if (Service.Config.InDebug)
+							{
+								PluginLog.Debug($"FindKardia 3: {m.Name} is a tank fallback.");
+							}
                             return m;
                         }
                     }
                 }
             }
 
-            PluginLog.Debug($"FindKardia: No target found, using fallback.");
+			if (Service.Config.InDebug)
+			{
+				PluginLog.Debug($"FindKardia: No target found, using fallback.");
+			}
             IBattleChara? fallback = null;
             fallback = FindTankTarget();
             if (fallback != null) return fallback;
@@ -2206,13 +2330,19 @@ public struct ActionTargetInfo(IBaseAction action)
 
             if (bestCatalyze != null)
             {
-                PluginLog.Debug($"FindDeploymentTacticsTarget: {bestCatalyze.Name} is a valid target with Catalyze, largest shield, and nearby allies.");
+				if (Service.Config.InDebug)
+				{
+					PluginLog.Debug($"FindDeploymentTacticsTarget: {bestCatalyze.Name} is a valid target with Catalyze, largest shield, and nearby allies.");
+				}
                 return bestCatalyze;
             }
 
             if (bestGalvanize != null && bestCatalyze == null)
             {
-                PluginLog.Debug($"FindDeploymentTacticsTarget: {bestGalvanize.Name} is a valid target with Galvanize, largest shield, and nearby allies.");
+				if (Service.Config.InDebug)
+				{
+					PluginLog.Debug($"FindDeploymentTacticsTarget: {bestGalvanize.Name} is a valid target with Galvanize, largest shield, and nearby allies.");
+				}
                 return bestGalvanize;
             }
 

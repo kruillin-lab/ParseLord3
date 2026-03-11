@@ -139,7 +139,7 @@ public partial class SageRotation
 
     static partial void ModifyEukrasiaPvE(ref ActionSetting setting)
     {
-        setting.ActionCheck = () => !HasEukrasia;
+        setting.ActionCheck = () => !IsLastAction(ActionID.EukrasiaPvE);
         setting.StatusProvide = [StatusID.Eukrasia];
         setting.IsFriendly = true;
         setting.CreateConfig = () => new ActionConfig()
@@ -184,14 +184,22 @@ public partial class SageRotation
         };
     }
 
-    static partial void ModifySoteriaPvE(ref ActionSetting setting)
-    {
-        setting.StatusProvide = [StatusID.Soteria];
-        setting.TargetType = TargetType.Self;
-        setting.ActionCheck = () => DataCenter.PartyMembers.Any(m => m.HasStatus(true, StatusID.Kardion));
-    }
+	static partial void ModifySoteriaPvE(ref ActionSetting setting)
+	{
+		setting.StatusProvide = [StatusID.Soteria];
+		setting.TargetType = TargetType.Self;
+		setting.ActionCheck = () =>
+		{
+			foreach (var m in DataCenter.PartyMembers)
+			{
+				if (m.HasStatus(true, StatusID.Kardion))
+					return true;
+			}
+			return false;
+		};
+	}
 
-    static partial void ModifyIcarusPvE(ref ActionSetting setting)
+	static partial void ModifyIcarusPvE(ref ActionSetting setting)
     {
         setting.SpecialType = SpecialActionType.HostileFriendlyMovingForward;
     }
